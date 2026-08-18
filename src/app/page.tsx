@@ -42,11 +42,11 @@ export default function Dashboard() {
           <p className="text-zinc-500 mt-2 max-w-[65ch] leading-relaxed">Welcome back. Here is the latest ranking overview and data collection status for IIT Mandi.</p>
         </div>
         <div className="flex items-center gap-3">
-          <select className="bg-white border border-slate-200/50 rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm focus:outline-none focus:border-emerald-500/50">
+          <select className="bg-white border border-slate-200/50 rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm focus:outline-none focus:border-sage-500/50">
             <option>NIRF 2026 Cycle</option>
             <option>QS 2026 Cycle</option>
           </select>
-          <button className="bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(16,185,129,0.3)]">
+          <button className="bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(90,115,89,0.3)]">
             Generate Report
           </button>
         </div>
@@ -60,20 +60,21 @@ export default function Dashboard() {
             value="28" 
             trend="+3 positions" 
             positive={true}
-            icon={<Medal weight="duotone" className="w-6 h-6 text-emerald-600" />} 
+            icon={<Medal weight="duotone" className="w-6 h-6 text-soft-gold-600" />} 
+            iconBg="bg-soft-gold-50"
           />
         </motion.div>
         <motion.div className="md:col-span-2" variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}>
-          <div className="h-full bg-white border border-slate-200/50 p-8 rounded-[2rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col justify-between group hover:border-emerald-500/20 transition-colors">
+          <div className="h-full bg-white border border-slate-200/50 p-8 rounded-[2rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col justify-between group hover:border-sage-500/20 transition-colors">
             <div className="flex justify-between items-start mb-6 z-10">
-              <div className="p-3 bg-emerald-50 rounded-2xl">
-                <FileText weight="duotone" className="w-6 h-6 text-emerald-600" />
+              <div className="p-3 bg-sage-50 rounded-2xl">
+                <FileText weight="duotone" className="w-6 h-6 text-sage-600" />
               </div>
               <div className="flex items-center gap-2 px-3 py-1 bg-zinc-100 rounded-full text-xs font-semibold text-zinc-600">
                 <motion.div 
                   animate={{ opacity: [1, 0.5, 1] }} 
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-2 h-2 rounded-full bg-emerald-500" 
+                  className="w-2 h-2 rounded-full bg-sage-500" 
                 />
                 Live Cycle
               </div>
@@ -101,6 +102,7 @@ export default function Dashboard() {
             trend="-5 since yesterday" 
             positive={true}
             icon={<TrendUp weight="duotone" className="w-6 h-6 text-zinc-600" />} 
+            iconBg="bg-zinc-50"
           />
         </motion.div>
       </div>
@@ -116,8 +118,8 @@ export default function Dashboard() {
               <AreaChart data={mockRankingData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorNirf" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#5a7359" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#5a7359" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.6} />
@@ -127,7 +129,7 @@ export default function Dashboard() {
                   contentStyle={{ borderRadius: '16px', border: '1px solid rgba(226, 232, 240, 0.8)', boxShadow: '0 20px 40px -15px rgba(0,0,0,0.1)', padding: '12px' }}
                   itemStyle={{ fontWeight: 600, color: '#0f172a' }}
                 />
-                <Area type="monotone" dataKey="nirf" name="NIRF Rank" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorNirf)" />
+                <Area type="monotone" dataKey="nirf" name="NIRF Rank" stroke="#5a7359" strokeWidth={3} fillOpacity={1} fill="url(#colorNirf)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -137,7 +139,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 bg-white border border-slate-200/50 rounded-[2rem] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-semibold tracking-tight text-zinc-900">Submission Status</h3>
-            <button className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors">View All</button>
+            <button className="text-sm font-medium text-sage-600 hover:text-sage-700 transition-colors">View All</button>
           </div>
           <div className="flex-1 w-full min-h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -147,7 +149,7 @@ export default function Dashboard() {
                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: 600, fill: '#475569' }} width={50} />
                 <Tooltip cursor={{fill: 'rgba(241, 245, 249, 0.4)'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                 <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '13px', color: '#475569' }} />
-                <Bar dataKey="completed" name="Completed (%)" stackId="a" fill="#10b981" radius={[8, 0, 0, 8]} barSize={28} />
+                <Bar dataKey="completed" name="Completed (%)" stackId="a" fill="#5a7359" radius={[8, 0, 0, 8]} barSize={28} />
                 <Bar dataKey="pending" name="Pending (%)" stackId="a" fill="#e2e8f0" radius={[0, 8, 8, 0]} barSize={28} />
               </BarChart>
             </ResponsiveContainer>
@@ -160,11 +162,11 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ title, value, trend, positive, icon }: { title: string, value: string, trend: string, positive: boolean, icon: React.ReactNode }) {
+function StatCard({ title, value, trend, positive, icon, iconBg = "bg-zinc-50" }: { title: string, value: string, trend: string, positive: boolean, icon: React.ReactNode, iconBg?: string }) {
   return (
     <div className="h-full bg-white border border-slate-200/50 p-8 rounded-[2rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.08)] transition-all flex flex-col justify-between group">
       <div className="flex justify-between items-start mb-6">
-        <div className="p-3 bg-zinc-50 rounded-2xl group-hover:scale-105 transition-transform">
+        <div className={`p-3 ${iconBg} rounded-2xl group-hover:scale-105 transition-transform`}>
           {icon}
         </div>
       </div>
@@ -172,7 +174,7 @@ function StatCard({ title, value, trend, positive, icon }: { title: string, valu
         <h4 className="text-zinc-500 text-sm font-medium mb-2">{title}</h4>
         <div className="flex flex-col gap-2">
           <span className="text-4xl font-semibold tracking-tight text-zinc-900">{value}</span>
-          <span className={`w-fit text-xs font-semibold px-2.5 py-1 rounded-full ${positive ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'}`}>
+          <span className={`w-fit text-xs font-semibold px-2.5 py-1 rounded-full ${positive ? 'bg-sage-50 text-sage-700' : 'bg-dusty-rose-50 text-dusty-rose-700'}`}>
             {trend}
           </span>
         </div>

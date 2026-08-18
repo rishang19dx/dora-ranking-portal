@@ -78,7 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <input 
                 type="text" 
                 placeholder="Search metrics or users..." 
-                className="w-full pl-9 pr-4 py-2 bg-zinc-100/50 hover:bg-zinc-100 focus:bg-zinc-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 border border-transparent focus:border-emerald-500/30 transition-all placeholder:text-zinc-400"
+                className="w-full pl-9 pr-4 py-2 bg-zinc-100/50 hover:bg-zinc-100 focus:bg-zinc-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-500/20 border border-transparent focus:border-sage-500/30 transition-all placeholder:text-zinc-400"
               />
             </div>
           </div>
@@ -86,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-3 shrink-0">
             <button className="relative p-2 hover:bg-zinc-100 rounded-xl text-zinc-600 transition-colors">
               <Bell weight="bold" className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-dusty-rose-500 rounded-full ring-2 ring-white"></span>
             </button>
             <div className="w-9 h-9 rounded-xl bg-zinc-900 flex items-center justify-center text-white text-xs font-semibold shadow-sm cursor-pointer hover:scale-105 transition-transform">
               AD
@@ -109,14 +109,14 @@ function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile }: { p
       <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200/50 shrink-0">
         {sidebarOpen ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white font-bold shadow-[0_4px_12px_-2px_rgba(16,185,129,0.3)]">
-              M
+            <div className="w-8 h-8 bg-slate-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-[0_4px_12px_-2px_rgba(65,93,126,0.3)]">
+              <span className="font-serif italic">M</span>
             </div>
-            <span className="font-semibold tracking-tight text-zinc-900 text-[15px] whitespace-nowrap">Ranking Portal</span>
+            <span className="font-serif font-semibold tracking-tight text-zinc-900 text-[16px] whitespace-nowrap">Ranking Portal</span>
           </motion.div>
         ) : (
-          <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white font-bold shadow-[0_4px_12px_-2px_rgba(16,185,129,0.3)] mx-auto">
-            M
+          <div className="w-8 h-8 bg-slate-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-[0_4px_12px_-2px_rgba(65,93,126,0.3)] mx-auto">
+            <span className="font-serif italic">M</span>
           </div>
         )}
         
@@ -146,14 +146,14 @@ function NavItem({ href, icon, label, active, open }: { href: string, icon: Reac
       <div 
         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative z-10 ${
           active 
-            ? 'text-emerald-700' 
+            ? 'text-sage-700' 
             : 'text-zinc-500 hover:text-zinc-900'
         }`}
       >
         {active && (
           <motion.div 
             layoutId="nav-active"
-            className="absolute inset-0 bg-emerald-50 rounded-xl -z-10"
+            className="absolute inset-0 bg-sage-50 rounded-xl -z-10"
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
         )}

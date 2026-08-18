@@ -38,14 +38,14 @@ export default function Settings() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition-all relative ${
                 activeTab === tab.id 
-                  ? 'text-emerald-700' 
+                  ? 'text-sage-700' 
                   : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/50'
               }`}
             >
               {activeTab === tab.id && (
                 <motion.div 
                   layoutId="active-tab" 
-                  className="absolute inset-0 bg-emerald-50 rounded-xl"
+                  className="absolute inset-0 bg-sage-50 rounded-xl"
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
@@ -74,17 +74,17 @@ export default function Settings() {
                   <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-semibold text-zinc-700 mb-2">Institute Name</label>
-                      <input type="text" defaultValue="IIT Mandi" className="w-full max-w-md bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-zinc-900" />
+                      <input type="text" defaultValue="IIT Mandi" className="w-full max-w-md bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500/20 focus:border-sage-500/50 transition-all text-zinc-900" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-zinc-700 mb-2">Default Ranking Cycle</label>
-                      <select className="w-full max-w-md bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-zinc-900">
+                      <select className="w-full max-w-md bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500/20 focus:border-sage-500/50 transition-all text-zinc-900">
                         <option>NIRF 2026</option>
                         <option>QS 2026</option>
                       </select>
                     </div>
                     <div className="pt-6 border-t border-slate-100">
-                      <button className="bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_16px_-4px_rgba(16,185,129,0.3)] w-fit">
+                      <button className="bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_16px_-4px_rgba(16,185,129,0.3)] w-fit">
                         Save Changes
                       </button>
                     </div>
@@ -102,7 +102,7 @@ export default function Settings() {
                         <h4 className="font-semibold text-zinc-900 text-sm">Two-Factor Authentication</h4>
                         <p className="text-xs text-zinc-500 mt-1">Require 2FA for all Nodal Officers.</p>
                       </div>
-                      <div className="w-12 h-6 bg-emerald-500 rounded-full flex items-center p-1 cursor-pointer">
+                      <div className="w-12 h-6 bg-sage-500 rounded-full flex items-center p-1 cursor-pointer">
                         <div className="w-4 h-4 bg-white rounded-full translate-x-6"></div>
                       </div>
                     </div>
@@ -118,7 +118,7 @@ export default function Settings() {
                     <div className="space-y-4">
                       {['Data Submission Alerts', 'Discrepancy Flags', 'Weekly Digest'].map(item => (
                         <div key={item} className="flex items-center gap-3">
-                          <input type="checkbox" defaultChecked className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
+                          <input type="checkbox" defaultChecked className="w-4 h-4 text-sage-600 rounded border-slate-300 focus:ring-sage-500" />
                           <label className="text-sm font-medium text-zinc-700">{item}</label>
                         </div>
                       ))}
@@ -134,9 +134,9 @@ export default function Settings() {
                     <p className="text-sm text-zinc-500">Manage required data fields for different ranking bodies.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {['NIRF Schema v3.1', 'QS World v2.0', 'THE Rankings', 'ARIIA Innovation'].map(item => (
-                        <div key={item} className="p-4 bg-zinc-50 rounded-2xl border border-slate-200/50 flex items-center justify-between group hover:border-emerald-500/30 transition-colors cursor-pointer">
+                        <div key={item} className="p-4 bg-zinc-50 rounded-2xl border border-slate-200/50 flex items-center justify-between group hover:border-sage-500/30 transition-colors cursor-pointer">
                           <span className="font-semibold text-zinc-700 text-sm">{item}</span>
-                          <span className="text-xs text-emerald-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Edit</span>
+                          <span className="text-xs text-sage-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Edit</span>
                         </div>
                       ))}
                     </div>

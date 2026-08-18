@@ -19,7 +19,7 @@ export default function DataCollection() {
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-zinc-900">Data Collection</h1>
           <p className="text-zinc-500 mt-2 max-w-[65ch] leading-relaxed">Manage active data requests and submission deadlines.</p>
         </div>
-        <button className="bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(16,185,129,0.3)]">
+        <button className="bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(90,115,89,0.3)]">
           New Request Cycle
         </button>
       </div>
@@ -28,9 +28,9 @@ export default function DataCollection() {
         <h3 className="text-xl font-semibold tracking-tight text-zinc-900 mb-6">Active Cycles</h3>
         
         <div className="space-y-4">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between p-6 border border-slate-200/50 rounded-2xl bg-zinc-50/50 group hover:border-emerald-500/30 transition-colors gap-6 lg:gap-0">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between p-6 border border-slate-200/50 rounded-2xl bg-zinc-50/50 group hover:border-sage-500/30 transition-colors gap-6 lg:gap-0">
             <div className="flex items-center gap-5">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm group-hover:scale-105 transition-transform">
+              <div className="w-12 h-12 rounded-2xl bg-sage-50 flex items-center justify-center text-sage-600 shadow-sm group-hover:scale-105 transition-transform">
                 <FileText weight="duotone" className="w-6 h-6" />
               </div>
               <div>
@@ -54,11 +54,11 @@ export default function DataCollection() {
                     initial={{ width: 0 }}
                     animate={{ width: "68%" }}
                     transition={{ ...spring, delay: 0.2 }}
-                    className="h-full bg-emerald-500 rounded-full" 
+                    className="h-full bg-sage-500 rounded-full" 
                   />
                 </div>
               </div>
-              <button className="text-emerald-600 text-sm font-semibold hover:text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-lg transition-all hidden sm:block">Manage</button>
+              <button className="text-sage-600 text-sm font-semibold hover:text-sage-700 hover:bg-sage-50 px-4 py-2 rounded-lg transition-all hidden sm:block">Manage</button>
             </div>
           </div>
         </div>

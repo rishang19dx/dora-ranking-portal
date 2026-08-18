@@ -29,7 +29,7 @@ export default function NodalOfficers() {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(16,185,129,0.3)]"
+          className="bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(16,185,129,0.3)]"
         >
           Add Officer
         </button>
@@ -51,7 +51,7 @@ export default function NodalOfficers() {
               {mockOfficers.map((officer) => (
                 <tr key={officer.id} className="hover:bg-zinc-50/50 transition-colors group">
                   <td className="px-8 py-5 font-medium text-zinc-900 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm shadow-sm">
+                    <div className="w-10 h-10 rounded-xl bg-sage-50 text-sage-600 flex items-center justify-center font-bold text-sm shadow-sm">
                       {officer.name.charAt(4)}
                     </div>
                     {officer.name}
@@ -65,13 +65,13 @@ export default function NodalOfficers() {
                   </td>
                   <td className="px-8 py-5">
                     <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-                      officer.status === 'Active' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500/20' : 'bg-orange-50 text-orange-700 ring-1 ring-orange-500/20'
+                      officer.status === 'Active' ? 'bg-sage-50 text-sage-700 ring-1 ring-sage-500/20' : 'bg-orange-50 text-orange-700 ring-1 ring-orange-500/20'
                     }`}>
                       {officer.status}
                     </span>
                   </td>
                   <td className="px-8 py-5">
-                    <button className="p-2 hover:bg-white hover:shadow-sm rounded-xl text-zinc-400 hover:text-emerald-600 transition-all">
+                    <button className="p-2 hover:bg-white hover:shadow-sm rounded-xl text-zinc-400 hover:text-sage-600 transition-all">
                       <PencilSimple weight="bold" className="w-5 h-5" />
                     </button>
                   </td>
@@ -109,11 +109,11 @@ export default function NodalOfficers() {
               <div className="space-y-5">
                 <div>
                   <label className="block text-sm font-semibold text-zinc-700 mb-2">Full Name</label>
-                  <input type="text" placeholder="e.g. Dr. John Doe" className="w-full bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-zinc-400" />
+                  <input type="text" placeholder="e.g. Dr. John Doe" className="w-full bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500/20 focus:border-sage-500/50 transition-all placeholder:text-zinc-400" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-zinc-700 mb-2">Department</label>
-                  <select className="w-full bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-zinc-700">
+                  <select className="w-full bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500/20 focus:border-sage-500/50 transition-all text-zinc-700">
                     <option>Computer Science</option>
                     <option>Electrical Eng.</option>
                     <option>Mechanical Eng.</option>
@@ -121,10 +121,10 @@ export default function NodalOfficers() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-zinc-700 mb-2">Email Address</label>
-                  <input type="email" placeholder="john@iitmandi.ac.in" className="w-full bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all placeholder:text-zinc-400" />
+                  <input type="email" placeholder="john@iitmandi.ac.in" className="w-full bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500/20 focus:border-sage-500/50 transition-all placeholder:text-zinc-400" />
                 </div>
                 <div className="pt-4 mt-6 border-t border-slate-100">
-                  <button className="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white px-5 py-3 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_16px_-4px_rgba(16,185,129,0.3)]">
+                  <button className="w-full bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-3 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_16px_-4px_rgba(16,185,129,0.3)]">
                     Send Invitation
                   </button>
                 </div>

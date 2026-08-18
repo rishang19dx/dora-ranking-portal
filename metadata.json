@@ -1,0 +1,6 @@
+{
+  "name": "IIT Mandi Ranking Portal",
+  "description": "Official institutional ranking portal for Indian Institute of Technology Mandi. Track, manage, verify, and visualize national and international rankings.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

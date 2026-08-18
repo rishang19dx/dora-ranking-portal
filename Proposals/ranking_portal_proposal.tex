@@ -1,0 +1,429 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{ragged2e}
+\usepackage{lastpage}
+\usepackage{pgfgantt}
+
+\hypersetup{colorlinks=true, linkcolor=blue!40!black, urlcolor=blue!40!black}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{18pt}{8pt}
+\titlespacing*{\subsection}{0pt}{12pt}{5pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small Automated Ranking Portal (ARP)}
+\fancyhead[R]{\small DORA}
+\fancyfoot[C]{\small\thepage}
+
+\newcolumntype{P}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+% ---------------- TITLE PAGE ----------------
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1.0cm}
+{\large\bfseries IIT Mandi}\\[4pt]
+{\normalsize Office of the Dean of Resources \& Alumni Affairs (DORA)}\\[1.8cm]
+{\Large\bfseries Project Proposal and Working Agreement}\\[10pt]
+{\huge\bfseries Automated Ranking Portal}\\[6pt]
+{\Large\bfseries (ARP)}\\[10pt]
+{\large\bfseries An Institutional Ranking Data Aggregation, Processing, and Analytics Platform}\\[1.2cm]
+\rule{0.85\textwidth}{0.4pt}\\[10pt]
+{\normalsize A proposal submitted for consideration and approval by the\\ Office of the Dean of Resources \& Alumni Affairs (DORA), IIT Mandi}\\[10pt]
+\rule{0.85\textwidth}{0.4pt}
+\vspace{1.2cm}
+
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{Submitted by:}\\[4pt]
+Student Development Team\\
+(Team of 4 Students)\\[6pt]
+1. \underline{\hspace{4.2cm}}\\[4pt]
+2. \underline{\hspace{4.2cm}}\\[4pt]
+3. \underline{\hspace{4.2cm}}\\[4pt]
+4. \underline{\hspace{4.2cm}}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{Submitted to:}\\[4pt]
+Office of the Dean of Resources \& Alumni Affairs (DORA)\\
+{}IIT Mandi\\[6pt]
+\textbf{Date:} \today
+\end{minipage}
+
+\vfill
+{\small This document constitutes a proposal and, upon signature by both parties, a working agreement governing scope of work, timelines, reporting, and compensation for the project described herein.}
+\end{center}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+% ---------------- SECTION 1 ----------------
+\section{Introduction and Project Overview}
+The data collection and compilation process for institutional ranking submissions (such as NIRF, QS World University Rankings, and Times Higher Education) at IIT Mandi is currently a manual pipeline operated by administrative staff. This process involves gathering student, faculty, and learnability data from various departments, manually identifying errors, and reformatting this data into agency-specific formats.
+
+Because data arrives via email in multimodal formats (Excel sheets, Word documents, and PDFs), the process is highly time-consuming and error-prone. This document proposes the design and iterative development of a web-based platform, the \textbf{Automated Ranking Portal} (``ARP''/``the Platform''), by a team of four (4) students (``the Development Team''/``the Team'') under the guidance of DORA.
+
+The Platform covers three connected areas of DORA's work:
+\begin{enumerate}[leftmargin=1.6em, itemsep=3pt]
+\item \textbf{Data Collection and Governance}: Department nodal officer management, multimodal document ingestion via email/upload, secure document repositories for proofs, and automated deadline tracking.
+\item \textbf{Processing and Validation}: Automated data unification, AI-assisted error spotting, maker-checker correction workflows, and audit trails for all data modifications.
+\item \textbf{Export and Analytics}: Agency-specific template generation (NIRF, QS, THE), executive dashboards for historical tracking, and department-wise performance scorecards.
+\end{enumerate}
+
+While the idea is simple to state, the underlying logic involves substantial data schema unification and pipeline complexity (Section~\ref{sec:scope}), so the Platform is best understood as an extensive data governance and compliance engine coupled with a leadership-facing analytics web application. This document also serves as a working agreement defining scope, reporting, review, and compensation for the Development Team.
+
+% ---------------- SECTION 2 ----------------
+\section{Scope of Work}
+\label{sec:scope}
+The scope below reflects the current high-level understanding of requirements. As described in Section~\ref{sec:iterative}, this scope is expected to evolve as DORA raises new requirements during the engagement.
+
+\subsection*{Part A --- Department Data Collection and Governance}
+\addcontentsline{toc}{subsection}{Part A --- Department Data Collection and Governance}
+
+\subsection{Institute Organogram and Hierarchy Mapping}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Creation of an interactive institute organogram mapping academic, administrative, and functional sections/subsections.
+\item Structural representation ensuring data collection is managed according to the exact hierarchical organization of the institute.
+\end{itemize}
+
+\subsection{Targeted Admin-Based Data Collection}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Admin interface to manage the roster of designated Nodal Officers for each department and section.
+\item Capability for the admin to select specific sections based on the institute organogram, identify required data, and dispatch targeted email requests.
+\item Automated provisioning of restricted portal access for Nodal Officers to securely upload required ranking proofs.
+\end{itemize}
+
+\subsection{Flexible Data Ingestion Engine}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Automated integration with a designated institutional Gmail account to securely and continuously fetch incoming data submissions.
+\item Support for varied data submission formats depending on the specific ranking requirement, including Google Forms, Excel spreadsheets, unstructured Word documents, and PDFs.
+\item Conversion of multimodal raw data into a single, unified internal schema that maps institutional metrics across different ranking methodologies.
+\end{itemize}
+
+\subsection{Secure Document Proof Repository}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item A centralized, searchable repository to store all raw documents submitted by departments (e.g., scanned proof of research grants, faculty awards).
+\item Document linkage to specific data points (e.g., clicking on a ``Sponsored Research Revenue'' figure allows the auditor to instantly view the attached grant sanction PDF).
+\item Document versioning to ensure historical records are maintained when a department submits updated or corrected files.
+\end{itemize}
+
+\subsection{Deadline and Compliance Tracking}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Admin-defined submission cycles with specified timelines and hard deadlines for data submissions.
+\item System tracking of exactly which section has been asked for data, what specific data was requested, expected deadlines, and receipt status.
+\item Automated and manual email alerts/reminders dispatched to Nodal Officers whose submissions are pending or incomplete.
+\item Compliance dashboard for DORA to view, at a glance, the overall progress of the ranking submission process.
+\end{itemize}
+
+\subsection*{Part B --- Data Processing, Unification and Validation}
+\addcontentsline{toc}{subsection}{Part B --- Data Processing, Unification and Validation}
+
+\subsection{Historical Data Querying and Value Comparison}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Storage and easy backend querying of at least the previous three years of historical ranking data for institutional reference.
+\item Real-time contextual display of historically submitted values alongside new data entries during updates (e.g., Previous: X, New: Y, Change: Increase/Decrease).
+\item Immediate visual feedback to the data entrant and reviewer, simplifying data verification before submission.
+\end{itemize}
+
+\subsection{Faculty and Student Roster Normalization}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Standardization of faculty data across departments (e.g., normalizing variations in designation, degree qualifications, and publication indexing details).
+\item Aggregation of student demographics, intake numbers, graduation rates, and placement statistics into master institutional metrics.
+\item Automated deduplication logic to prevent double-counting of interdisciplinary faculty or joint research projects.
+\end{itemize}
+
+\subsection{Automated Error Spotting and Rule-Based Validation}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Deterministic rule-based checks applied instantly upon data ingestion (e.g., ensuring `Total PhDs Awarded` cannot be negative, or `Placement Percentage` cannot exceed 100).
+\item Automatic flagging of missing mandatory columns, empty rows, or corrupted data cells in uploaded Excel sheets.
+\item Visual highlighting of errors within the admin dashboard, allowing the reviewer to quickly trace the error back to the exact source document.
+\end{itemize}
+
+\subsection{AI-Assisted Discrepancy Flagging}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Heuristic and AI-driven analysis comparing current year submissions against historical trends to detect statistical anomalies.
+\item Example: Automatically flagging a department if their reported research publications drop by 80\% compared to the previous year, prompting administrative review.
+\item Severity grading of flags (e.g., Critical vs. Warning) to help administrators prioritize data auditing efforts.
+\end{itemize}
+
+\subsection{Maker-Checker Workflow for Data Corrections}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item When an error is flagged, the Platform allows DORA to formally raise a ``Correction Request'' directed back to the department's Nodal Officer.
+\item The Nodal Officer (Maker) submits the corrected data or overriding justification via the portal.
+\item DORA (Checker) reviews the updated submission and explicitly clicks ``Approve'' or ``Reject'', recording the decision. Data is not finalized until Checker approval.
+\end{itemize}
+
+\subsection{Audit Log and Data Change Tracking}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Immutable recording of every create, edit, approve, reject, and export action across the platform, including the old value, new value, actor, and timestamp.
+\item Dedicated interface for internal auditors to filter, search, and export the audit log to ensure data integrity prior to external submission.
+\end{itemize}
+
+\subsection*{Part C --- Agency Export and Ranking Calculation}
+\addcontentsline{toc}{subsection}{Part C --- Agency Export and Ranking Calculation}
+
+\subsection{Agency-Specific Schema Mapping}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Maintenance of internal configuration maps that translate the unified institutional data into the exact nomenclatures and structures demanded by specific agencies.
+\item Support for dynamic parameter adjustments, as ranking agencies frequently update their required data formats year-over-year.
+\end{itemize}
+
+\subsection{Final Data Packet Generation and Export}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Automated compilation of the approved data into the required final formats (e.g., NIRF Data Capturing System (DCS) Excel templates).
+\item Generation of consolidated PDF summary reports for the Director's final sign-off before upload.
+\item Supported export targets include \textbf{NIRF} (all 4 categories prioritized), \textbf{MDRA} (Best University \& Engineering), \textbf{QS World University Rankings}, and \textbf{Times Higher Education (THE)}.
+\end{itemize}
+
+\subsection*{Part D --- Insights, Dashboards and Analytics}
+\addcontentsline{toc}{subsection}{Part D --- Insights, Dashboards and Analytics}
+
+\subsection{Public-Facing Ranking Data \& Visualizations}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item A publicly accessible portal requiring no administrative or developer access, allowing any visitor to view institutional ranking data.
+\item Automated fetching and visualization of year-wise ranking trends across different ranking systems to show performance over time.
+\item Visual comparative analytics benchmarking IIT Mandi's performance against other relevant institutions, particularly 2nd-generation IITs.
+\end{itemize}
+
+\subsection{Executive Ranking Dashboards}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item A high-level, leadership-facing dashboard visualizing IIT Mandi's historical ranking performance over a selectable time range (e.g., last 5 years).
+\item Parameter-wise breakdown showing exactly where the institute gained or lost points (e.g., Teaching \& Learning vs. Research \& Professional Practice).
+\item Visual gap analysis highlighting metrics where the institute is falling behind peer benchmarks or its own historical averages.
+\end{itemize}
+
+\subsection{Department-wise Performance Scorecards}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Granular dashboards that rank internal departments based on their contribution to the overall institutional score (e.g., which department brought in the most research funding or had the highest placement rate).
+\item Ability for department heads to view their own scorecard to identify areas of excellence and areas requiring improvement.
+\end{itemize}
+
+\subsection{Automated Briefing Generation}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Ability to generate a standardized, boardroom-ready PDF briefing detailing the year's ranking submission statistics, major discrepancies caught by the system, and projected ranking outcomes.
+\end{itemize}
+
+\subsection*{Part E --- Cross-Cutting Requirements}
+\addcontentsline{toc}{subsection}{Part E --- Cross-Cutting Requirements}
+
+\subsection{Roles and Access Control}
+\label{sec:roles}
+The Platform will support strict role-based access control (RBAC) as follows:
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{Admin/Staff (Data Officer):} Full access to trigger ingestion, review and approve Nodal Officer submissions, initiate correction requests, and generate agency exports.
+\item \textbf{Department Nodal Officer:} Restricted access to upload data/proofs for their specific department only, and to respond to assigned correction requests. Cannot view other departments' raw data.
+\item \textbf{Leadership/Director:} Read-only access to all executive dashboards, scorecards, and final generated reports.
+\item \textbf{Auditor:} Read-only access to raw proofs, the audit log, and historical submission trails to ensure compliance.
+\end{itemize}
+
+\subsection{Data and System Inputs Required from DORA}
+To build and operate the Platform, the Development Team will require the following from DORA:
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{Historical ranking data} and previous agency-specific schema formats for NIRF, QS, and THE.
+\item \textbf{Sample raw data} (Excel, Word, PDF) typically received from departments to train and test the multimodal ingestion pipeline.
+\item \textbf{Authorised email account access:} access to, or a delegated permission on, the authorised email account receiving department submissions.
+\item \textbf{Infrastructure support:} guidance on hosting, server, and cloud backup requirements. Where specialized support is needed, DORA will direct the Team to the concerned person/department (e.g., IT Services).
+\end{itemize}
+
+\textbf{Confidentiality of institutional data.} All data shared by DORA for the purposes of building and operating the Platform is proprietary and confidential to the Institution. The Development Team shall not share, disclose, publish, or use this data outside the scope of this engagement, and shall not share it with any third party, under any circumstance, without the Institution's prior written consent.
+
+\subsection{Out of Scope (Initial Phase)}
+\label{sec:oos}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Direct, automated API integration to upload data \textit{into} the NIRF/QS/THE portals, as these agencies typically require manual authenticated uploads by the Director.
+\item Historical data entry or digitization of unstructured paper records from previous decades.
+\end{itemize}
+
+Any new feature or change requested by DORA beyond the scope above will be evaluated for feasibility on the spot, at the time it is raised. If accepted for inclusion, the Team and DORA will proceed accordingly, and will mutually revise the project timeline (Section~\ref{sec:timeline}) and, where applicable, compensation (Section~\ref{sec:compensation}) to reflect the additional work.
+
+% ---------------- SECTION 3 ----------------
+\section{Development Approach}
+
+\subsection{Iterative Development}
+\label{sec:iterative}
+A complete, final system architecture cannot be reasonably fixed at the outset given the complexity in Section~\ref{sec:scope}. The Platform will therefore be developed iteratively: new requirements raised by DORA will be assessed for feasibility on the spot (Section~\ref{sec:oos}) and, if accepted, added to the working scope in a subsequent iteration, with the Team compensated for the additional work under Section~\ref{sec:compensation}. Material changes to scope, timeline, or compensation will be documented as a signed addendum to this agreement.
+
+\subsection{Version Control and Work Tracking}
+All source code will be maintained in a dedicated GitHub repository, and all work will be tracked and submitted via GitHub Pull Requests (PRs), which serve as the primary record of individual contribution.
+
+% ---------------- SECTION 4 ----------------
+\section{Team Structure}
+The Development Team shall consist of four (4) students, listed below (to be finalized and appended to this document upon submission):
+
+\begin{enumerate}[leftmargin=1.8em, itemsep=4pt]
+\item \underline{\hspace{7cm}} (Team Lead / Point of Contact)
+\item \underline{\hspace{7cm}} (Team Lead / Point of Contact)
+\item \underline{\hspace{7cm}}
+\item \underline{\hspace{7cm}}
+\end{enumerate}
+
+Team members 1 and 2 shall jointly serve as Team Leads and primary points of contact with DORA for scheduling meetings, consolidating weekly reports, and coordinating delivery.
+
+% ---------------- SECTION 5 ----------------
+\section{Timeline and Prioritized Milestones}
+\label{sec:timeline}
+Based on administrative requirements, the development pipeline is strictly prioritized to deliver maximum immediate value. The timeline is divided into three distinct phases, targeting an overall completion window ending \textbf{1 December 2026} (Section~\ref{sec:duration}).
+
+\subsection{Phase 1: High Priority (First Demo)}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{NIRF Ranking Support:} End-to-end support for the NIRF ranking system and its four required categories.
+\item \textbf{Public Frontend:} Publicly accessible visualizations showing year-wise ranking trends.
+\item \textbf{Competitor Analysis:} Visual comparison functionalities benchmarking against other relevant 2nd-generation IITs.
+\item \textbf{Basic Prototype Workflow:} A functional end-to-end prototype demonstrating basic frontend and backend connectivity.
+\item \textbf{Institute Organogram:} Creation of the institutional hierarchy mapping for structured data collection.
+\end{itemize}
+
+\subsection{Phase 2: Core Data Collection (Immediately After Prototype)}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{Admin Section Selection:} Capability for the admin to select target sections based on the organogram and initiate data requests.
+\item \textbf{Data Collection Workflow:} Integration of forms, files, and document-based data submission pathways.
+\item \textbf{Historical Data Repository:} Structured storage and querying capabilities for at least the past three years of historical ranking data.
+\end{itemize}
+
+\subsection{Phase 3: Advanced Features \& Deployment (Later Development)}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{Multi-Ranking Support:} Expansion of export and schema mapping to QS, THE, and MDRA rankings.
+\item \textbf{Detailed Workflows \& Reminders:} Automated email reminders, advanced deadline management, and complex workflow tracking.
+\item \textbf{Historical-Value Comparison:} Contextual previous-value display and difference calculation during new data entry.
+\item \textbf{Security \& Production:} Advanced access controls, audit logging, and final production deployment on actual domains.
+\end{itemize}
+
+\begin{center}
+\begin{ganttchart}[
+  vgrid, hgrid,
+  x unit=0.42cm,
+  y unit title=0.7cm,
+  y unit chart=0.62cm,
+  title height=1,
+  bar height=0.5,
+  bar label font=\scriptsize,
+  title label font=\scriptsize,
+  milestone label font=\scriptsize,
+  group label font=\scriptsize\bfseries,
+  bar/.append style={fill=black!55},
+  bar label node/.append style={align=right},
+  ]{1}{15}
+  \gantttitle{Prioritized Project Timeline: Weeks}{15} \\
+  \gantttitlelist{1,...,15}{1} \\
+  \ganttgroup{Phase 1: High Priority / Demo}{1}{4} \\
+  \ganttbar{NIRF Schema \& Organogram Setup}{1}{1} \\
+  \ganttbar{Public Visualizations \& Comparisons}{2}{3} \\
+  \ganttbar{Basic End-to-End Prototype}{3}{4} \\
+  \ganttgroup{Phase 2: Core Data Collection}{5}{9} \\
+  \ganttbar{Admin Data Requests \& Workflows}{5}{7} \\
+  \ganttbar{Historical Data Querying Engine}{8}{9} \\
+  \ganttgroup{Phase 3: Advanced \& Deployment}{10}{15} \\
+  \ganttbar{QS, THE, MDRA Integrations}{10}{11} \\
+  \ganttbar{Reminders \& Historical Comparison}{12}{13} \\
+  \ganttbar{Security, Audit Logs \& UAT}{14}{14} \\
+  \ganttbar{Production Deployment}{15}{15}
+\end{ganttchart}
+\end{center}
+
+\textit{Note: this Gantt chart illustrates the sequence of the prioritized phases. Actual phase durations, dependencies, and start dates will be agreed with DORA and revised as scope evolves under Section~\ref{sec:oos}.}
+
+% ---------------- SECTION 6 ----------------
+\section{Reporting, Review, and Communication}
+
+\subsection{Weekly Progress Reports}
+The Development Team shall submit one (1) written progress report per week, summarizing work completed, work in progress, and blockers, attributed by individual member and referencing the corresponding GitHub Pull Requests (Section 3.2).
+
+\subsection{Weekly Demonstration Meeting}
+The Development Team and a designated Administrative representative shall meet at most once per week to demonstrate progress and gather inputs. A meeting is not mandatory every single week; it will be scheduled as needed, by mutual convenience, particularly if there is no material update since the previous meeting.
+
+\subsection{Administrative Review and Delegation}
+Final data exports are generated only after review and approval by DORA.
+
+\subsection{Documentation of Communication}
+All key communication and decisions exchanged between the Team and DORA, including outcomes of meetings, will additionally be documented over email, serving as minutes of meeting (MoM) for record-keeping.
+
+% ---------------- SECTION 7 ----------------
+\section{Compensation and Payment Terms}
+\label{sec:compensation}
+
+\subsection{Stipend}
+Each member of the Development Team shall be compensated at a rate of Rs.~270 per hour of documented, verifiable work.
+
+\subsection{Non-Monetary Compensation}
+In addition to the hourly stipend, each Team member shall be provided with one (1) Claude Code access subscription/license per month, for the duration of their active participation in the project, to be provided or reimbursed by the Institution.
+
+\subsection{Payment Schedule}
+Compensation shall be calculated and disbursed on a monthly basis. Payment for hours worked in a given calendar month shall be released during the first week of the following month, subject to submission and administrative acceptance of that month's weekly reports.
+
+\subsection{Integrity of Hours and Basis for Payment}
+Payment in a given month is contingent on submission of that month's weekly reports and verifiable work reflected through GitHub activity (Section 3.2). The Development Team commits to logging hours with utmost sincerity and honesty; no inflated, false, or unworked hours shall be claimed for compensation.
+
+% ---------------- SECTION 8 ----------------
+\section{Intellectual Property and Ownership}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item All source code, documentation, designs, data, and other work products created or populated by the Development Team under this engagement shall be the property of the Institution, subject to applicable institutional policy on student-developed intellectual property. This includes full institutional ownership of the underlying data and codebase, not merely a license to use the Platform.
+\item The Development Team shall be permitted to reference this project as part of their academic or professional portfolio, subject to prior written consent of DORA regarding the extent of disclosure, and excluding any confidential data.
+\end{itemize}
+
+% ---------------- SECTION 9 ----------------
+\section{Data Privacy and Confidentiality}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item The Platform will process sensitive data related to institutional, faculty, and student records.
+\item Access to production data shall be limited to what is strictly necessary for development, testing, and debugging, and shall follow any data protection guidelines issued by the Institution.
+\item The Development Team shall not use, disclose, or retain institutional data for any purpose outside the scope of this engagement, both during and after the engagement period.
+\end{itemize}
+
+% ---------------- SECTION 10 ----------------
+\section{Duration and Termination}
+\label{sec:duration}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item This agreement shall commence on the date of signature by both parties. The Team targets completion and handover of the Platform to DORA by \textbf{1 December 2026}. This target date is subject to change based on more or fewer requirements being added to scope over the course of the engagement (Section~\ref{sec:oos}); the Development Team will make its best effort to complete the project as soon as possible.
+\item In the event of termination, compensation shall be payable for all verified work completed up to the effective date of termination, following Section~\ref{sec:compensation}.
+\end{itemize}
+
+% ---------------- SECTION 11 ----------------
+\section{Acceptance and Signatures}
+By signing below, both parties acknowledge that they have read, understood, and agree to the terms described in this document, including the understanding that the technical scope in Section~\ref{sec:scope} is indicative and will evolve iteratively as described in Section~\ref{sec:iterative}.
+
+\vspace{1cm}
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{For the Office of the Dean of Resources \& Alumni Affairs (DORA), IIT Mandi}\\[1.4cm]
+\underline{\hspace{6.5cm}}\\
+Name:\underline{\hspace{5cm}}\\[6pt]
+Designation:\underline{\hspace{4.5cm}}\\[6pt]
+Date:\underline{\hspace{5.5cm}}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{For the Student Development Team}\\[6pt]
+\underline{\hspace{6.5cm}}\\
+Name:\underline{\hspace{5cm}}\\
+Designation: Team Lead\\
+Date:\underline{\hspace{5.5cm}}\\[10pt]
+\underline{\hspace{6.5cm}}\\
+Name:\underline{\hspace{5cm}}\\
+Designation: Team Lead\\
+Date:\underline{\hspace{5.5cm}}
+\end{minipage}
+
+\vspace{1cm}
+\textbf{Other Team Members (Acknowledgement of Terms):}
+
+\begin{tabular}{@{}p{7.5cm}p{6cm}@{}}
+1. \underline{\hspace{6cm}} & Signature: \underline{\hspace{3.5cm}} \\[10pt]
+2. \underline{\hspace{6cm}} & Signature: \underline{\hspace{3.5cm}} \\
+\end{tabular}
+
+\end{document}

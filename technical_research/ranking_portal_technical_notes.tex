@@ -1,0 +1,152 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in, headheight=14pt}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{titling}
+\usepackage{booktabs}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{lightgray}{rgb}{0.95,0.95,0.95}
+\lstset{
+    backgroundcolor=\color{lightgray},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    xleftmargin=15pt
+}
+
+% Header configuration
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Automated Ranking Portal (ARP) - Tech Notes}
+\rhead{Development Team}
+\cfoot{\thepage}
+
+\begin{document}
+\thispagestyle{empty}
+
+\begin{center}
+\textbf{\LARGE IIT Mandi Automated Ranking Portal (ARP)}
+
+\vspace{0.5cm}
+
+\textbf{\Huge Technical Notes \& Architecture Document} \\
+\vspace{0.5cm}
+\Large Internal Guidelines for the Developer Team
+\end{center}
+
+\vspace{1.5cm}
+
+\noindent\textbf{Target Audience:} Software Development Team \\
+\textbf{Purpose:} This document outlines the technical specifications, suggested technology stack, rationale, and system architecture for building the Automated Ranking Portal. It serves as the primary technical reference for developers to understand \textit{what} to build and \textit{how} to build it.
+
+\vspace{1cm}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introduction and Objectives}
+The Automated Ranking Portal (ARP) is designed to replace a manual, error-prone data collection pipeline with an automated system. The administration receives multimodal data (Excel, Word, PDF) via email from various departments. This data must be ingested, validated, standardized, and eventually exported into precise formats required by ranking agencies (NIRF, QS, Times Higher Education).
+
+From a technical perspective, the platform is a \textbf{data ingestion and processing pipeline} coupled with a \textbf{React-based administrative dashboard}.
+
+\section{Suggested Technology Stack \& Rationale}
+To ensure rapid development, maintainability, and alignment with modern web standards, the following stack is recommended:
+
+\subsection{Frontend: React + TypeScript + Vite}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{React:} Provides a robust component-based architecture for building the complex dashboard UIs and data-review tables.
+    \item \textbf{TypeScript:} Enforces strict typing, which is critical when handling complex, nested data schemas from various departments. It drastically reduces runtime errors.
+    \item \textbf{Vite:} Chosen over Webpack/CRA for significantly faster hot-module replacement (HMR) and optimized build times.
+\end{itemize}
+
+\subsection{Backend \& Processing Engine: Python (FastAPI)}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Python:} The absolute best choice for data extraction and AI integrations. We heavily rely on Python libraries like \texttt{pandas} (for Excel/CSV), \texttt{python-docx} (for Word), and \texttt{PyPDF2}/\texttt{pdfplumber} (for PDFs).
+    \item \textbf{FastAPI:} Provides a high-performance, async-ready REST API framework. It auto-generates OpenAPI documentation, making frontend-backend integration seamless.
+    \item \textbf{AI Integration:} Python natively supports Google's Vertex AI / Gemini SDKs, which we will use for anomaly detection and spotting missing data in unstructured documents.
+\end{itemize}
+
+\subsection{Database \& Authentication: Firebase}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Firebase Authentication:} Handles secure login for Admin and Department Nodal Officers without the overhead of rolling a custom auth system.
+    \item \textbf{Firestore (NoSQL):} Excellent for storing initially unstructured or semi-structured data parsed from multimodal documents before they are fully normalized.
+\end{itemize}
+
+\subsection{Email Integration: Gmail API (OAuth2)}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Gmail API:} Provides programmatic access to the designated institutional inbox. We will use Pub/Sub or cron jobs to poll for new emails, extract attachments, and route them to the processing engine.
+\end{itemize}
+
+\section{System Architecture \& Components}
+The system should be divided into decoupled services to ensure scalability and ease of debugging.
+
+\subsection{Component 1: Ingestion Daemon}
+\textbf{What to build:} A background worker that connects to the Gmail API. \\
+\textbf{How to build it:}
+\begin{itemize}
+    \item Implement an OAuth2 flow to authorize the app for the institutional inbox (read-only scopes).
+    \item Run a cron job (e.g., using Celery or standard Python schedulers) that checks for unread emails from authorized department sender addresses.
+    \item Download attachments and upload them to a temporary secure storage bucket (e.g., Firebase Storage or AWS S3), queuing a message to Component 2.
+\end{itemize}
+
+\subsection{Component 2: Multimodal Extraction Engine}
+\textbf{What to build:} A parser that standardizes incoming files. \\
+\textbf{How to build it:}
+\begin{itemize}
+    \item \textbf{Excel:} Use \texttt{pandas} to read sheets, normalize headers (lowercasing, stripping whitespace), and convert to JSON.
+    \item \textbf{PDF/Word:} Use OCR/text-extraction libraries. For highly unstructured data, pipe the extracted raw text to an LLM (Gemini API) with a strict JSON schema prompt to extract required fields (e.g., ``Extract faculty count, student intake, and publications into this JSON structure'').
+\end{itemize}
+
+\subsection{Component 3: Validation \& AI Engine}
+\textbf{What to build:} The rule-engine that flags errors to the admin. \\
+\textbf{How to build it:}
+\begin{itemize}
+    \item Implement deterministic rules: e.g., \texttt{if faculty\_count == 0: flag('Missing Faculty Data')}.
+    \item Implement heuristic rules: e.g., if a department's publication count drops by 90\% compared to last year, flag it as a potential anomaly.
+    \item Store flags in Firestore with a status of \texttt{PENDING}, which the frontend will fetch and display in the Review Dashboard.
+\end{itemize}
+
+\subsection{Component 4: Agency Exporter}
+\textbf{What to build:} The formatter that compiles NIRF, QS, and THE reports. \\
+\textbf{How to build it:}
+\begin{itemize}
+    \item Maintain template schemas for each agency.
+    \item Map the unified internal database fields to the agency-specific fields.
+    \item Generate downloadable formats (usually Excel or specialized CSVs) using \texttt{pandas.to\_excel}.
+\end{itemize}
+
+\subsection{Component 5: Frontend Analytics Dashboard}
+\textbf{What to build:} The user interface for staff and administration. \\
+\textbf{How to build it:}
+\begin{itemize}
+    \item Use \texttt{React Router} for navigation (Uploads, Review Errors, Analytics, Export).
+    \item Use a charting library like \texttt{Recharts} or \texttt{Chart.js} for the Performance Tracking dashboard (line charts for year-over-year rankings, bar charts for department-wise comparisons).
+    \item Implement Role-Based Access Control (RBAC) on the frontend: hide the ``Export'' button from Department Nodal Officers, restricting it to Admins.
+\end{itemize}
+
+\section{Security \& Data Privacy Guidelines}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Environment Variables:} Never hardcode API keys, Firebase configs, or OAuth client secrets. Use \texttt{.env} files and ensure \texttt{.gitignore} includes them.
+    \item \textbf{Data Retention:} Raw files (PDFs, Excels) stored in the temporary bucket must be purged after successful extraction and validation to minimize data liability.
+    \item \textbf{CORS and API Security:} The FastAPI backend must strict CORS policies to only accept requests from the deployed Vite frontend domains. All endpoints must require a valid Firebase ID Token in the Authorization header.
+\end{itemize}
+
+\section{Development Workflow}
+\begin{enumerate}
+    \item \textbf{Branching Strategy:} Use feature branches (\texttt{feature/email-ingestion}, \texttt{bugfix/excel-parser}).
+    \item \textbf{Pull Requests:} All code must be reviewed via GitHub PRs before merging to \texttt{main}.
+    \item \textbf{Linting \& Formatting:} Pre-configure \texttt{ESLint} and \texttt{Prettier} for the frontend, and \texttt{Black} or \texttt{Ruff} for the Python backend to ensure code consistency.
+\end{enumerate}
+
+\end{document}

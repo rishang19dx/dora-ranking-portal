@@ -1,0 +1,396 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{ragged2e}
+\usepackage{lastpage}
+\usepackage{pgfgantt}
+
+\hypersetup{colorlinks=true, linkcolor=blue!40!black, urlcolor=blue!40!black}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{18pt}{8pt}
+\titlespacing*{\subsection}{0pt}{12pt}{5pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small DORA Resource Management Portal (DRMP)}
+\fancyhead[R]{\small Office of DORA}
+\fancyfoot[C]{\small\thepage}
+
+\newcolumntype{P}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+% ---------------- TITLE PAGE ----------------
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+\vspace*{1.0cm}
+{\large\bfseries IIT Mandi}\\[4pt]
+{\normalsize Office of the Dean of Resources \& Alumni Affairs (DORA)}\\[1.8cm]
+{\Large\bfseries Project Proposal and Working Agreement}\\[10pt]
+{\huge\bfseries DORA Resource Management Portal}\\[6pt]
+{\Large\bfseries (DRMP)}\\[10pt]
+{\large\bfseries An Institutional Endowment, CSR, Scholarship, Fundraising \&\\ Donor Relationship Management Platform}\\[1.2cm]
+\rule{0.85\textwidth}{0.4pt}\\[10pt]
+{\normalsize A proposal submitted for consideration and approval by the Office of the\\ Dean of Resources \& Alumni Affairs (DORA), IIT Mandi}\\[10pt]
+\rule{0.85\textwidth}{0.4pt}
+\vspace{1.2cm}
+
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{Submitted by:}\\[4pt]
+Student Development Team\\
+(Team of 4 Students)\\[6pt]
+1. \underline{\hspace{4.2cm}}\\[4pt]
+2. \underline{\hspace{4.2cm}}\\[4pt]
+3. \underline{\hspace{4.2cm}}\\[4pt]
+4. \underline{\hspace{4.2cm}}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{Submitted to:}\\[4pt]
+Office of the Dean of Resources \& Alumni Affairs (DORA)\\
+{}IIT Mandi\\[6pt]
+\textbf{Date:} \today
+\end{minipage}
+
+\vfill
+{\small This document constitutes a proposal and, upon signature by both parties, a working agreement governing scope of work, timelines, reporting, and compensation for the project described herein.}
+\end{center}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+% ---------------- SECTION 1 ----------------
+\section{Introduction and Project Overview}
+The endowment, CSR (Corporate Social Responsibility) grant, scholarship disbursement, and donor/resource-generation activities currently administered by the Office of the Dean of Resources \& Alumni Affairs (hereinafter ``DORA'' or ``the Institution'') are, as of today, tracked entirely manually through spreadsheets, documents, and paper records, which makes them time-consuming, error-prone, and difficult to audit as the number of endowed funds, corporate grants, scholarship applicants, and donor relationships grows. An informally-built prototype was created earlier only to illustrate the intended look and feel of such a platform, and has not been used to track any actual data. This document proposes the design and iterative development of a web-based platform, to be named the \textbf{DORA Resource Management Portal} (``DRMP''/``the Platform''), by a team of four (4) students (``the Development Team''/``the Team'') under the guidance of the DORA office.
+
+The Platform covers two connected areas of DORA's work:
+\begin{enumerate}[leftmargin=1.6em, itemsep=3pt]
+\item \textbf{Governance and compliance}: endowment fund management, CSR grant and milestone tracking, and scholarship application and disbursement, along with approval and maker-checker controls, audit logging, and administrative review.
+\item \textbf{Resource generation and donor relationship management}: a donor/partner database and CRM, fundraising pipeline tracking, a proposal repository, an approval-gated donor email and outreach module, donor-facing dashboards, donor-wise reporting, and automated compliance alerts.
+\end{enumerate}
+
+While the idea is simple to state, the underlying logic across both areas involves substantial rule-based and workflow complexity (Section~\ref{sec:scope}), so the Platform is best understood as a configurable governance-and-relationship-management engine coupled with a staff- and leadership-facing web application, not a simple form tool. This document also serves as a working agreement defining scope, reporting, review, and compensation for the Development Team.
+
+% ---------------- SECTION 2 ----------------
+\section{Scope of Work}
+\label{sec:scope}
+The scope below reflects the current high-level understanding of requirements. As described in Section~\ref{sec:iterative}, this scope is expected to evolve as DORA raises new requirements during the engagement.
+
+\subsection*{Part A --- Governance and Compliance}
+\addcontentsline{toc}{subsection}{Part A --- Governance and Compliance}
+
+\subsection{Endowment Fund Master Data Management}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Admin interface to manage endowment fund records: adding a new fund, setting its donor name, category (Academic Chair / Student Financial Aid / Research Support / Capital Infrastructure / Special Initiative), principal corpus amount, year established, and annual yield rate.
+\item The Platform shall separately record and distinguish, for every fund and every year: the \textbf{estimated/projected yield} (computed from the configured yield rate, an assumption) and the \textbf{actual interest received} (as per bank/investment statements, entered or reconciled by the Endowment Officer). Utilization and dashboard reporting shall clearly label which figure is a projection and which is actual, and shall not conflate the two.
+\item Ability for the admin to export fund data in a structured format (CSV/Excel) for offline institutional and audit records.
+\item Admin-defined mapping of annual yield allocation against each fund's category (e.g., what portion of a Research Support fund's yield is earmarked for spend in a given year). This mapping forms the base ruleset used for the utilization reporting in Section~\ref{sec:audit}.
+\end{itemize}
+
+\subsection{CSR Grant and Milestone Tracking Engine}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Grant lifecycle logic driven by rules configured by the admin (DORA) rather than hard-coded values, since the Platform serves grants from multiple corporate donors with differing milestone structures, not a single fixed template.
+\item Grant record management: corporate donor name, sanctioned amount, Principal Investigator (name and department), start date, end date, and status (Ongoing / Completed / Lapsed).
+\item Milestone sub-records per grant: description, due date, amount, completion status, and a linked Utilization Certificate (UC) status (Pending / Submitted / Verified), since milestone-linked fund release is central to CSR compliance.
+\item UC document upload per milestone, viewable by Finance and auditors.
+\item Overdue milestone flagging: any milestone past its due date and not marked complete is automatically flagged for admin follow-up.
+\item Fund utilization figures (spent versus sanctioned) are automatically rolled up per grant and per corporate donor for dashboard reporting. Exact rollup format and timing will be finalized during development.
+\end{itemize}
+
+\subsection{Scholarship Scheme and Applicant Management}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item A scheme configuration form where the admin defines, per scholarship scheme, the donor, eligibility rule (minimum CGPA, maximum family income, percentage of tuition covered), and annual budget.
+\item Applicant intake capturing student name, roll number, department, GPA, family annual income, requested/awarded amount, and supporting document references (income certificate, marksheet).
+\item Eligibility check against the configured scheme rules at the point of application entry, flagging any applicant who does not meet the criteria.
+\item \textbf{Selection of eligible applicants shall follow the scheme's specific approved selection criteria} (e.g., ranking by CGPA, need, or a weighted formula defined by the donor/scheme), and not merely the order in which applications were submitted. The Platform shall allow the reviewer to compare and rank all eligible applicants for a scheme before any approval decision is made.
+\item Award amount tracked against the scheme's annual budget, with a running utilization balance.
+\end{itemize}
+
+\subsection{Disbursement Approval and Fund Release Workflow}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item A staff-facing workflow allowing a Scholarship Officer or CSR/Grants Officer to raise a disbursement or milestone-payout request.
+\item \textbf{Approval and disbursement are treated as two distinct, sequential stages of the workflow, each independently recorded with its own actor and timestamp.} Marking a request ``Approved'' does not itself release funds; a separate ``Disburse'' action, taken after approval, is required to complete the transaction and is logged separately.
+\item Approval workflow through which the Dean (or a delegated approver) reviews and approves or rejects the request, with a mandatory reason field for any rejection.
+\item Automatic update of budget and utilization records upon disbursement, with notification to the requesting officer and Finance.
+\item Maker-checker control enforced on the server: the staff member who raises a request cannot be the same login that approves it, and the approver cannot be the same login that marks it disbursed.
+\end{itemize}
+
+\subsection{Audit Log and Financial Change Tracking}
+\label{sec:audit}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Recording of every create, edit, approve, reject, and disburse action across all modules, including amount, reason (where applicable), actor, and timestamp.
+\item Automated notification to relevant staff and Finance when a disbursement is approved, or when a milestone becomes overdue.
+\item Admin/auditor interface to filter, search, and export the audit log for compliance review.
+\end{itemize}
+
+\subsection{Administrative Review, Approval, and Delegation Workflow}
+\label{sec:admin-review}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Before any disbursement (scholarship or CSR milestone payout) is treated as final, the DORA administration reviews the request generated by the Platform.
+\item Upon approval, the Platform notifies/forwards the finalized disbursement record to Finance, by email and/or a dedicated portal view.
+\end{itemize}
+
+\subsection*{Part B --- Resource Generation and Donor Relationship Management}
+\addcontentsline{toc}{subsection}{Part B --- Resource Generation and Donor Relationship Management}
+
+\subsection{Donor and Partner Database (CRM)}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item A comprehensive, searchable database of donors and prospective partners, covering individual donors, alumni, companies, foundations, PSUs (public sector undertakings), and other prospective partners.
+\item Per-record profile: contact details, category/type, relationship owner (the DORA staff member managing the relationship), past giving/engagement history, and free-text notes.
+\item Only data provided by DORA or entered manually by DORA staff shall populate the CRM; the Platform shall not scrape, purchase, or import third-party contact databases (see Section~\ref{sec:oos}).
+\end{itemize}
+
+\subsection{Fundraising Pipeline Tracking}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item A pipeline/stage tracker covering the complete fundraising lifecycle: lead identification, meetings/engagement, proposal submission, sanction, and receipt of funds.
+\item Each opportunity is linked to a donor/partner record (Section 2.7) and shows its current stage, expected/committed amount, and next action.
+\item Stage-change history, so DORA can see how long an opportunity has spent at each stage.
+\end{itemize}
+
+\subsection{Proposal Repository}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item A repository of DORA's fundraising proposals (by theme, fund category, or programme), that DORA staff can browse and select from.
+\item Ability to attach a selected, approved proposal to an outreach communication (Section~\ref{sec:email}) or a pipeline opportunity (Section 2.8).
+\end{itemize}
+
+\subsection{Donor Email and Outreach Module}
+\label{sec:email}
+\textit{(Priority \#1 among the newly added requirements.)}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Ability for authorised DORA staff to draft emails to selected donors from the authorised DORA email account, attach approved proposals or other documents (Section 2.9), and maintain a communication history per donor.
+\item Automated reminders/follow-up flags for donor communications awaiting a reply or requiring a next action.
+\item \textbf{External emails shall be sent only after review and approval by the authorised DORA user.} A drafted email is held in a pending state, visible to the approver, until explicitly approved; only the approver's action triggers the actual send. This approval gate applies to every outgoing external communication without exception.
+\end{itemize}
+
+\subsection{Fundraising, Governance and Compliance Dashboards}
+\textit{(Priority \#2 among the newly added requirements.)}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Total funds generated, commitments versus actual receipts, and proposals submitted, over a selectable time range.
+\item Donor-wise contribution totals, active fundraising opportunities by stage, and pending follow-ups.
+\item Endowment, CSR, and scholarship governance metrics (Section 2.1--2.6), on the same platform, for a single leadership-facing view.
+\end{itemize}
+
+\subsection{Donor-wise Reporting and Compliance Document Management}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Donor-wise reports covering: corpus/endowment statements, annual utilization (distinguishing estimated yield from actual interest received, per Section 2.1), recipient details (which students/projects benefited), Utilization Certificates, MoUs (Memoranda of Understanding), sanction letters, and other compliance documents.
+\item Document storage and retrieval per donor, so DORA can produce a complete compliance packet for any donor on request.
+\end{itemize}
+
+\subsection{Automated Alerts and Reminders}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Automated alerts for: pending Utilization Certificates, pending compliance reports, MoU expiries, upcoming/overdue scholarship disbursements, and donor commitments not yet fulfilled.
+\item Alerts are surfaced both within the Platform and by email, to the relevant role (Section~\ref{sec:roles}).
+\end{itemize}
+
+\subsection*{Part C --- Cross-Cutting Requirements}
+\addcontentsline{toc}{subsection}{Part C --- Cross-Cutting Requirements}
+
+\subsection{Roles and Access Control}
+\label{sec:roles}
+The Platform will support role-based access as follows:
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{Endowment Officer:} add/edit funds, including reconciling actual interest received; view all modules read-only.
+\item \textbf{CSR/Grants Officer:} add/edit grants and milestones; upload UCs; cannot approve their own milestone payouts.
+\item \textbf{Scholarship Officer:} log applicants; initiate approval requests; cannot approve or disburse their own requests.
+\item \textbf{Resource Generation/Fundraising Officer:} manage the donor/partner database, fundraising pipeline, and proposal repository; draft (but not send) donor emails.
+\item \textbf{Dean/Approver:} approve or reject disbursements; approve outgoing donor emails before send; view all dashboards; cannot directly edit historical fund or grant records.
+\item \textbf{Finance:} view all financial data; execute/record disbursements after approval; export reports; reconcile receipts; cannot approve applications.
+\item \textbf{Auditor:} read-only access to all records, audit log, UC documents, MoUs, and donor reports; the only role with no create, edit, or approve permission anywhere in the system.
+\end{itemize}
+
+\subsection{Data and System Inputs Required from Administration}
+To build and operate the Platform, the Development Team will require the following from DORA/the Institution:
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{Endowment data:} existing fund list, donor records, corpus figures, yield rates, and category allocations, for initial data load.
+\item \textbf{CSR grant data:} existing/ongoing grant records, corporate donor details, milestone schedules, and any Utilization Certificates already on file.
+\item \textbf{Scholarship data:} existing scheme definitions, selection criteria, and applicant/disbursement history, if available.
+\item \textbf{Donor and partner data:} existing donor/alumni/company/foundation/PSU contact records, past giving history, and any existing MoUs or sanction letters, for CRM seeding.
+\item \textbf{Proposal repository seed content:} existing DORA proposal documents and templates.
+\item \textbf{Authorised email account access:} access to, or a delegated send-permission on, the authorised DORA email account, for the outreach module.
+\item \textbf{Login/authentication setup:} access to the Institution's SSO or Google Workspace (or equivalent) for integrating staff login.
+\item \textbf{Infrastructure support:} guidance on hosting, server, and cloud backup requirements. Where specialized support is needed, the administration will direct the Team to the concerned person/department (e.g., IT Services) for hosting, server, or backup-related matters.
+\item Additional data, access, or system inputs may be required as the Platform evolves, based on future development needs and requirements raised during the engagement; these will be requested from DORA as and when identified.
+\end{itemize}
+
+\textbf{Confidentiality of institutional data.} All data shared by DORA/the Institution for the purposes of building and operating the Platform, including but not limited to donor and alumni information, corpus and financial figures, student personal and financial data, Utilization Certificates, MoUs, sanction letters, and donor communication history, is proprietary and confidential to the Institution. The Development Team shall not share, disclose, publish, or use this data outside the scope of this engagement, and shall not share it with any third party, under any circumstance, without the Institution's prior written consent.
+
+\subsection{Out of Scope (Initial Phase)}
+\label{sec:oos}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Payment gateway integration or actual bank transfer execution for scholarship or CSR disbursement, unless explicitly added to scope later.
+\item Integration with the Institution's central ERP/financial/academic systems, unless explicitly requested with access provided by the Institution.
+\item Purchase, scraping, or import of third-party donor/contact databases; the CRM (Section 2.7) is populated only from data DORA provides or DORA staff enter.
+\item Sending of any external communication without prior approval by an authorised DORA user (Section~\ref{sec:email}); this is a hard constraint, not a configurable default.
+\end{itemize}
+
+Any new feature or change requested by DORA beyond the scope above will be evaluated for feasibility on the spot, at the time it is raised. If accepted for inclusion, the Team and DORA will proceed accordingly, and will mutually revise the project timeline (Section~\ref{sec:timeline}) and, where applicable, compensation (Section~\ref{sec:compensation}) to reflect the additional work.
+
+% ---------------- SECTION 3 ----------------
+\section{Development Approach}
+
+\subsection{Iterative Development}
+\label{sec:iterative}
+A complete, final system architecture cannot be reasonably fixed at the outset given the complexity in Section~\ref{sec:scope}. The Platform will therefore be developed iteratively: new requirements raised by DORA will be assessed for feasibility on the spot (Section~\ref{sec:oos}) and, if accepted, added to the working scope in a subsequent iteration, with the Team compensated for the additional work under Section~\ref{sec:compensation}. Given the scope of Part B (Sections 2.7--2.13) has been added after the initial draft, DORA should expect the overall timeline (Section~\ref{sec:timeline}) to be revised upward from any earlier estimate; the Team will propose a revised phase plan once requirements are finalized. Material changes to scope, timeline, or compensation will be documented as a signed addendum to this agreement.
+
+Given the two explicit priorities DORA has indicated within the new requirements, namely the approval-gated donor email module (\textbf{Priority \#1}, Section~\ref{sec:email}) and the fundraising/governance dashboards (\textbf{Priority \#2}), the Team will sequence Part B development accordingly, subject to dependencies on the donor database (Section 2.7) being available first.
+
+\subsection{Version Control and Work Tracking}
+All source code will be maintained in a dedicated GitHub repository, and all work will be tracked and submitted via GitHub Pull Requests (PRs), which serve as the primary record of individual contribution.
+
+% ---------------- SECTION 4 ----------------
+\section{Team Structure}
+The Development Team shall consist of four (4) students, listed below (to be finalized and appended to this document upon submission):
+
+\begin{enumerate}[leftmargin=1.8em, itemsep=4pt]
+\item \underline{\hspace{7cm}} (Team Lead / Point of Contact)
+\item \underline{\hspace{7cm}} (Team Lead / Point of Contact)
+\item \underline{\hspace{7cm}}
+\item \underline{\hspace{7cm}}
+\end{enumerate}
+
+Team members 1 and 2 shall jointly serve as Team Leads and primary points of contact with the DORA office for scheduling meetings, consolidating weekly reports, and coordinating delivery.
+
+% ---------------- SECTION 5 ----------------
+\section{Timeline and Milestones}
+\label{sec:timeline}
+The chart below is an \textbf{indicative, sample timeline} intended to illustrate the general phasing of work across both Part A (governance and compliance) and Part B (resource generation and donor relationship management); detailed milestones, sub-goals, and dates will be finalized with DORA once development begins and added to this document in a later revision. It targets an overall completion window ending \textbf{1 December 2026} (Section~\ref{sec:duration}), subject to change under Section~\ref{sec:oos} given the expanded scope.
+
+\begin{center}
+\begin{ganttchart}[
+  vgrid, hgrid,
+  x unit=0.29cm,
+  y unit title=0.7cm,
+  y unit chart=0.62cm,
+  title height=1,
+  bar height=0.5,
+  bar label font=\scriptsize,
+  title label font=\scriptsize,
+  milestone label font=\scriptsize,
+  group label font=\scriptsize\bfseries,
+  bar/.append style={fill=black!55},
+  bar label node/.append style={align=right},
+  ]{1}{22}
+  \gantttitle{Indicative Project Timeline: Weeks (Sample)}{22} \\
+  \gantttitlelist{1,...,22}{1} \\
+  \ganttbar{Requirement Finalization \& Architecture}{1}{2} \\
+  \ganttbar{Endowment Fund Master Data Module}{2}{3} \\
+  \ganttbar{CSR Grant \& Milestone Tracking Engine}{3}{6} \\
+  \ganttbar{Scholarship Scheme \& Applicant Module}{5}{7} \\
+  \ganttbar{Disbursement Approval \& Maker-Checker Workflow}{6}{9} \\
+  \ganttbar{Audit Log \& Governance Dashboard}{8}{10} \\
+  \ganttbar{Donor/Partner Database (CRM)}{7}{10} \\
+  \ganttbar{Fundraising Pipeline \& Proposal Repository}{9}{12} \\
+  \ganttbar{Donor Email \& Outreach Module (P1)}{11}{14} \\
+  \ganttbar{Fundraising Dashboards (P2)}{13}{16} \\
+  \ganttbar{Donor Reporting \& Automated Alerts}{15}{18} \\
+  \ganttbar{SSO/Login Integration \& Data Migration}{16}{18} \\
+  \ganttbar{Testing, UAT \& Feedback Iterations}{18}{21} \\
+  \ganttbar{Deployment \& Handover}{21}{22}
+\end{ganttchart}
+\end{center}
+
+\textit{Note: this Gantt chart is a sample for illustration only. Actual phase durations, dependencies, and start dates will be agreed with DORA and revised as scope evolves under Section~\ref{sec:oos}.}
+
+% ---------------- SECTION 6 ----------------
+\section{Reporting, Review, and Communication}
+
+\subsection{Weekly Progress Reports}
+The Development Team shall submit one (1) written progress report per week, summarizing work completed, work in progress, and blockers, attributed by individual member and referencing the corresponding GitHub Pull Requests (Section 3.2).
+
+\subsection{Weekly Demonstration Meeting}
+The Development Team and a designated DORA representative shall meet at most once per week to demonstrate progress and gather inputs. A meeting is not mandatory every single week; it will be scheduled as needed, by mutual convenience, particularly if there is no material update since the previous meeting.
+
+\subsection{Administrative Review and Delegation}
+As described in Section~\ref{sec:admin-review}, disbursement results are forwarded to Finance only after DORA review and approval, and outgoing donor emails are sent only after DORA approval (Section~\ref{sec:email}).
+
+\subsection{Documentation of Communication}
+All key communication and decisions exchanged between the Team and DORA, including outcomes of meetings, will additionally be documented over email, serving as minutes of meeting (MoM) for record-keeping.
+
+% ---------------- SECTION 7 ----------------
+\section{Compensation and Payment Terms}
+\label{sec:compensation}
+
+\subsection{Stipend}
+Each member of the Development Team shall be compensated at a rate of Rs.~270 per hour of documented, verifiable work.
+
+\subsection{Non-Monetary Compensation}
+In addition to the hourly stipend, each Team member shall be provided with one (1) Claude Code access subscription/license per month, for the duration of their active participation in the project, to be provided or reimbursed by the Institution.
+
+\subsection{Payment Schedule}
+Compensation shall be calculated and disbursed on a monthly basis. Payment for hours worked in a given calendar month shall be released during the first week of the following month, subject to submission and administrative acceptance of that month's weekly reports.
+
+\subsection{Integrity of Hours and Basis for Payment}
+Payment in a given month is contingent on submission of that month's weekly reports and verifiable work reflected through GitHub activity (Section 3.2). The Development Team commits to logging hours with utmost sincerity and honesty; no inflated, false, or unworked hours shall be claimed for compensation.
+
+% ---------------- SECTION 8 ----------------
+\section{Intellectual Property and Ownership}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item All source code, documentation, designs, donor/CRM data, and other work products created or populated by the Development Team under this engagement shall be the property of the Institution, subject to applicable institutional policy on student-developed intellectual property. This includes full institutional ownership of the underlying data and codebase, not merely a license to use the Platform.
+\item The Development Team shall be permitted to reference this project as part of their academic or professional portfolio, subject to prior written consent of DORA regarding the extent of disclosure, and excluding any confidential donor, financial, or student data.
+\end{itemize}
+
+% ---------------- SECTION 9 ----------------
+\section{Data Privacy and Confidentiality}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item The Platform will process sensitive data related to institutional endowment finances, corporate and individual donor relationships and communications, and student personal and financial records (scholarship applications).
+\item Access to production data, including the donor CRM and email communication history, shall be limited to what is strictly necessary for development, testing, and debugging, and shall follow any data protection guidelines issued by the Institution.
+\item The Development Team shall not use, disclose, or retain endowment, donor, alumni, or student data for any purpose outside the scope of this engagement, both during and after the engagement period, consistent with the confidentiality clause in Section 2.15.
+\end{itemize}
+
+% ---------------- SECTION 10 ----------------
+\section{Duration and Termination}
+\label{sec:duration}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item This agreement shall commence on the date of signature by both parties. The Team targets completion and handover of the Platform to DORA by \textbf{1 December 2026}. This target date is subject to change based on more or fewer requirements being added to scope over the course of the engagement (Section~\ref{sec:oos}), and in particular given the expanded scope described in Part B of Section~\ref{sec:scope}; the Development Team will make its best effort to complete the project as soon as possible.
+\item In the event of termination, compensation shall be payable for all verified work completed up to the effective date of termination, following Section~\ref{sec:compensation}.
+\end{itemize}
+
+% ---------------- SECTION 11 ----------------
+\section{Acceptance and Signatures}
+By signing below, both parties acknowledge that they have read, understood, and agree to the terms described in this document, including the understanding that the technical scope in Section~\ref{sec:scope} is indicative and will evolve iteratively as described in Section~\ref{sec:iterative}.
+
+\vspace{1cm}
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{For the Office of the Dean of Resources \& Alumni Affairs, IIT Mandi}\\[1.4cm]
+\underline{\hspace{6.5cm}}\\
+Name:\underline{\hspace{5cm}}\\[6pt]
+Designation:\underline{\hspace{4.5cm}}\\[6pt]
+Date:\underline{\hspace{5.5cm}}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\textbf{For the Student Development Team}\\[6pt]
+\underline{\hspace{6.5cm}}\\
+Name:\underline{\hspace{5cm}}\\
+Designation: Team Lead\\
+Date:\underline{\hspace{5.5cm}}\\[10pt]
+\underline{\hspace{6.5cm}}\\
+Name:\underline{\hspace{5cm}}\\
+Designation: Team Lead\\
+Date:\underline{\hspace{5.5cm}}
+\end{minipage}
+
+\vspace{1cm}
+\textbf{Other Team Members (Acknowledgement of Terms):}
+
+\begin{tabular}{@{}p{7.5cm}p{6cm}@{}}
+1. \underline{\hspace{6cm}} & Signature: \underline{\hspace{3.5cm}} \\[10pt]
+2. \underline{\hspace{6cm}} & Signature: \underline{\hspace{3.5cm}} \\
+\end{tabular}
+
+\end{document}

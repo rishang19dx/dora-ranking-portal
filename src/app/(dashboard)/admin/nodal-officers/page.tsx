@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Users, EnvelopeSimple, Phone, PencilSimple, X } from '@phosphor-icons/react';
+import { useToast } from '@/components/ToastProvider';
 
 const mockOfficers = [
   { id: 1, name: 'Dr. Jane Smith', dept: 'Computer Science', email: 'jane@iitmandi.ac.in', phone: '+91 98765 43210', status: 'Active' },
@@ -14,6 +15,12 @@ const spring = { type: "spring", stiffness: 100, damping: 20 };
 
 export default function NodalOfficers() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { showToast } = useToast();
+
+  const handleInvite = () => {
+    setIsModalOpen(false);
+    showToast('Invitation sent successfully to the Nodal Officer.', 'success');
+  };
 
   return (
     <motion.div 
@@ -71,7 +78,10 @@ export default function NodalOfficers() {
                     </span>
                   </td>
                   <td className="px-8 py-5">
-                    <button className="p-2 hover:bg-white hover:shadow-sm rounded-xl text-zinc-400 hover:text-sage-600 transition-all">
+                    <button 
+                      onClick={() => showToast('Editing is not yet implemented.', 'info')}
+                      className="p-2 hover:bg-white hover:shadow-sm rounded-xl text-zinc-400 hover:text-sage-600 transition-all"
+                    >
                       <PencilSimple weight="bold" className="w-5 h-5" />
                     </button>
                   </td>
@@ -124,7 +134,10 @@ export default function NodalOfficers() {
                   <input type="email" placeholder="john@iitmandi.ac.in" className="w-full bg-zinc-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500/20 focus:border-sage-500/50 transition-all placeholder:text-zinc-400" />
                 </div>
                 <div className="pt-4 mt-6 border-t border-slate-100">
-                  <button className="w-full bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-3 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_16px_-4px_rgba(16,185,129,0.3)]">
+                  <button 
+                    onClick={handleInvite}
+                    className="w-full bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-3 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_16px_-4px_rgba(16,185,129,0.3)]"
+                  >
                     Send Invitation
                   </button>
                 </div>

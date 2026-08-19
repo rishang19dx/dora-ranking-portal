@@ -1,0 +1,275 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// Authentication & Users (NextAuth.js style + Custom Roles)
+// -----------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  NODAL_OFFICER
+  DIRECTOR
+  AUDITOR
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(NODAL_OFFICER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  accounts      Account[]
+  sessions      Session[]
+
+  // Nodal Officers can manage multiple departments
+  departments   UserDepartment[]
+  auditLogs     AuditLog[]
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// -----------------------------------------------------------------------------
+// Institutional Organogram
+// Hierarchy: Institute -> School -> Department
+// -----------------------------------------------------------------------------
+
+model Institute {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schools   School[]
+}
+
+model School {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  instituteId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  institute   Institute    @relation(fields: [instituteId], references: [id], onDelete: Cascade)
+  departments Department[]
+  faculties   Faculty[]    // "one faculty belongs to only one school"
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  schoolId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  // Nodal Officers assigned to this department
+  users       UserDepartment[]
+  
+  // Data submissions tied to this department
+  submissions Submission[]
+
+  @@unique([name, schoolId]) // Department names should be unique within a school
+}
+
+// Many-to-Many relationship between Users (Nodal Officers) and Departments
+model UserDepartment {
+  userId       String
+  departmentId String
+  assignedAt   DateTime @default(now())
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, departmentId])
+}
+
+// -----------------------------------------------------------------------------
+// Data Governance & Workflow
+// -----------------------------------------------------------------------------
+
+enum CycleStatus {
+  ACTIVE
+  CLOSED
+}
+
+model RankingCycle {
+  id          String   @id @default(cuid())
+  year        Int      @unique
+  status      CycleStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  submissions Submission[]
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  CORRECTION_REQUESTED
+  APPROVED
+}
+
+model Submission {
+  id           String           @id @default(cuid())
+  departmentId String
+  cycleId      String
+  status       SubmissionStatus @default(DRAFT)
+  submittedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  
+  department   Department       @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  cycle        RankingCycle     @relation(fields: [cycleId], references: [id], onDelete: Restrict)
+  
+  correctionRequests CorrectionRequest[]
+  
+  // Aggregated NIRF Form Data (1:1 with Submission)
+  studentIntake      StudentIntake?
+  facultyDetails     FacultyDetails?
+  placementStats     PlacementStats?
+  financialResources FinancialResources?
+  
+  @@unique([departmentId, cycleId]) // A department has exactly ONE submission per cycle
+}
+
+enum CorrectionStatus {
+  OPEN
+  RESOLVED
+}
+
+model CorrectionRequest {
+  id           String   @id @default(cuid())
+  submissionId String
+  message      String   @db.Text
+  status       CorrectionStatus @default(OPEN)
+  createdAt    DateTime @default(now())
+  resolvedAt   DateTime?
+  
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String   // e.g., "CREATE", "UPDATE", "APPROVE", "REQUEST_CORRECTION"
+  entityType String   // e.g., "Submission", "StudentIntake"
+  entityId   String
+  delta      String   @db.Text // JSON string of changes: { field: { old: X, new: Y } }
+  createdAt  DateTime @default(now())
+  
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+// -----------------------------------------------------------------------------
+// NIRF Data Forms (Aggregated Metrics)
+// -----------------------------------------------------------------------------
+
+// Faculty details strictly tied to a School (as per "one faculty belongs to only one school")
+// We can use this to aggregate data automatically, or just for record keeping.
+model Faculty {
+  id          String   @id @default(cuid())
+  schoolId    String
+  name        String
+  designation String
+  isPhD       Boolean  @default(false)
+  gender      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+}
+
+// Below are the aggregated forms filled by Nodal Officers for their Departments
+model StudentIntake {
+  id           String     @id @default(cuid())
+  submissionId String     @unique
+  
+  ug_intake    Int        @default(0)
+  pg_intake    Int        @default(0)
+  phd_enrolled Int        @default(0)
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model FacultyDetails {
+  id           String     @id @default(cuid())
+  submissionId String     @unique
+  
+  total_faculty Int       @default(0)
+  phd_faculty   Int       @default(0)
+  women_faculty Int       @default(0)
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model PlacementStats {
+  id             String     @id @default(cuid())
+  submissionId   String     @unique
+  
+  ug_placed      Int        @default(0)
+  pg_placed      Int        @default(0)
+  median_salary  Float      @default(0.0)
+  higher_studies Int        @default(0)
+  
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  submission     Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model FinancialResources {
+  id                      String     @id @default(cuid())
+  submissionId            String     @unique
+  
+  capital_expenditure     Float      @default(0.0)
+  operational_expenditure Float      @default(0.0)
+  
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+
+  submission              Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}

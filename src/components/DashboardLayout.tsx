@@ -20,6 +20,8 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
 
   return (
@@ -84,12 +86,73 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <button className="relative p-2 hover:bg-zinc-100 rounded-xl text-zinc-600 transition-colors">
-              <Bell weight="bold" className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-dusty-rose-500 rounded-full ring-2 ring-white"></span>
-            </button>
-            <div className="w-9 h-9 rounded-xl bg-zinc-900 flex items-center justify-center text-white text-xs font-semibold shadow-sm cursor-pointer hover:scale-105 transition-transform">
-              AD
+            <div className="relative">
+              <button 
+                onClick={() => { setNotificationsOpen(!notificationsOpen); setProfileOpen(false); }}
+                className="relative p-2 hover:bg-zinc-100 rounded-xl text-zinc-600 transition-colors"
+              >
+                <Bell weight="bold" className="w-5 h-5" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-dusty-rose-500 rounded-full ring-2 ring-white"></span>
+              </button>
+              
+              <AnimatePresence>
+                {notificationsOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-2 w-80 bg-white border border-slate-200/50 rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] overflow-hidden z-50"
+                  >
+                    <div className="p-4 border-b border-slate-100 bg-zinc-50/50 flex justify-between items-center">
+                      <h4 className="font-semibold text-sm text-zinc-900">Notifications</h4>
+                      <span className="text-xs text-sage-600 font-medium cursor-pointer">Mark all as read</span>
+                    </div>
+                    <div className="p-2 max-h-64 overflow-y-auto">
+                      <div className="p-3 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer">
+                        <p className="text-sm font-medium text-zinc-900">Submission Received</p>
+                        <p className="text-xs text-zinc-500 mt-1">SCEE has uploaded Student Intake data.</p>
+                        <p className="text-[10px] text-zinc-400 mt-2 uppercase font-semibold">2 hours ago</p>
+                      </div>
+                      <div className="p-3 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer">
+                        <p className="text-sm font-medium text-zinc-900">Deadline Approaching</p>
+                        <p className="text-xs text-zinc-500 mt-1">NIRF 2026 Phase 1 ends in 5 days.</p>
+                        <p className="text-[10px] text-zinc-400 mt-2 uppercase font-semibold">1 day ago</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="relative">
+              <div 
+                onClick={() => { setProfileOpen(!profileOpen); setNotificationsOpen(false); }}
+                className="w-9 h-9 rounded-xl bg-zinc-900 flex items-center justify-center text-white text-xs font-semibold shadow-sm cursor-pointer hover:scale-105 transition-transform"
+              >
+                AD
+              </div>
+              
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-2 w-56 bg-white border border-slate-200/50 rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] overflow-hidden z-50 p-2"
+                  >
+                    <div className="p-3 border-b border-slate-100 mb-2">
+                      <p className="text-sm font-semibold text-zinc-900">Admin User</p>
+                      <p className="text-xs text-zinc-500 truncate">admin@iitmandi.ac.in</p>
+                    </div>
+                    <Link href="/settings" className="flex items-center gap-2 w-full p-2 text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50 rounded-xl transition-colors">
+                      <Gear weight="bold" className="w-4 h-4" /> Settings
+                    </Link>
+                    <button className="flex items-center gap-2 w-full p-2 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors mt-1">
+                      Sign out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>
@@ -128,13 +191,22 @@ function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile }: { p
       </div>
 
       <nav className="flex-1 py-6 px-3 flex flex-col gap-1.5 overflow-y-auto">
-        <NavItem href="/" icon={<ChartBar weight="duotone" className="w-5 h-5" />} label="Dashboard" active={pathname === "/"} open={sidebarOpen} />
-        <NavItem href="/data-collection" icon={<FileText weight="duotone" className="w-5 h-5" />} label="Data Collection" active={pathname === "/data-collection"} open={sidebarOpen} />
-        <NavItem href="/nodal-officers" icon={<Users weight="duotone" className="w-5 h-5" />} label="Nodal Officers" active={pathname === "/nodal-officers"} open={sidebarOpen} />
-        <NavItem href="/rankings" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Rankings (NIRF)" active={pathname === "/rankings"} open={sidebarOpen} />
-        <NavItem href="/documents" icon={<BookOpen weight="duotone" className="w-5 h-5" />} label="Documents" active={pathname === "/documents"} open={sidebarOpen} />
-        <div className="flex-1" />
-        <NavItem href="/settings" icon={<Gear weight="duotone" className="w-5 h-5" />} label="Settings" active={pathname === "/settings"} open={sidebarOpen} />
+        {pathname.startsWith('/nodal-officer') ? (
+          <>
+            <NavItem href="/nodal-officer" icon={<ChartBar weight="duotone" className="w-5 h-5" />} label="My Dashboard" active={pathname === "/nodal-officer"} open={sidebarOpen} />
+            <NavItem href="/nodal-officer/submissions/new" icon={<FileText weight="duotone" className="w-5 h-5" />} label="Submit Data" active={pathname.includes("/submissions/new")} open={sidebarOpen} />
+          </>
+        ) : (
+          <>
+            <NavItem href="/admin" icon={<ChartBar weight="duotone" className="w-5 h-5" />} label="Dashboard" active={pathname === "/admin"} open={sidebarOpen} />
+            <NavItem href="/admin/data-collection" icon={<FileText weight="duotone" className="w-5 h-5" />} label="Data Collection" active={pathname.includes("/data-collection")} open={sidebarOpen} />
+            <NavItem href="/admin/nodal-officers" icon={<Users weight="duotone" className="w-5 h-5" />} label="Nodal Officers" active={pathname.includes("/nodal-officers")} open={sidebarOpen} />
+            <NavItem href="/admin/rankings" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Rankings (NIRF)" active={pathname.includes("/rankings")} open={sidebarOpen} />
+            <NavItem href="/admin/documents" icon={<BookOpen weight="duotone" className="w-5 h-5" />} label="Documents" active={pathname.includes("/documents")} open={sidebarOpen} />
+            <div className="flex-1" />
+            <NavItem href="/admin/settings" icon={<Gear weight="duotone" className="w-5 h-5" />} label="Settings" active={pathname.includes("/settings")} open={sidebarOpen} />
+          </>
+        )}
       </nav>
     </>
   );

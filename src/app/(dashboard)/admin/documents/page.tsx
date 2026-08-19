@@ -3,10 +3,12 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { File, FileText, MagnifyingGlass, Faders, DownloadSimple } from '@phosphor-icons/react';
+import { useToast } from '@/components/ToastProvider';
 
 const spring = { type: "spring", stiffness: 100, damping: 20 };
 
 export default function Documents() {
+  const { showToast } = useToast();
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -28,7 +30,10 @@ export default function Documents() {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-500/20 focus:border-sage-500/50 w-full sm:w-64 transition-all placeholder:text-zinc-400 shadow-sm"
             />
           </div>
-          <button className="p-2.5 border border-slate-200/50 bg-white rounded-xl hover:bg-zinc-50 text-zinc-500 hover:text-zinc-900 transition-colors shadow-sm">
+          <button 
+            onClick={() => showToast('Filtering is not yet implemented.', 'info')}
+            className="p-2.5 border border-slate-200/50 bg-white rounded-xl hover:bg-zinc-50 text-zinc-500 hover:text-zinc-900 transition-colors shadow-sm"
+          >
             <Faders weight="bold" className="w-4 h-4" />
           </button>
         </div>
@@ -46,7 +51,12 @@ export default function Documents() {
             </div>
             <div className="pt-4 border-t border-slate-100 flex justify-between items-center opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
               <span className="text-xs font-semibold text-zinc-400">1.2 MB</span>
-              <button className="text-sage-600 hover:text-sage-700 bg-sage-50 p-1.5 rounded-lg"><DownloadSimple weight="bold" className="w-4 h-4" /></button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); showToast('Document download started.', 'success'); }}
+                className="text-sage-600 hover:text-sage-700 bg-sage-50 p-1.5 rounded-lg"
+              >
+                <DownloadSimple weight="bold" className="w-4 h-4" />
+              </button>
             </div>
           </div>
         ))}

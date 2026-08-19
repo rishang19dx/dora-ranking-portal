@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Institutional Ranking Data Aggregation, Processing, and Analytics Platform",
 };
 
-import DashboardLayout from "@/components/DashboardLayout";
+import { ToastProvider } from "@/components/ToastProvider";
 
 export default function RootLayout({
   children,
@@ -19,8 +19,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.variable} ${playfair.variable} font-sans antialiased min-h-[100dvh]`} suppressHydrationWarning>
-        <DashboardLayout>{children}</DashboardLayout>
+      <body className={`${outfit.variable} ${playfair.variable} font-sans antialiased min-h-[100dvh] bg-zinc-50`} suppressHydrationWarning>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

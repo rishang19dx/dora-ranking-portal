@@ -3,10 +3,13 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { FileText, Clock, CheckCircle, WarningCircle } from '@phosphor-icons/react';
+import { useToast } from '@/components/ToastProvider';
+import Link from 'next/link';
 
 const spring = { type: "spring", stiffness: 100, damping: 20 };
 
 export default function DataCollection() {
+  const { showToast } = useToast();
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -19,7 +22,10 @@ export default function DataCollection() {
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-zinc-900">Data Collection</h1>
           <p className="text-zinc-500 mt-2 max-w-[65ch] leading-relaxed">Manage active data requests and submission deadlines.</p>
         </div>
-        <button className="bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(90,115,89,0.3)]">
+        <button 
+          onClick={() => showToast('Starting a new request cycle is not yet implemented.', 'info')}
+          className="bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(90,115,89,0.3)]"
+        >
           New Request Cycle
         </button>
       </div>
@@ -58,7 +64,9 @@ export default function DataCollection() {
                   />
                 </div>
               </div>
-              <button className="text-sage-600 text-sm font-semibold hover:text-sage-700 hover:bg-sage-50 px-4 py-2 rounded-lg transition-all hidden sm:block">Manage</button>
+              <Link href="/submissions/new" className="text-sage-600 text-sm font-semibold hover:text-sage-700 hover:bg-sage-50 px-4 py-2 rounded-lg transition-all hidden sm:block">
+                Manage
+              </Link>
             </div>
           </div>
         </div>

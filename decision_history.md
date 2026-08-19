@@ -55,3 +55,16 @@ This document serves as an immutable chronological log of key decisions taken by
 *   `src/app/*` (Massive restructuring of all routes)
 *   `src/app/layout.tsx` (Stripped of DashboardLayout)
 *   `src/components/DashboardLayout.tsx` (Made dynamic)
+
+### 2026-08-19: "WOW" Visual Enhancements & Brand Integration
+**Context:** The portal required a visual upgrade from a flat, clean prototype to a premium, high-end application using glassmorphism and the official IIT Mandi branding.
+
+**Decisions Made:**
+1.  **Brand Integration:** The official IIT Mandi logo and campus banner were integrated into the public landing page as requested by the user, immediately grounding the application in its institutional context.
+2.  **Glassmorphism & Depth:** The main dashboard layouts and cards were upgraded from solid `bg-white` to `bg-white/70 backdrop-blur-2xl` to create a frosted glass effect that interacts with underlying UI layers.
+3.  **Motion & Interactions:** Framer Motion was utilized to add staggered cascading entry animations to the grid cards, removing the static load feel.
+4.  **Regression Fixes:** Addressed 404 broken links identified by the browser subagent (`/public-data`, `/submissions/new` redirect).
+
+**Files Impacted:**
+*   `task.md` (Updated)
+*   `decision_history.md` (Updated)

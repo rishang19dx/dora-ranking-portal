@@ -26,12 +26,22 @@ const mockDepartmentData = [
 
 const spring = { type: "spring", stiffness: 100, damping: 20 };
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: spring }
+};
+
 export default function Dashboard() {
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={spring}
+      initial="hidden"
+      animate="show"
+      variants={containerVariants}
       className="max-w-[1400px] mx-auto space-y-8"
     >
       
@@ -54,7 +64,7 @@ export default function Dashboard() {
 
       {/* Bento Grid - Top Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <motion.div className="md:col-span-1" variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}>
+        <motion.div className="md:col-span-1" variants={itemVariants}>
           <StatCard 
             title="NIRF Ranking" 
             value="28" 
@@ -64,8 +74,8 @@ export default function Dashboard() {
             iconBg="bg-soft-gold-50"
           />
         </motion.div>
-        <motion.div className="md:col-span-2" variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}>
-          <div className="h-full bg-white border border-slate-200/50 p-8 rounded-[2rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col justify-between group hover:border-sage-500/20 transition-colors">
+        <motion.div className="md:col-span-2" variants={itemVariants}>
+          <div className="h-full bg-white/70 backdrop-blur-2xl border border-slate-200/50 p-8 rounded-[2rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col justify-between group hover:border-sage-500/20 hover:shadow-[0_20px_40px_-15px_rgba(90,115,89,0.15)] transition-all">
             <div className="flex justify-between items-start mb-6 z-10">
               <div className="p-3 bg-sage-50 rounded-2xl">
                 <FileText weight="duotone" className="w-6 h-6 text-sage-600" />
@@ -95,7 +105,7 @@ export default function Dashboard() {
             <div className="absolute inset-0 border border-white/40 rounded-[2rem] pointer-events-none mix-blend-overlay"></div>
           </div>
         </motion.div>
-        <motion.div className="md:col-span-1" variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}>
+        <motion.div className="md:col-span-1" variants={itemVariants}>
           <StatCard 
             title="Discrepancies" 
             value="14" 
@@ -108,10 +118,10 @@ export default function Dashboard() {
       </div>
 
       {/* Bento Grid - Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <motion.div className="grid grid-cols-1 lg:grid-cols-5 gap-6" variants={containerVariants}>
         
         {/* Year-wise Trend Chart */}
-        <div className="lg:col-span-3 bg-white border border-slate-200/50 rounded-[2rem] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]">
+        <motion.div variants={itemVariants} className="lg:col-span-3 bg-white/70 backdrop-blur-2xl border border-slate-200/50 rounded-[2rem] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.08)] transition-all">
           <h3 className="text-xl font-semibold tracking-tight text-zinc-900 mb-8">Historical Ranking Trends</h3>
           <div className="h-[320px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -133,10 +143,10 @@ export default function Dashboard() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
         {/* Department Data Collection Progress */}
-        <div className="lg:col-span-2 bg-white border border-slate-200/50 rounded-[2rem] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] flex flex-col">
+        <motion.div variants={itemVariants} className="lg:col-span-2 bg-white/70 backdrop-blur-2xl border border-slate-200/50 rounded-[2rem] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] flex flex-col hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.08)] transition-all">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-semibold tracking-tight text-zinc-900">Submission Status</h3>
             <button className="text-sm font-medium text-sage-600 hover:text-sage-700 transition-colors">View All</button>
@@ -154,9 +164,9 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
-      </div>
+      </motion.div>
 
     </motion.div>
   );
@@ -164,7 +174,7 @@ export default function Dashboard() {
 
 function StatCard({ title, value, trend, positive, icon, iconBg = "bg-zinc-50" }: { title: string, value: string, trend: string, positive: boolean, icon: React.ReactNode, iconBg?: string }) {
   return (
-    <div className="h-full bg-white border border-slate-200/50 p-8 rounded-[2rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.08)] transition-all flex flex-col justify-between group">
+    <div className="h-full bg-white/70 backdrop-blur-2xl border border-slate-200/50 p-8 rounded-[2rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all flex flex-col justify-between group">
       <div className="flex justify-between items-start mb-6">
         <div className={`p-3 ${iconBg} rounded-2xl group-hover:scale-105 transition-transform`}>
           {icon}

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, FileXls, FilePdf, UploadSimple, ArrowRight, ArrowLeft, DownloadSimple } from '@phosphor-icons/react';
 import { useToast } from '@/components/ToastProvider';
+import { useRouter } from 'next/navigation';
 
 const steps = [
   { id: 1, title: 'Faculty Details', desc: 'Sanctioned and actual faculty counts' },
@@ -16,6 +17,7 @@ export default function NodalOfficerUpload() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showToast } = useToast();
+  const router = useRouter();
 
   const handleNext = () => {
     if (currentStep < steps.length) setCurrentStep(currentStep + 1);
@@ -30,7 +32,7 @@ export default function NodalOfficerUpload() {
     setTimeout(() => {
       setIsSubmitting(false);
       showToast('Data submitted successfully for administrative review.', 'success');
-      // In a real app, router.push('/data-collection')
+      router.push('/nodal-officer');
     }, 2000);
   };
 

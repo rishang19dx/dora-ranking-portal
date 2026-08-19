@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.variable} ${playfair.variable} font-sans antialiased min-h-[100dvh] bg-zinc-50`} suppressHydrationWarning>
+      <body className={`${outfit.variable} ${playfair.variable} font-sans antialiased min-h-[100dvh] ambient-mesh`} suppressHydrationWarning>
         <ToastProvider>
           {children}
         </ToastProvider>

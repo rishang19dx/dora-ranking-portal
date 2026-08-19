@@ -56,7 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         initial={{ width: 256 }}
         animate={{ width: sidebarOpen ? 256 : 80 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="hidden md:flex bg-white border-r border-slate-200/50 flex-col z-20 shrink-0"
+        className="hidden md:flex bg-white/70 backdrop-blur-2xl border-r border-slate-200/50 flex-col z-20 shrink-0"
       >
         <SidebarContent pathname={pathname} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} isMobile={false} />
       </motion.aside>
@@ -65,7 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col overflow-hidden relative">
         
         {/* Header */}
-        <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 shrink-0">
+        <header className="h-16 bg-white/60 backdrop-blur-2xl border-b border-slate-200/50 flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 shrink-0">
           <div className="flex items-center gap-4 flex-1">
             <button onClick={() => setMobileMenuOpen(true)} className="md:hidden p-2 -ml-2 hover:bg-zinc-100 rounded-xl text-zinc-600 transition-colors">
               <List weight="bold" className="w-5 h-5" />

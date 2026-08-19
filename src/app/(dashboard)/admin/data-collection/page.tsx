@@ -64,9 +64,9 @@ export default function DataCollection() {
                   />
                 </div>
               </div>
-              <Link href="/submissions/new" className="text-sage-600 text-sm font-semibold hover:text-sage-700 hover:bg-sage-50 px-4 py-2 rounded-lg transition-all hidden sm:block">
+              <button onClick={() => showToast('Manage cycle view is under construction.', 'info')} className="text-sage-600 text-sm font-semibold hover:text-sage-700 hover:bg-sage-50 px-4 py-2 rounded-lg transition-all hidden sm:block">
                 Manage
-              </Link>
+              </button>
             </div>
           </div>
         </div>

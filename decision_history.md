@@ -68,3 +68,20 @@ This document serves as an immutable chronological log of key decisions taken by
 **Files Impacted:**
 *   `task.md` (Updated)
 *   `decision_history.md` (Updated)
+
+### 2026-08-22: UI Overhaul & Premium "Institution Vibe" Transition
+**Context:** The portal required a comprehensive UI overhaul to transition from a generic tech aesthetic to a premium, academic "Institution Vibe" (Bento 2.0 design system).
+
+**Decisions Made:**
+1.  **Color Palette & Typography:** Implemented a sophisticated, harmonious color palette consisting of Sage, Dusty Rose, Soft Gold, and Slate Blue. Integrated `Playfair Display` serif typography to elevate the academic feel and ensure a premium visual experience.
+2.  **Icon Library Migration:** Systematically transitioned from `lucide-react` to `@phosphor-icons/react` across core components (like DataCollection, Documents, and Rankings) to achieve a more cohesive and refined iconography.
+3.  **Build Stabilization & Technical Debt:** 
+    *   Addressed leftover artifacts from a previous Vite setup (`src/main.tsx`, `src/App.tsx`). Rather than deleting them, they were explicitly excluded from the Next.js TypeScript compilation (`tsconfig.json`) to prevent module resolution and type errors while preserving them for reference.
+    *   Resolved strict TypeScript errors with legacy `lucide-react` icons (e.g., removing unsupported `title` props on SVG elements in `RankingsView.tsx` and wrapping them in semantic HTML spans).
+
+**Files Impacted:**
+*   `tailwind.config.ts` & `src/index.css` (Theming and Tokens)
+*   `src/app/(dashboard)/admin/*` (UI Refinements)
+*   `tsconfig.json` (Build configuration)
+*   `src/views/RankingsView.tsx` (Type fixes)
+*   `decision_history.md` (Updated)

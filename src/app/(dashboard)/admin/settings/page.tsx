@@ -11,7 +11,7 @@ const tabs = [
   { id: 'agency', label: 'Agency Schemas', icon: <Database weight="duotone" className="w-5 h-5" /> },
 ];
 
-const spring = { type: "spring", stiffness: 100, damping: 20 };
+const spring = { type: "spring" as const, stiffness: 100, damping: 20 };
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('general');

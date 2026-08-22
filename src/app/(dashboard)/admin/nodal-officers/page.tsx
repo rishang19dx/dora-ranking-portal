@@ -11,7 +11,7 @@ const mockOfficers = [
   { id: 3, name: 'Dr. Anita Desai', dept: 'Mechanical Eng.', email: 'anita@iitmandi.ac.in', phone: '+91 98765 43212', status: 'Pending' },
 ];
 
-const spring = { type: "spring", stiffness: 100, damping: 20 };
+const spring = { type: "spring" as const, stiffness: 100, damping: 20 };
 
 export default function NodalOfficers() {
   const [isModalOpen, setIsModalOpen] = useState(false);

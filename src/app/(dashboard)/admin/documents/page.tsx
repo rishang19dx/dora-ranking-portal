@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { File, FileText, MagnifyingGlass, Faders, DownloadSimple } from '@phosphor-icons/react';
 import { useToast } from '@/components/ToastProvider';
 
-const spring = { type: "spring", stiffness: 100, damping: 20 };
+const spring = { type: "spring" as const, stiffness: 100, damping: 20 };
 
 export default function Documents() {
   const { showToast } = useToast();

@@ -24,7 +24,7 @@ const mockDepartmentData = [
   { name: 'SMME', completed: 45, pending: 55 },
 ];
 
-const spring = { type: "spring", stiffness: 100, damping: 20 };
+const spring = { type: "spring" as const, stiffness: 100, damping: 20 };
 
 const containerVariants = {
   hidden: { opacity: 0 },

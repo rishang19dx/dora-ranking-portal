@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Medal, TrendUp, ChartBar } from '@phosphor-icons/react';
 
-const spring = { type: "spring", stiffness: 100, damping: 20 };
+const spring = { type: "spring" as const, stiffness: 100, damping: 20 };
 
 export default function Rankings() {
   return (

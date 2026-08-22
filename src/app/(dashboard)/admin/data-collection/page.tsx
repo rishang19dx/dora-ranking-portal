@@ -6,7 +6,7 @@ import { FileText, Clock, CheckCircle, WarningCircle } from '@phosphor-icons/rea
 import { useToast } from '@/components/ToastProvider';
 import Link from 'next/link';
 
-const spring = { type: "spring", stiffness: 100, damping: 20 };
+const spring = { type: "spring" as const, stiffness: 100, damping: 20 };
 
 export default function DataCollection() {
   const { showToast } = useToast();

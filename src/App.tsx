@@ -137,7 +137,7 @@ export default function App() {
               news={news}
               stats={stats}
               onSelectRanking={(ranking) => setSelectedRankingDetail(ranking)}
-              onNavigate={(tab) => setActiveTab(tab)}
+              onNavigateTab={(tab) => setActiveTab(tab)}
             />
           )}
 

@@ -294,7 +294,9 @@ export const RankingsView: React.FC<RankingsViewProps> = ({
                         <div className="flex items-center gap-1.5">
                           <span className="text-[#003366]">{r.ranking_name}</span>
                           {r.verified && (
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" title="Verified" />
+                            <span title="Verified" className="flex items-center">
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            </span>
                           )}
                         </div>
                         <div className="text-[10px] text-gray-500 font-normal">{r.agency_name}</div>

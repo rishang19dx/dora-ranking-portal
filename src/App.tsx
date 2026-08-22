@@ -145,7 +145,7 @@ export default function App() {
             <RankingsView
               rankings={rankings}
               agencies={agencies}
-              searchQuery={searchQuery}
+              initialSearchQuery={searchQuery}
               onSelectRanking={(ranking) => setSelectedRankingDetail(ranking)}
             />
           )}
@@ -247,14 +247,9 @@ export default function App() {
       {selectedRankingDetail && (
         <RankingDetailModal
           ranking={selectedRankingDetail}
-          parameters={parameters.filter(
-            (p) => p.ranking_id === selectedRankingDetail.id
-          )}
-          documents={documents.filter(
-            (d) => d.ranking_id === selectedRankingDetail.id
-          )}
+          allRankings={rankings}
           onClose={() => setSelectedRankingDetail(null)}
-          onOpenDocument={(doc) => setSelectedDocument(doc)}
+          onOpenDoc={(doc) => setSelectedDocument(doc)}
         />
       )}
 

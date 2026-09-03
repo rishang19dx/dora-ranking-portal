@@ -1,0 +1,82 @@
+[
+    {
+        "institute_id": "IR-I-U-0456",
+        "name": "Indian Institute of Technology MadrasClose",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": null,
+        "rank": 1
+    },
+    {
+        "institute_id": "IR-I-U-0306",
+        "name": "Indian Institute of Technology BombayClose",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "score": null,
+        "rank": 2
+    },
+    {
+        "institute_id": "IR-I-U-0220",
+        "name": "Indian Institute of ScienceClose",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "score": null,
+        "rank": 3
+    },
+    {
+        "institute_id": "IR-I-U-0573",
+        "name": "Indian Institute of Technology KharagpurClose",
+        "city": "Kharagpur",
+        "state": "West Bengal",
+        "score": null,
+        "rank": 4
+    },
+    {
+        "institute_id": "IR-I-I-1075",
+        "name": "Indian Institute of Technology KanpurClose",
+        "city": "Kanpur",
+        "state": "Uttar Pradesh",
+        "score": null,
+        "rank": 5
+    },
+    {
+        "institute_id": "IR-I-U-0013",
+        "name": "Indian Institute of Technology HyderabadClose",
+        "city": "Hyderabad",
+        "state": "Telangana",
+        "score": null,
+        "rank": 6
+    },
+    {
+        "institute_id": "IR-I-I-1074",
+        "name": "Indian Institute of Technology DelhiClose",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "score": null,
+        "rank": 7
+    },
+    {
+        "institute_id": "IR-I-U-0560",
+        "name": "Indian Institute of Technology RoorkeeClose",
+        "city": "Roorkee",
+        "state": "Uttarakhand",
+        "score": null,
+        "rank": 8
+    },
+    {
+        "institute_id": "IR-I-U-0439",
+        "name": "Anna UniversityClose",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": null,
+        "rank": 9
+    },
+    {
+        "institute_id": "IR-I-U-0184",
+        "name": "Indian Institute of Technology MandiClose",
+        "city": "Mandi",
+        "state": "Himachal Pradesh",
+        "score": null,
+        "rank": 10
+    }
+]

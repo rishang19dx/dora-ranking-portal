@@ -1,0 +1,82 @@
+[
+    {
+        "institute_id": "IR-I-U-0306",
+        "name": "Indian Institute of Technology Bombay",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "score": null,
+        "rank": 1
+    },
+    {
+        "institute_id": "IR-I-U-0456",
+        "name": "Indian Institute of Technology Madras",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": null,
+        "rank": 2
+    },
+    {
+        "institute_id": "IR-I-U-0013",
+        "name": "Indian Institute of Technology Hyderabad",
+        "city": "Hyderabad",
+        "state": "Telangana",
+        "score": null,
+        "rank": 3
+    },
+    {
+        "institute_id": "IR-I-U-0220",
+        "name": "Indian Institute of Science, Bengaluru",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "score": null,
+        "rank": 4
+    },
+    {
+        "institute_id": "IR-I-I-1075",
+        "name": "Indian Institute of Technology Kanpur",
+        "city": "Kanpur",
+        "state": "Uttar Pradesh",
+        "score": null,
+        "rank": 5
+    },
+    {
+        "institute_id": "IR-I-U-0560",
+        "name": "Indian Institute of Technology Roorkee",
+        "city": "Roorkee",
+        "state": "Uttarakhand",
+        "score": null,
+        "rank": 6
+    },
+    {
+        "institute_id": "IR-I-I-1074",
+        "name": "Indian Institute of Technology Delhi",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "score": null,
+        "rank": 7
+    },
+    {
+        "institute_id": "IR-I-U-0184",
+        "name": "Indian Institute of Technology Mandi",
+        "city": "Mandi",
+        "state": "Himachal Pradesh",
+        "score": null,
+        "rank": 8
+    },
+    {
+        "institute_id": "IR-I-U-0573",
+        "name": "Indian Institute of Technology Kharagpur",
+        "city": "Kharagpur",
+        "state": "West Bengal",
+        "score": null,
+        "rank": 9
+    },
+    {
+        "institute_id": "IR-I-U-0439",
+        "name": "Anna University",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": null,
+        "rank": 10
+    }
+]

@@ -1,190 +1,182 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, FileXls, FilePdf, UploadSimple, ArrowRight, ArrowLeft, DownloadSimple } from '@phosphor-icons/react';
-import { useToast } from '@/components/ToastProvider';
-import { useRouter } from 'next/navigation';
+import { FormEvent, useState } from "react";
+import {
+  CheckCircle2,
+  FileSpreadsheet,
+  FileText,
+  Send,
+  Upload,
+} from "lucide-react";
 
-const steps = [
-  { id: 1, title: 'Faculty Details', desc: 'Sanctioned and actual faculty counts' },
-  { id: 2, title: 'Student Intake', desc: 'UG and PG enrollment data' },
-  { id: 3, title: 'Proof Documents', desc: 'Supporting PDFs for validation' },
-  { id: 4, title: 'Review', desc: 'Final review and submission' }
+const metricCategories = [
+  "Sponsored Research",
+  "Faculty Roster",
+  "Placement & Higher Studies",
+  "PhDs Awarded",
 ];
 
 export default function NodalOfficerUpload() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showToast } = useToast();
-  const router = useRouter();
+  const [submissionTitle, setSubmissionTitle] = useState("");
+  const [metricCategory, setMetricCategory] = useState(metricCategories[0]);
+  const [rawDataFile, setRawDataFile] = useState<File | null>(null);
+  const [proofDocument, setProofDocument] = useState<File | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleNext = () => {
-    if (currentStep < steps.length) setCurrentStep(currentStep + 1);
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitted(true);
   };
 
-  const handleBack = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
-  };
-
-  const handleSubmit = () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      showToast('Data submitted successfully for administrative review.', 'success');
-      router.push('/nodal-officer');
-    }, 2000);
-  };
+  if (isSubmitted) {
+    return (
+      <main className="mx-auto max-w-3xl">
+        <section className="rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm sm:p-12">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+            <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
+          </div>
+          <p className="mt-6 text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">
+            Submission created
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">
+            Your data is pending review
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-500">
+            The submission has been recorded for the assigned department with a
+            <span className="font-semibold text-gray-700"> PENDING </span>
+            status. DORA will review the data and supporting proof documents.
+          </p>
+          <div className="mx-auto mt-8 max-w-sm rounded-xl border border-gray-100 bg-gray-50 p-4 text-left text-sm">
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-500">Title</span>
+              <span className="font-medium text-gray-900">{submissionTitle}</span>
+            </div>
+            <div className="mt-3 flex justify-between gap-4">
+              <span className="text-gray-500">Category</span>
+              <span className="font-medium text-gray-900">{metricCategory}</span>
+            </div>
+            <div className="mt-3 flex justify-between gap-4">
+              <span className="text-gray-500">Status</span>
+              <span className="font-semibold text-blue-600">PENDING</span>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-zinc-900">Data Submission</h1>
-        <p className="text-zinc-500 mt-2 max-w-[65ch] leading-relaxed">NIRF 2026 Institutional Data Cycle</p>
+    <main className="mx-auto max-w-4xl">
+      <div className="mb-8">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">
+          Nodal Officer Portal
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
+          Create data submission
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-500">
+          Submit one metric category and its evidence for administrative review.
+          This submission is scoped to your assigned department.
+        </p>
       </div>
 
-      {/* Progress Tracker */}
-      <div className="bg-white border border-slate-200/50 rounded-2xl p-6 shadow-sm overflow-x-auto">
-        <div className="flex items-center min-w-max">
-          {steps.map((step, index) => (
-            <React.Fragment key={step.id}>
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
-                  currentStep > step.id ? 'bg-sage-600 text-white' :
-                  currentStep === step.id ? 'bg-sage-100 text-sage-700 ring-2 ring-sage-500/30' :
-                  'bg-zinc-100 text-zinc-400'
-                }`}>
-                  {currentStep > step.id ? <CheckCircle weight="bold" className="w-5 h-5" /> : step.id}
-                </div>
-                <div className="hidden sm:block">
-                  <p className={`text-sm font-semibold ${currentStep >= step.id ? 'text-zinc-900' : 'text-zinc-400'}`}>{step.title}</p>
-                </div>
-              </div>
-              {index < steps.length - 1 && (
-                <div className={`h-0.5 w-12 sm:w-20 mx-4 rounded-full ${currentStep > step.id ? 'bg-sage-600' : 'bg-zinc-100'}`} />
-              )}
-            </React.Fragment>
-          ))}
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8"
+      >
+        <div className="mb-8 flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+          <FileText className="h-5 w-5 text-gray-500" aria-hidden="true" />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Assigned department
+            </p>
+            <p className="mt-1 text-sm font-medium text-gray-900">
+              Department associated with your Nodal Officer account
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Wizard Content */}
-      <div className="bg-white border border-slate-200/50 rounded-[2rem] p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] min-h-[400px] flex flex-col">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="flex-1"
+        <div className="grid gap-6 sm:grid-cols-2">
+          <label className="sm:col-span-2">
+            <span className="text-sm font-semibold text-gray-900">Submission Title</span>
+            <input
+              required
+              type="text"
+              value={submissionTitle}
+              onChange={(event) => setSubmissionTitle(event.target.value)}
+              placeholder="e.g. Sponsored research contributions 2025-26"
+              className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+          </label>
+
+          <label className="sm:col-span-2">
+            <span className="text-sm font-semibold text-gray-900">Metric Category</span>
+            <select
+              required
+              value={metricCategory}
+              onChange={(event) => setMetricCategory(event.target.value)}
+              className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            >
+              {metricCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-semibold text-gray-900">Raw Data Upload</span>
+            <span className="mt-1 block text-xs text-gray-500">Structured data only: XLSX or CSV</span>
+            <span className="mt-3 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-gray-200 px-3 py-3 transition hover:border-blue-400 hover:bg-blue-50/40">
+              <FileSpreadsheet className="h-5 w-5 shrink-0 text-blue-600" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate text-sm text-gray-600">
+                {rawDataFile?.name ?? "Choose a structured data file"}
+              </span>
+              <Upload className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+              <input
+                required
+                type="file"
+                accept=".xlsx,.csv"
+                onChange={(event) => setRawDataFile(event.target.files?.[0] ?? null)}
+                className="sr-only"
+              />
+            </span>
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-semibold text-gray-900">Proof Document Upload</span>
+            <span className="mt-1 block text-xs text-gray-500">Evidence documents: PDF or DOCX</span>
+            <span className="mt-3 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-gray-200 px-3 py-3 transition hover:border-blue-400 hover:bg-blue-50/40">
+              <FileText className="h-5 w-5 shrink-0 text-blue-600" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate text-sm text-gray-600">
+                {proofDocument?.name ?? "Choose an evidence document"}
+              </span>
+              <Upload className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+              <input
+                required
+                type="file"
+                accept=".pdf,.docx"
+                onChange={(event) => setProofDocument(event.target.files?.[0] ?? null)}
+                className="sr-only"
+              />
+            </span>
+            <span className="mt-2 block text-xs leading-5 text-gray-500">
+              Files will be securely stored in the Document Proof Repository for immutable audit tracking.
+            </span>
+          </label>
+        </div>
+
+        <div className="mt-8 flex justify-end border-t border-gray-100 pt-6">
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
-            <h2 className="text-xl font-semibold text-zinc-900 mb-2">{steps[currentStep - 1].title}</h2>
-            <p className="text-zinc-500 text-sm mb-8">{steps[currentStep - 1].desc}</p>
-
-            {/* Step 1 & 2: Excel Data Uploads */}
-            {(currentStep === 1 || currentStep === 2) && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-zinc-50 border border-slate-200 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <FileXls weight="duotone" className="w-8 h-8 text-green-600" />
-                    <div>
-                      <p className="font-semibold text-zinc-900 text-sm">Download Template</p>
-                      <p className="text-xs text-zinc-500">Standardized {currentStep === 1 ? 'Faculty' : 'Student'} data format</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => showToast('Template download started.', 'info')}
-                    className="p-2 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg text-zinc-600 transition-all shadow-sm"
-                  >
-                    <DownloadSimple weight="bold" className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div 
-                  onClick={() => showToast('File picker opened.', 'info')}
-                  className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-sage-400 hover:bg-sage-50/50 transition-all group"
-                >
-                  <div className="w-12 h-12 rounded-full bg-zinc-50 group-hover:bg-sage-100 flex items-center justify-center mb-4 transition-colors">
-                    <UploadSimple weight="bold" className="w-6 h-6 text-zinc-400 group-hover:text-sage-600" />
-                  </div>
-                  <p className="text-sm font-semibold text-zinc-900 mb-1">Click to upload or drag and drop</p>
-                  <p className="text-xs text-zinc-500">Excel files only (XLSX, CSV) up to 10MB</p>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: PDF Proofs */}
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                <div 
-                  onClick={() => showToast('File picker opened.', 'info')}
-                  className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-sage-400 hover:bg-sage-50/50 transition-all group"
-                >
-                  <div className="w-12 h-12 rounded-full bg-zinc-50 group-hover:bg-sage-100 flex items-center justify-center mb-4 transition-colors">
-                    <FilePdf weight="duotone" className="w-6 h-6 text-zinc-400 group-hover:text-sage-600" />
-                  </div>
-                  <p className="text-sm font-semibold text-zinc-900 mb-1">Upload proof documents</p>
-                  <p className="text-xs text-zinc-500">PDFs only, multiple files allowed</p>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Review */}
-            {currentStep === 4 && (
-              <div className="space-y-4">
-                <div className="p-4 bg-sage-50 border border-sage-200/50 rounded-xl flex gap-4 items-start">
-                  <CheckCircle weight="fill" className="w-6 h-6 text-sage-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-sage-900 text-sm">All sections completed</p>
-                    <p className="text-sage-700 text-sm mt-1">Please review your uploaded files before submitting to the Dean's Office. Once submitted, changes require an explicit correction request.</p>
-                  </div>
-                </div>
-                
-                {/* Summary boxes */}
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="p-4 border border-slate-200 rounded-xl">
-                    <p className="text-xs text-zinc-500 mb-1 uppercase tracking-wider font-semibold">Faculty Data</p>
-                    <p className="text-sm font-medium text-zinc-900 flex items-center gap-2"><FileXls weight="fill" className="text-green-600"/> faculty_final.xlsx</p>
-                  </div>
-                  <div className="p-4 border border-slate-200 rounded-xl">
-                    <p className="text-xs text-zinc-500 mb-1 uppercase tracking-wider font-semibold">Student Data</p>
-                    <p className="text-sm font-medium text-zinc-900 flex items-center gap-2"><FileXls weight="fill" className="text-green-600"/> students_2026.xlsx</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Navigation Buttons */}
-        <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between mt-auto">
-          <button 
-            onClick={handleBack}
-            disabled={currentStep === 1 || isSubmitting}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ArrowLeft weight="bold" /> Back
+            <Send className="h-4 w-4" aria-hidden="true" />
+            Submit for review
           </button>
-          
-          {currentStep < steps.length ? (
-            <button 
-              onClick={handleNext}
-              className="flex items-center gap-2 bg-zinc-900 hover:bg-black active:scale-[0.98] text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md"
-            >
-              Continue <ArrowRight weight="bold" />
-            </button>
-          ) : (
-            <button 
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="flex items-center gap-2 bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-[0_8px_16px_-4px_rgba(90,115,89,0.3)] disabled:opacity-70 disabled:cursor-wait"
-            >
-              {isSubmitting ? 'Submitting...' : 'Submit to DORA'} <CheckCircle weight="bold" />
-            </button>
-          )}
         </div>
-      </div>
-    </div>
+      </form>
+    </main>
   );
 }

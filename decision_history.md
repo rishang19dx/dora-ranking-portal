@@ -85,3 +85,19 @@ This document serves as an immutable chronological log of key decisions taken by
 *   `tsconfig.json` (Build configuration)
 *   `src/views/RankingsView.tsx` (Type fixes)
 *   `decision_history.md` (Updated)
+
+
+
+## 2026-09-03: Nodal Officer Upload Portal
+
+**Context:** Phase 1 requires Nodal Officers to submit metric data and supporting evidence for their assigned department.
+
+**Decisions Made:**
+1. Replaced the placeholder multi-step wizard with a focused client-side submission form containing a title, metric category, structured raw-data upload, and proof-document upload.
+2. Used `lucide-react` icons and a white card with subtle gray borders and a prominent blue submit action to match the requested interaction and visual hierarchy.
+3. Kept the department scope visible as account-associated context; real authenticated department data will replace the placeholder when authentication is connected.
+4. Implemented a dummy `onSubmit` handler that prevents navigation and displays a success state with `PENDING` status, matching the intended submission workflow.
+
+**Files Impacted:**
+- `src/app/(dashboard)/nodal-officer/submissions/new/page.tsx`
+- `decision_history.md`

@@ -273,3 +273,206 @@ model FinancialResources {
 
   submission              Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 }
+
+// -----------------------------------------------------------------------------
+// Organogram-driven data collection
+//
+// These models mirror `src/lib/server/store.ts`, which persists the same
+// entities to `.data/portal-store.json` until the Postgres instance is
+// provisioned. The organogram itself is code-defined in `src/lib/organogram.ts`;
+// `OrgUnit` exists so the hierarchy can be moved into the database without
+// changing the shape of anything that consumes it.
+// -----------------------------------------------------------------------------
+
+enum OrgUnitType {
+  GOVERNANCE
+  EXECUTIVE
+  ACADEMIC
+  ADMINISTRATIVE
+  FUNCTIONAL
+}
+
+model OrgUnit {
+  id          String      @id // stable slug, e.g. "dean-academics"
+  name        String
+  shortName   String?
+  type        OrgUnitType
+  head        String?
+  email       String?
+  description String?
+  /// Data catalogue ids this unit is the custodian of.
+  dataScopes  String[]
+  parentId    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  parent   OrgUnit?  @relation("OrgUnitHierarchy", fields: [parentId], references: [id])
+  children OrgUnit[] @relation("OrgUnitHierarchy")
+
+  officers NodalOfficerAssignment[]
+  targets  DataRequestTarget[]
+  grants   PortalAccessGrant[]
+  uploads  ProofUpload[]
+}
+
+enum OfficerStatus {
+  INVITED
+  ACTIVE
+  REVOKED
+}
+
+model NodalOfficer {
+  id            String        @id @default(cuid())
+  name          String
+  designation   String?
+  email         String        @unique
+  phone         String?
+  notes         String?
+  status        OfficerStatus @default(INVITED)
+  lastInvitedAt DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  assignments NodalOfficerAssignment[]
+  grants      PortalAccessGrant[]
+  deliveries  RequestDelivery[]
+  uploads     ProofUpload[]
+}
+
+model NodalOfficerAssignment {
+  officerId  String
+  orgUnitId  String
+  assignedAt DateTime @default(now())
+
+  officer NodalOfficer @relation(fields: [officerId], references: [id], onDelete: Cascade)
+  orgUnit OrgUnit      @relation(fields: [orgUnitId], references: [id], onDelete: Cascade)
+
+  @@id([officerId, orgUnitId])
+}
+
+enum RankingFramework {
+  NIRF
+  QS
+  THE
+  NAAC
+}
+
+enum DataRequestStatus {
+  DISPATCHED
+  CLOSED
+}
+
+model DataRequest {
+  id           String            @id @default(cuid())
+  reference    String            @unique // DORA/<year>/<framework>/<seq>
+  title        String
+  framework    RankingFramework
+  cycleYear    Int
+  subject      String
+  message      String            @db.Text
+  deadline     DateTime
+  /// Data catalogue ids requested across all targeted sections.
+  dataItemIds  String[]
+  status       DataRequestStatus @default(DISPATCHED)
+  createdBy    String
+  createdAt    DateTime          @default(now())
+  dispatchedAt DateTime          @default(now())
+
+  targets    DataRequestTarget[]
+  deliveries RequestDelivery[]
+  grants     PortalAccessGrant[]
+  uploads    ProofUpload[]
+}
+
+enum TargetStatus {
+  PENDING
+  PARTIAL
+  SUBMITTED
+}
+
+model DataRequestTarget {
+  id             String       @id @default(cuid())
+  requestId      String
+  orgUnitId      String
+  /// Items narrowed to what this section is the custodian of.
+  dataItemIds    String[]
+  status         TargetStatus @default(PENDING)
+  remindersSent  Int          @default(0)
+  lastReminderAt DateTime?
+  submittedAt    DateTime?
+
+  request DataRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  orgUnit OrgUnit     @relation(fields: [orgUnitId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, orgUnitId])
+}
+
+enum DeliveryStatus {
+  SENT
+  SIMULATED
+  FAILED
+}
+
+enum DeliveryKind {
+  DISPATCH
+  REMINDER
+}
+
+model RequestDelivery {
+  id        String         @id @default(cuid())
+  requestId String
+  officerId String
+  orgUnitId String
+  email     String
+  subject   String
+  status    DeliveryStatus
+  kind      DeliveryKind   @default(DISPATCH)
+  error     String?
+  sentAt    DateTime       @default(now())
+
+  request DataRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  officer NodalOfficer @relation(fields: [officerId], references: [id], onDelete: Cascade)
+}
+
+/// One single-purpose upload link per (officer, section, request).
+/// Only the SHA-256 digest of the token is stored.
+model PortalAccessGrant {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  officerId   String
+  requestId   String
+  orgUnitId   String
+  dataItemIds String[]
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  useCount    Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  officer NodalOfficer @relation(fields: [officerId], references: [id], onDelete: Cascade)
+  request DataRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  orgUnit OrgUnit      @relation(fields: [orgUnitId], references: [id], onDelete: Cascade)
+  uploads ProofUpload[]
+}
+
+model ProofUpload {
+  id          String   @id @default(cuid())
+  requestId   String
+  grantId     String
+  officerId   String
+  orgUnitId   String
+  dataItemId  String
+  fileName    String
+  storedName  String
+  size        Int
+  contentType String
+  /// SHA-256 of the stored bytes, for immutable audit tracking.
+  checksum    String
+  note        String?
+  uploadedAt  DateTime @default(now())
+
+  request DataRequest       @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  grant   PortalAccessGrant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  officer NodalOfficer      @relation(fields: [officerId], references: [id], onDelete: Cascade)
+  orgUnit OrgUnit           @relation(fields: [orgUnitId], references: [id], onDelete: Cascade)
+}

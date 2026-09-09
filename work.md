@@ -37,3 +37,17 @@
 *   **Data Collection Fields:** Added required title and metric category fields, structured raw data input (`.xlsx`/`.csv`), and proof input (`.pdf`/`.docx`) alongside repository audit helper text.
 *   **Workflow Alignment:** Added dummy `onSubmit` behavior with `preventDefault()` and a persistent `PENDING` success state to match the required Maker-Checker submission workflow.
 *   **UI/UX & Documentation:** Utilized `lucide-react` icons and a white card layout, recorded design decisions in `decision_history.md`, and verified `npm run build` passes (including linting and TypeScript checks).
+
+### Update: 04
+**Date:** 2026-09-09
+**Team Member:** Krishna
+**Week:** 2
+**Task:** Phase 1 - Organogram-Driven Data Collection & Nodal Officer Access
+**Time Logged:** 6.00 Hours (360 minutes)
+
+#### Technical Decisions Logged:
+*   **Organogram Modelling:** Converted `Institute_Organogram.md` into a typed, queryable hierarchy in `src/lib/organogram.ts` (56 units across governance, executive, academic, administrative and functional layers) with per-unit data custodianship, and rendered it as a reusable searchable/selectable tree component.
+*   **Targeted Requests:** Built the three-step request composer (sections -> required data -> message) with per-section narrowing of the requested items, live recipient resolution, coverage warnings, and a templated email preview.
+*   **Access Provisioning:** Dispatch now issues one hashed, expiring, single-section upload grant per recipient; reminders rotate links, closing a request or removing an officer revokes them, and uploads are scoped and checksummed server-side.
+*   **Persistence Strategy:** Kept all workflow state behind a single file-backed repository module (`src/lib/server/store.ts`) with mirrored Prisma models added to the schema, so connecting Postgres later touches one file.
+*   **Validation:** `npm run build` passes; the full flow (create officer -> dispatch -> outbox email -> portal upload -> status roll-up -> reminder rotation -> close/revoke) was exercised end to end against a dev server, including rejection of wrong-format, out-of-scope, revoked and invalid-token uploads.

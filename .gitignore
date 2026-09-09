@@ -9,3 +9,8 @@ coverage/
 *.log
 .env*
 !.env.example
+.npmrc
+.nvmrc
+
+# File-backed portal store, proof uploads and local mail outbox
+.data/

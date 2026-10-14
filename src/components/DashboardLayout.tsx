@@ -13,7 +13,8 @@ import {
   List,
   CaretLeft,
   Medal,
-  BookOpen
+  BookOpen,
+  TreeStructure
 } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -199,7 +200,8 @@ function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile }: { p
         ) : (
           <>
             <NavItem href="/admin" icon={<ChartBar weight="duotone" className="w-5 h-5" />} label="Dashboard" active={pathname === "/admin"} open={sidebarOpen} />
-            <NavItem href="/admin/data-collection" icon={<FileText weight="duotone" className="w-5 h-5" />} label="Data Collection" active={pathname.includes("/data-collection")} open={sidebarOpen} />
+            <NavItem href="/admin/organogram" icon={<TreeStructure weight="duotone" className="w-5 h-5" />} label="Organogram" active={pathname.includes("/organogram")} open={sidebarOpen} />
+            <NavItem href="/admin/data-collection" icon={<FileText weight="duotone" className="w-5 h-5" />} label="Data Collection" active={pathname.includes("/data-collection") || pathname.includes("/data-requests")} open={sidebarOpen} />
             <NavItem href="/admin/nodal-officers" icon={<Users weight="duotone" className="w-5 h-5" />} label="Nodal Officers" active={pathname.includes("/nodal-officers")} open={sidebarOpen} />
             <NavItem href="/admin/rankings" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Rankings (NIRF)" active={pathname.includes("/rankings")} open={sidebarOpen} />
             <NavItem href="/admin/documents" icon={<BookOpen weight="duotone" className="w-5 h-5" />} label="Documents" active={pathname.includes("/documents")} open={sidebarOpen} />

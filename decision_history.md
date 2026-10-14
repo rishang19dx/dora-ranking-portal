@@ -85,3 +85,43 @@ This document serves as an immutable chronological log of key decisions taken by
 *   `tsconfig.json` (Build configuration)
 *   `src/views/RankingsView.tsx` (Type fixes)
 *   `decision_history.md` (Updated)
+
+
+
+## 2026-09-03: Nodal Officer Upload Portal
+
+**Context:** Phase 1 requires Nodal Officers to submit metric data and supporting evidence for their assigned department.
+
+**Decisions Made:**
+1. Replaced the placeholder multi-step wizard with a focused client-side submission form containing a title, metric category, structured raw-data upload, and proof-document upload.
+2. Used `lucide-react` icons and a white card with subtle gray borders and a prominent blue submit action to match the requested interaction and visual hierarchy.
+3. Kept the department scope visible as account-associated context; real authenticated department data will replace the placeholder when authentication is connected.
+4. Implemented a dummy `onSubmit` handler that prevents navigation and displays a success state with `PENDING` status, matching the intended submission workflow.
+
+**Files Impacted:**
+- `src/app/(dashboard)/nodal-officer/submissions/new/page.tsx`
+- `decision_history.md`
+
+## 2026-09-09: Organogram-Driven Data Collection & Nodal Officer Provisioning
+
+**Team Member:** Krishna (Member)
+**Week:** 2 (Phase 1 - Core NIRF Workflow)
+
+**Context:** The admin needed to run data collection according to the exact hierarchy of the institute: an interactive organogram, a managed roster of nodal officers per section, targeted email requests to selected sections, and automatic restricted portal access for officers to upload ranking proofs.
+
+**Decisions Made:**
+1. **Organogram as code, not content.** `Institute_Organogram.md` (Mermaid) is documentation and cannot be queried, so the hierarchy was modelled in `src/lib/organogram.ts` as a typed tree (`GOVERNANCE / EXECUTIVE / ACADEMIC / ADMINISTRATIVE / FUNCTIONAL`) covering the Director's office, all Deans, the Registrar's two Deputy Registrars, every functional section beneath them, and the nine schools/centres with their faculty bodies. Published mailboxes were carried over verbatim.
+2. **Data custodianship on the unit.** Each unit declares `dataScopes` drawn from a catalogue of 28 requestable items (`src/lib/data-catalogue.ts`, grouped by NIRF parameter: TLR / RPC / GO / OI / PR / Institutional). This single mapping drives both directions of the composer - selecting sections suggests the data they own, and each section's request is narrowed to the items it actually holds.
+3. **File-backed store behind a repository module.** Postgres is not provisioned yet, so all workflow state persists to `.data/portal-store.json` through `src/lib/server/store.ts` with a serialised read-modify-write queue and atomic renames. Mirrored Prisma models (`OrgUnit`, `NodalOfficer`, `DataRequest`, `PortalAccessGrant`, `ProofUpload`) were added to the schema so the migration replaces only that one module.
+4. **Roster seeded from the organogram.** On first run the officer roster is populated from the mailboxes published in the organogram as `INVITED` records, so the admin starts from real institute contacts, and sections with no officer are surfaced as explicit coverage warnings before dispatch.
+5. **Access provisioning as a side effect of dispatch.** Sending a request issues one single-purpose grant per (officer, section, request). Only the SHA-256 digest of the token is stored, verification is constant-time, links carry a TTL (default 45 days), a reminder revokes and rotates the previous link, and closing a request or removing an officer revokes every outstanding grant. Uploads are scoped server-side to the grant's own section and data items, extension-checked against the catalogue, size-capped at 25 MB and checksummed for audit.
+6. **No new dependencies for email.** Instead of adding an SMTP client, the mailer posts to the Resend HTTP API when `RESEND_API_KEY` is present and otherwise writes rendered messages to `.data/outbox/`, reporting them as `SIMULATED`. Dispatch is therefore fully exercisable in development, and the delivery log records the transport outcome per recipient.
+
+**Files Impacted:**
+- `src/lib/organogram.ts`, `src/lib/data-catalogue.ts`, `src/lib/types.ts` (Domain model)
+- `src/lib/server/{store,access,mailer,dispatch,coverage,http}.ts` (Workflow services)
+- `src/app/api/{organogram,nodal-officers,data-requests,portal}/**` (Route handlers)
+- `src/components/organogram/OrgTree.tsx` (Reusable selectable hierarchy)
+- `src/app/(dashboard)/admin/{organogram,nodal-officers,data-collection,data-requests}/**` (Admin UI)
+- `src/app/portal/[token]/**` (Restricted upload portal)
+- `src/components/DashboardLayout.tsx`, `prisma/schema.prisma`, `.env.example`, `.gitignore`, `README.md`

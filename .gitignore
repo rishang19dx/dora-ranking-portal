@@ -20,5 +20,7 @@ backend/venv/
 *.sqlite3
 .pytest_cache/
 backend/media/
+backend/staticfiles/
 frontend/dist/
+
 

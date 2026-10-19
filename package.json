@@ -5,6 +5,7 @@
   "description": "IIT Mandi DORA Ranking Portal - React SPA + Django REST Framework",
   "scripts": {
     "dev": "./scripts/dev.sh",
+    "deploy": "./scripts/deploy.sh",
     "dev:backend": "cd backend && ./venv/bin/python manage.py runserver 0.0.0.0:8000",
     "dev:frontend": "cd frontend && bun run dev",
     "build": "cd frontend && bun run build",

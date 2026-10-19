@@ -14,3 +14,11 @@ coverage/
 
 # File-backed portal store, proof uploads and local mail outbox
 .data/
+venv/
+.venv/
+backend/venv/
+*.sqlite3
+.pytest_cache/
+backend/media/
+frontend/dist/
+

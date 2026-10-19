@@ -1,0 +1,139 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lastpage}
+
+\definecolor{primary}{RGB}{0, 75, 141}     % Deep Blue
+\definecolor{secondary}{RGB}{204, 85, 0}   % Burnt Orange
+\definecolor{lightbg}{RGB}{245, 247, 250}  % Light background
+
+\hypersetup{colorlinks=true, linkcolor=primary, urlcolor=primary}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small Weekly Work Report -- YashSharma-code}
+\fancyhead[R]{\small dora-ranking-portal}
+\fancyfoot[C]{\small Page \thepage\ of \pageref{LastPage}}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+\begin{document}
+
+{\Large\bfseries Weekly Work Report}\\[4pt]
+{\large\bfseries\color{primary} DORA Ranking Portal -- Nodal Officer Upload UI \& Secure Cache Webhook}\\[6pt]
+\begin{tabular}{@{}ll@{}}
+\textbf{Contributor:} & Yash Sharma (\texttt{yash.sh.aqua@gmail.com} / GitHub: \texttt{YashSharma-code}) \\
+\textbf{Period:} & 26 August 2026 -- 8 September 2026 \\
+\textbf{Repository:} & \url{https://github.com/rishang19dx/dora-ranking-portal} \\
+\textbf{Source commit:} & \texttt{fa507b8} -- \textit{feat: implement nodal officer upload UI and secure cache webhook}
+\end{tabular}
+
+\vspace{0.4cm}
+\section*{Basis of this report (please read)}
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Scope.} Covers the work authored and integrated by Yash Sharma under commit \texttt{fa507b8} (branch \texttt{feature/phase1-updates}), recorded across three updates in \texttt{work.md} and documented in \texttt{decision\_history.md}.
+\item \textbf{Commit record.} All work is contained in commit \texttt{fa507b8}, dated 3 September 2026 at 15:10 IST (19 files changed, +4,581 / $-$636 lines).
+\item \textbf{Baseline integration.} The commit integrates teammate Lokesh's baseline branch (\texttt{origin/custom\_nirf\_n\_organogram}, commit \texttt{9ff3246}), reconciling dependency conflicts and securing the revalidation boundary before implementing new workflow features. Direct delta modifications over the baseline consist of 10 files (+755 / $-$643 lines).
+\item \textbf{Effort allocation.} Total verified effort is \textbf{8.00 hours}, partitioned across Sprint Weeks 3 and 4: baseline integration and type synchronization (3.50 h), cache invalidation security (2.00 h), and the department-scoped nodal upload portal UI (2.50 h). This maintains an average of 4.0 hours/week, well below the 8 hours/week institute guideline.
+\item \textbf{Validation.} The production Next.js build (\texttt{npm run build}) and Python syntax checks passed cleanly with all type, linting, and route configurations satisfied.
+\end{itemize}
+
+\section*{Summary}
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{llrr}
+\toprule
+\textbf{Sprint Week} & \textbf{Dates \& Focus} & \textbf{Files Changed} & \textbf{Effort (h)} \\
+\midrule
+Week 3 & 26 Aug--01 Sep: Baseline integration \& dependency sync (Update 01) & 10 (integrated) & 3.50 \\
+Week 4 & 02 Sep--08 Sep: Cache security \& nodal upload UI (Updates 02 \& 03) & 9 (modified) & 4.50 \\
+\midrule
+\textbf{Total} & \textbf{26 Aug--08 Sep 2026 (Phase 1 Sprint W3--W4)} & \textbf{19} & \textbf{8.00} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{Total verified effort: 8.00 hours across 2 active sprint weeks (average 4.0 h/week). Net code changes authored over teammate baseline: +755 / $-$643 lines. Total commit footprint: +4,581 / $-$636 lines across 19 files.}
+
+\section*{Detailed Breakdown of Work}
+
+\subsection*{Update 01 (26 Aug--01 Sep): Baseline Integration \& Dependency Sync}
+\textbf{Logged Effort:} 3.50 Hours \quad \textbf{Task:} Baseline Integration \& Teammate Sync
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Assessment:} Conducted a detailed architectural evaluation of teammate Lokesh's NIRF API and organogram branch (\texttt{origin/custom\_nirf\_n\_organogram}, commit \texttt{9ff3246}), determining the necessity to harden cache invalidation security boundaries prior to workflow feature development.
+\item \textbf{Integration:} Verified that the existing Next.js build passed, and integrated commit \texttt{9ff3246} cleanly into the working branch.
+\item \textbf{Conflict Resolution:} Successfully resolved merge conflicts in \texttt{package-lock.json} by preserving the local \texttt{@types/react-dom 19.2.5} entry, preventing TypeScript type mismatches in the App Router.
+\item \textbf{Version Control Cleanup:} Removed committed binary bytecode (\texttt{custom\_api\_nirf/\_\_pycache\_\_/app.cpython-312.pyc}) from source control and updated \texttt{.gitignore} to ignore Python cache files permanently.
+\end{itemize}
+
+\subsection*{Update 02 (02--03 Sep): Cache Invalidation Security \& Webhook Hardening}
+\textbf{Logged Effort:} 2.00 Hours \quad \textbf{Task:} Cache Invalidation Security \& Validation
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Security Implementation:} Hardened the dynamic Next.js cache revalidation route (\texttt{src/app/api/revalidate/route.ts}) by enforcing a mandatory shared secret header (\texttt{REVALIDATION\_SECRET}). Unauthenticated requests are immediately rejected with an HTTP 401 response.
+\item \textbf{Scraper Callback Hardening:} Updated the Python FastAPI scraper callback in \texttt{custom\_api\_nirf/app.py} to send the \texttt{REVALIDATION\_SECRET} in request headers, failing explicitly if the secret is not configured in the environment.
+\item \textbf{Configuration Management:} Documented the secret placeholder in \texttt{.env.example} to ensure zero leakage of production credentials into source control.
+\item \textbf{Validation:} Confirmed successful compilation of Next.js production routes and validated Python AST syntax for \texttt{app.py} and \texttt{scraper.py}.
+\end{itemize}
+
+\subsection*{Update 03 (03--08 Sep): Nodal Officer Upload Portal UI \& Form Validation}
+\textbf{Logged Effort:} 2.50 Hours \quad \textbf{Task:} Nodal Officer Upload Portal UI
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{UI Architecture:} Completely replaced the placeholder multi-step wizard in \texttt{src/app/(dashboard)/nodal-officer/submissions/new/page.tsx} (+324 / $-$188 lines) with a production-grade client-side form tailored for department-scoped ranking submissions.
+\item \textbf{Data Collection Fields:} Implemented required form inputs including submission title, NIRF metric category selection (TLR, RPC, GO, OI, PR), structured raw data file upload (\texttt{.xlsx}, \texttt{.csv}), and official institutional proof document upload (\texttt{.pdf}, \texttt{.docx}).
+\item \textbf{Workflow Compliance:} Implemented client-side validation, form submission intercept (\texttt{preventDefault()}), and persistent \texttt{PENDING} confirmation state conforming to the institute's Maker-Checker audit workflow.
+\item \textbf{UI/UX \& Documentation:} Utilized \texttt{lucide-react} icons with clean white card layouts and subtle borders, recorded decisions in \texttt{decision\_history.md}, and verified \texttt{npm run build} passed cleanly.
+\end{itemize}
+
+\section*{Files Changed in Commit \texttt{fa507b8}}
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{p{6.8cm} p{1.6cm} p{2.2cm} p{4.2cm}}
+\toprule
+\textbf{File} & \textbf{Status} & \textbf{Lines Changed} & \textbf{Purpose} \\
+\midrule
+\texttt{nodal-officer/submissions/new/page.tsx} & Modified & +324 / $-$188 & Department-scoped upload form UI \\
+\texttt{src/app/api/revalidate/route.ts} & Modified & +9 / $-$2 & Shared secret cache authorization \\
+\texttt{custom\_api\_nirf/app.py} & Modified & +10 / $-$4 & Scraper webhook auth token injection \\
+\texttt{.env.example} & Modified & +3 / $-$0 & \texttt{REVALIDATION\_SECRET} config \\
+\texttt{.gitignore} & Modified & +2 / $-$0 & Exclude Python bytecode \\
+\texttt{decision\_history.md} & Modified & +16 / $-$0 & Architectural decision log \\
+\texttt{work.md} & Modified & +39 / $-$0 & Logged hours and task updates \\
+\texttt{package-lock.json} & Modified & +994 / $-$994 & React DOM type conflict resolution \\
+\texttt{custom\_api\_nirf/\_\_pycache\_\_/...} & Removed & Binary & Cleaned repository hygiene \\
+\midrule
+\multicolumn{4}{l}{\textit{Integrated from baseline branch \texttt{origin/custom\_nirf\_n\_organogram} (10 files):}} \\
+\texttt{Institute\_Organogram.md} & Integrated & 113 lines & Mermaid organogram source \\
+\texttt{Integration\_Docs.md} & Integrated & 59 lines & Caching architecture docs \\
+\texttt{custom\_api\_nirf/data/*.json} (6 files) & Integrated & 3,530 lines & NIRF 2024 \& 2025 datasets \\
+\texttt{custom\_api\_nirf/scraper.py} & Integrated & 81 lines & NIRF automated data scraper \\
+\texttt{custom\_api\_nirf/requirements.txt} & Integrated & 4 lines & Python dependencies \\
+\texttt{src/utils/api.ts} & Integrated & 49 lines & Client NIRF fetcher with cache tags \\
+\midrule
+\textbf{Total Commit Footprint} & & \textbf{+4,581 / $-$636} & \textbf{19 files changed} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Technical Decisions Logged}
+\begin{enumerate}[leftmargin=1.6em, itemsep=2pt]
+\item \textbf{Secure Revalidation Boundary:} Enforcing a pre-shared secret on the ISR revalidation endpoint prevents unauthorized cache busting attacks against the live application.
+\item \textbf{Focused Departmental Form:} Replaced an overly complex generic wizard with a streamlined submission form providing explicit file validation and visual clarity for nodal officers.
+\item \textbf{Maker-Checker Alignment:} Modeled submission states with an immediate \texttt{PENDING} state confirmation to reflect the institute's verification pipeline.
+\item \textbf{Clean Dependency \& Version Control Hygiene:} Purging compiled Python binaries and pinning matching type declarations ensured reliable Next.js builds across development environments.
+\end{enumerate}
+
+\end{document}

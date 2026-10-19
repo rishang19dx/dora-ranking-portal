@@ -1,0 +1,754 @@
+{
+  "id": "iit-mandi",
+  "name": "Indian Institute of Technology Mandi",
+  "shortName": "IIT Mandi",
+  "type": "GOVERNANCE",
+  "head": "Institute",
+  "description": "Root of the institute organogram. All ranking data rolls up to this node.",
+  "dataScopes": [],
+  "children": [
+    {
+      "id": "standing-committee",
+      "name": "Institute Standing Committee (Recommendations to Board of Governors)",
+      "shortName": "ISC",
+      "type": "GOVERNANCE",
+      "head": "Chairperson, Standing Committee",
+      "description": "Recommends institute-level policy to the Board of Governors.",
+      "dataScopes": [
+        "governance-records"
+      ]
+    },
+    {
+      "id": "director",
+      "name": "Director's Office",
+      "shortName": "Director",
+      "type": "EXECUTIVE",
+      "head": "Director",
+      "email": "director@iitmandi.ac.in",
+      "description": "Head of the institute. Approving authority for all ranking submissions.",
+      "dataScopes": [
+        "governance-records",
+        "institute-profile"
+      ],
+      "children": [
+        {
+          "id": "execom",
+          "name": "Institute ExeCom (All Deans and Registrar)",
+          "shortName": "ExeCom",
+          "type": "EXECUTIVE",
+          "head": "Institute Executive Committee",
+          "description": "Executive committee of all Deans and the Registrar.",
+          "dataScopes": [
+            "governance-records"
+          ]
+        },
+        {
+          "id": "audit",
+          "name": "Audit",
+          "type": "FUNCTIONAL",
+          "head": "Internal Audit Officer",
+          "description": "Internal and statutory audit of institute accounts.",
+          "dataScopes": [
+            "audited-statements"
+          ]
+        },
+        {
+          "id": "recruitment-cell",
+          "name": "Recruitment Cell (under Deputy Registrar I)",
+          "shortName": "Recruitment",
+          "type": "ADMINISTRATIVE",
+          "head": "Deputy Registrar I",
+          "description": "Faculty and staff recruitment, sanctioned vs filled positions.",
+          "dataScopes": [
+            "sanctioned-positions",
+            "faculty-roster"
+          ]
+        },
+        {
+          "id": "dean-infra",
+          "name": "Dean, Infrastructure & Services",
+          "shortName": "Infrastructure",
+          "type": "ADMINISTRATIVE",
+          "head": "Dean, Infrastructure & Services",
+          "email": "deaninfra@iitmandi.ac.in",
+          "description": "Campus infrastructure, services and utilities.",
+          "dataScopes": [
+            "campus-infrastructure",
+            "capital-expenditure"
+          ],
+          "children": [
+            {
+              "id": "estate-works",
+              "name": "Estate & Works",
+              "type": "FUNCTIONAL",
+              "head": "Superintending Engineer",
+              "description": "Built-up area, laboratories, classrooms and ongoing works.",
+              "dataScopes": [
+                "campus-infrastructure",
+                "capital-expenditure"
+              ]
+            },
+            {
+              "id": "medical-services",
+              "name": "Medical Services",
+              "type": "FUNCTIONAL",
+              "head": "Senior Medical Officer",
+              "description": "Health centre facilities and medical support for students and staff.",
+              "dataScopes": [
+                "campus-infrastructure",
+                "student-facilities"
+              ]
+            },
+            {
+              "id": "it-services",
+              "name": "IT Services & Communications",
+              "shortName": "IT Services",
+              "type": "FUNCTIONAL",
+              "head": "Head, Computer Centre",
+              "description": "Network, computing facilities, digital learning infrastructure.",
+              "dataScopes": [
+                "campus-infrastructure",
+                "digital-learning"
+              ]
+            },
+            {
+              "id": "transport",
+              "name": "Transport",
+              "type": "FUNCTIONAL",
+              "head": "Transport Officer",
+              "description": "Institute transport fleet and campus mobility.",
+              "dataScopes": [
+                "campus-infrastructure"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dean-academics",
+          "name": "Dean, Academics",
+          "shortName": "Academics",
+          "type": "ACADEMIC",
+          "head": "Dean, Academics",
+          "email": "deanacad@iitmandi.ac.in",
+          "description": "Admissions, academic programmes, examinations and the library.",
+          "dataScopes": [
+            "student-intake",
+            "admissions",
+            "graduation-outcomes",
+            "digital-learning"
+          ],
+          "children": [
+            {
+              "id": "jee-gate-admissions",
+              "name": "JEE, GATE & Admissions",
+              "shortName": "Admissions",
+              "type": "FUNCTIONAL",
+              "head": "Chairperson, Admissions",
+              "description": "Entrance examinations, seat matrix, regional and social diversity of intake.",
+              "dataScopes": [
+                "admissions",
+                "student-intake",
+                "diversity"
+              ]
+            },
+            {
+              "id": "academic-courses-research",
+              "name": "Academic Courses and Research",
+              "shortName": "Academic Section",
+              "type": "FUNCTIONAL",
+              "head": "Assistant Registrar (Academics)",
+              "description": "Programme structure, examination results, graduation outcomes.",
+              "dataScopes": [
+                "graduation-outcomes",
+                "student-intake",
+                "phd-awarded"
+              ]
+            },
+            {
+              "id": "library",
+              "name": "Library",
+              "type": "FUNCTIONAL",
+              "head": "Librarian",
+              "description": "Library holdings, e-resource subscriptions and annual library expenditure.",
+              "dataScopes": [
+                "library-resources",
+                "operational-expenditure"
+              ]
+            },
+            {
+              "id": "shss",
+              "name": "School of Humanities and Social Sciences",
+              "shortName": "SHSS",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SHSS",
+              "email": "shssoffice@iitmandi.ac.in",
+              "description": "School faculty body - academic programmes, faculty roster and research output for SHSS.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school"
+              ],
+              "children": [
+                {
+                  "id": "shss-faculty-body",
+                  "name": "School Faculty Body",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SHSS",
+                  "description": "Faculty of SHSS. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "sbs",
+              "name": "School of Biosciences and Bioengineering",
+              "shortName": "SBS",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SBS",
+              "email": "chairsbs@iitmandi.ac.in",
+              "description": "School faculty body - academic programmes, faculty roster and research output for SBS.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school"
+              ],
+              "children": [
+                {
+                  "id": "sbs-faculty-body",
+                  "name": "School Faculty Body",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SBS",
+                  "description": "Faculty of SBS. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "scee",
+              "name": "School of Civil and Environmental Engineering",
+              "shortName": "SCEE",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SCEE",
+              "email": "chairscee@iitmandi.ac.in",
+              "description": "School faculty body - academic programmes, faculty roster and research output for SCEE.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school"
+              ],
+              "children": [
+                {
+                  "id": "scee-faculty-body",
+                  "name": "School Faculty Body",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SCEE",
+                  "description": "Faculty of SCEE. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "se",
+              "name": "School of Engineering",
+              "shortName": "SE",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SE",
+              "description": "School faculty body - academic programmes, faculty roster and research output for SE.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school"
+              ],
+              "children": [
+                {
+                  "id": "se-faculty-body",
+                  "name": "School Faculty Body",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SE",
+                  "description": "Faculty of SE. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "smss",
+              "name": "School of Mathematical and Statistical Sciences",
+              "shortName": "SMSS",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SMSS",
+              "email": "chairsmss@iitmandi.ac.in",
+              "description": "School faculty body - academic programmes, faculty roster and research output for SMSS.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school"
+              ],
+              "children": [
+                {
+                  "id": "smss-faculty-body",
+                  "name": "School Faculty Body",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SMSS",
+                  "description": "Faculty of SMSS. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "som",
+              "name": "School of Management",
+              "shortName": "SoM",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SoM",
+              "email": "chairsom@iitmandi.ac.in",
+              "description": "School faculty body - academic programmes, faculty roster and research output for SoM.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school"
+              ],
+              "children": [
+                {
+                  "id": "som-faculty-body",
+                  "name": "School Faculty Body",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SoM",
+                  "description": "Faculty of SoM. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "scene",
+              "name": "School of Chemical Sciences and Energy Engineering",
+              "shortName": "SCENE",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SCENE",
+              "email": "chair_scene@iitmandi.ac.in",
+              "description": "School faculty body - academic programmes, faculty roster and research output for SCENE.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school"
+              ],
+              "children": [
+                {
+                  "id": "scene-faculty-body",
+                  "name": "School Faculty Body",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SCENE",
+                  "description": "Faculty of SCENE. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "cqst",
+              "name": "Centre for Quantum Science and Technologies",
+              "shortName": "CQST",
+              "type": "ACADEMIC",
+              "head": "Coordinator, CQST",
+              "email": "chaircqst@iitmandi.ac.in",
+              "description": "Centre faculty body - academic programmes, faculty roster and research output for CQST.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school"
+              ],
+              "children": [
+                {
+                  "id": "cqst-faculty-body",
+                  "name": "Centre Faculty Body",
+                  "type": "ACADEMIC",
+                  "head": "Centre Faculty Body, CQST",
+                  "description": "Faculty of CQST. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "amrc",
+              "name": "Advanced Materials Research Centre",
+              "shortName": "AMRC",
+              "type": "ACADEMIC",
+              "head": "Coordinator, AMRC",
+              "email": "amrc@iitmandi.ac.in",
+              "description": "Centre faculty body - academic programmes, faculty roster and research output for AMRC.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school"
+              ],
+              "children": [
+                {
+                  "id": "amrc-faculty-body",
+                  "name": "Centre Faculty Body",
+                  "type": "ACADEMIC",
+                  "head": "Centre Faculty Body, AMRC",
+                  "description": "Faculty of AMRC. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dean-students",
+          "name": "Dean, Student Affairs",
+          "shortName": "Student Affairs",
+          "type": "ADMINISTRATIVE",
+          "head": "Dean, Student Affairs",
+          "email": "deanstudents@iitmandi.ac.in",
+          "description": "Student life, hostels, sports, alumni and international students.",
+          "dataScopes": [
+            "student-facilities",
+            "alumni-contribution",
+            "diversity"
+          ],
+          "children": [
+            {
+              "id": "cultural-activities",
+              "name": "Cultural Activities",
+              "type": "FUNCTIONAL",
+              "head": "Faculty In-charge, Cultural Affairs",
+              "description": "Cultural festivals, clubs and student societies.",
+              "dataScopes": [
+                "student-facilities"
+              ]
+            },
+            {
+              "id": "sports",
+              "name": "Sports",
+              "type": "FUNCTIONAL",
+              "head": "Faculty In-charge, Sports",
+              "description": "Sports infrastructure, participation and achievements.",
+              "dataScopes": [
+                "student-facilities"
+              ]
+            },
+            {
+              "id": "hostels",
+              "name": "Hostels",
+              "type": "FUNCTIONAL",
+              "head": "Chief Warden",
+              "description": "Hostel capacity, occupancy and residential facilities.",
+              "dataScopes": [
+                "student-facilities",
+                "campus-infrastructure"
+              ]
+            },
+            {
+              "id": "foreign-students",
+              "name": "Foreign Students Office",
+              "shortName": "International",
+              "type": "FUNCTIONAL",
+              "head": "Advisor, International Relations",
+              "description": "International student enrolment, exchange programmes and MoUs.",
+              "dataScopes": [
+                "diversity",
+                "international-outlook"
+              ]
+            },
+            {
+              "id": "alumni-affairs",
+              "name": "Alumni Affairs",
+              "type": "FUNCTIONAL",
+              "head": "Head, Alumni Relations",
+              "description": "Alumni network, endowments and financial contributions.",
+              "dataScopes": [
+                "alumni-contribution"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dean-sric",
+          "name": "Dean, Sponsored Research & Industrial Consultancy",
+          "shortName": "SRIC",
+          "type": "ACADEMIC",
+          "head": "Dean, SRIC",
+          "email": "deansric@iitmandi.ac.in",
+          "description": "Sponsored research, consultancy, IPR and entrepreneurship.",
+          "dataScopes": [
+            "sponsored-projects",
+            "consultancy",
+            "patents",
+            "entrepreneurship"
+          ],
+          "children": [
+            {
+              "id": "sponsored-research",
+              "name": "Sponsored Research",
+              "type": "FUNCTIONAL",
+              "head": "Associate Dean, Sponsored Research",
+              "description": "Externally funded research projects and grant receipts.",
+              "dataScopes": [
+                "sponsored-projects"
+              ]
+            },
+            {
+              "id": "consultancy",
+              "name": "Consultancy",
+              "type": "FUNCTIONAL",
+              "head": "Associate Dean, Consultancy",
+              "description": "Industry consultancy projects and earnings.",
+              "dataScopes": [
+                "consultancy"
+              ]
+            },
+            {
+              "id": "ipr-entrepreneurship",
+              "name": "IPR & Entrepreneurship Policy",
+              "shortName": "IPR & Startups",
+              "type": "FUNCTIONAL",
+              "head": "Head, IPR Cell",
+              "description": "Patents filed, published and granted; incubated startups.",
+              "dataScopes": [
+                "patents",
+                "entrepreneurship"
+              ]
+            },
+            {
+              "id": "continuing-education",
+              "name": "Continuing Education",
+              "type": "FUNCTIONAL",
+              "head": "Head, Continuing Education",
+              "description": "Outreach programmes, executive education and short courses.",
+              "dataScopes": [
+                "outreach-programmes"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dean-finance",
+          "name": "Dean, Finance & Purchase",
+          "shortName": "Finance",
+          "type": "ADMINISTRATIVE",
+          "head": "Dean, Finance & Purchase",
+          "email": "deanfinance@iitmandi.ac.in",
+          "description": "Institute budget, purchases and accounts.",
+          "dataScopes": [
+            "capital-expenditure",
+            "operational-expenditure",
+            "audited-statements"
+          ],
+          "children": [
+            {
+              "id": "budget",
+              "name": "Budget",
+              "type": "FUNCTIONAL",
+              "head": "Deputy Registrar (Finance)",
+              "description": "Annual budget allocation and utilisation.",
+              "dataScopes": [
+                "capital-expenditure",
+                "operational-expenditure"
+              ]
+            },
+            {
+              "id": "stores-purchase",
+              "name": "Stores & Purchase",
+              "type": "FUNCTIONAL",
+              "head": "Assistant Registrar (Stores & Purchase)",
+              "description": "Equipment procurement and capital asset register.",
+              "dataScopes": [
+                "capital-expenditure"
+              ]
+            },
+            {
+              "id": "accounts",
+              "name": "Accounts",
+              "type": "FUNCTIONAL",
+              "head": "Assistant Registrar (Accounts)",
+              "description": "Audited financial statements and expenditure heads.",
+              "dataScopes": [
+                "audited-statements",
+                "operational-expenditure"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dean-faculty",
+          "name": "Dean, Faculty",
+          "shortName": "Faculty Affairs",
+          "type": "ADMINISTRATIVE",
+          "head": "Dean, Faculty",
+          "email": "deanfaculty@iitmandi.ac.in",
+          "description": "All service matters and facilities for faculty.",
+          "dataScopes": [
+            "faculty-roster",
+            "sanctioned-positions"
+          ],
+          "children": [
+            {
+              "id": "faculty-service-matters",
+              "name": "Faculty Service Matters & Facilities",
+              "shortName": "Faculty Services",
+              "type": "FUNCTIONAL",
+              "head": "Assistant Registrar (Faculty Affairs)",
+              "description": "Faculty appointments, qualifications, experience and retention records.",
+              "dataScopes": [
+                "faculty-roster",
+                "sanctioned-positions"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "registrar",
+          "name": "Registrar",
+          "type": "ADMINISTRATIVE",
+          "head": "Registrar",
+          "email": "registrar@iitmandi.ac.in",
+          "description": "Chief administrative officer of the institute.",
+          "dataScopes": [
+            "governance-records",
+            "institute-profile"
+          ],
+          "children": [
+            {
+              "id": "deputy-registrar-1",
+              "name": "Deputy Registrar I",
+              "shortName": "DR-I",
+              "type": "ADMINISTRATIVE",
+              "head": "Deputy Registrar I",
+              "description": "Establishment matters for non-teaching employees.",
+              "dataScopes": [
+                "non-teaching-staff"
+              ],
+              "children": [
+                {
+                  "id": "non-teaching-service",
+                  "name": "Service Matters, Non-teaching Employees",
+                  "shortName": "Establishment",
+                  "type": "FUNCTIONAL",
+                  "head": "Assistant Registrar (Establishment)",
+                  "description": "Non-teaching staff strength, sanctioned and filled posts.",
+                  "dataScopes": [
+                    "non-teaching-staff",
+                    "sanctioned-positions"
+                  ],
+                  "children": [
+                    {
+                      "id": "rti-legal",
+                      "name": "RTI, Parliament Questions & Legal Services",
+                      "shortName": "RTI & Legal",
+                      "type": "FUNCTIONAL",
+                      "head": "Public Information Officer",
+                      "description": "External queries, RTI responses and legal compliance records.",
+                      "dataScopes": [
+                        "governance-records"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "deputy-registrar-2",
+              "name": "Deputy Registrar II",
+              "shortName": "DR-II",
+              "type": "ADMINISTRATIVE",
+              "head": "Deputy Registrar II",
+              "description": "Statutory bodies and institute public relations.",
+              "dataScopes": [
+                "governance-records"
+              ],
+              "children": [
+                {
+                  "id": "statutory-meetings",
+                  "name": "Meetings of BoG, Finance Committee & Senate",
+                  "shortName": "Statutory Bodies",
+                  "type": "FUNCTIONAL",
+                  "head": "Assistant Registrar (Council Affairs)",
+                  "description": "Minutes and resolutions of statutory bodies.",
+                  "dataScopes": [
+                    "governance-records"
+                  ],
+                  "children": [
+                    {
+                      "id": "public-relations",
+                      "name": "Public Relations & Guest Facilities",
+                      "shortName": "Public Relations",
+                      "type": "FUNCTIONAL",
+                      "head": "Public Relations Officer",
+                      "description": "Institute perception, media presence and visitor facilities.",
+                      "dataScopes": [
+                        "perception",
+                        "institute-profile"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

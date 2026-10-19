@@ -1,0 +1,446 @@
+[
+  {
+    "id": "student-intake",
+    "label": "Student Strength & Intake (UG / PG / PhD)",
+    "group": "TLR",
+    "frameworks": [
+      "NIRF",
+      "QS",
+      "NAAC"
+    ],
+    "description": "Sanctioned intake, actual admissions and total enrolment for each programme.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "admissions",
+    "label": "Admissions & Entrance Examination Data",
+    "group": "TLR",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "JEE / GATE seat matrix, opening-closing ranks and category-wise allotment.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "faculty-roster",
+    "label": "Faculty Roster & Qualifications",
+    "group": "TLR",
+    "frameworks": [
+      "NIRF",
+      "QS",
+      "THE",
+      "NAAC"
+    ],
+    "description": "Faculty list with designation, PhD status, experience and date of joining.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "sanctioned-positions",
+    "label": "Sanctioned vs Filled Positions",
+    "group": "TLR",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Approved posts against positions filled, for faculty and staff cadres.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "non-teaching-staff",
+    "label": "Non-teaching Staff Strength",
+    "group": "TLR",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Technical and administrative staff on roll, by cadre.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "capital-expenditure",
+    "label": "Capital Expenditure",
+    "group": "TLR",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Three-year capital spend on land, buildings, laboratories and equipment.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "operational-expenditure",
+    "label": "Operational Expenditure",
+    "group": "TLR",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Three-year operational spend including salaries, maintenance and seminars.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "library-resources",
+    "label": "Library Holdings & E-resources",
+    "group": "TLR",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Volumes, journal and database subscriptions with annual expenditure.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "campus-infrastructure",
+    "label": "Campus Infrastructure & Facilities",
+    "group": "TLR",
+    "frameworks": [
+      "NIRF",
+      "THE",
+      "NAAC"
+    ],
+    "description": "Built-up area, classrooms, laboratories, hostels and medical facilities.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "digital-learning",
+    "label": "Digital & Online Learning Resources",
+    "group": "TLR",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Smart classrooms, LMS usage, MOOC content and network capacity.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "publications",
+    "label": "Publications & Citations (WoS / Scopus)",
+    "group": "RPC",
+    "frameworks": [
+      "NIRF",
+      "QS",
+      "THE"
+    ],
+    "description": "Indexed publications with citation counts for the assessment period.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "sponsored-projects",
+    "label": "Sponsored Research Projects & Funding",
+    "group": "RPC",
+    "frameworks": [
+      "NIRF",
+      "THE",
+      "NAAC"
+    ],
+    "description": "Externally funded projects with sanctioned amount and funding agency.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "sponsored-projects-school",
+    "label": "School-wise Research Funding",
+    "group": "RPC",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Project-wise research receipts attributable to the school or centre.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "consultancy",
+    "label": "Consultancy Projects & Earnings",
+    "group": "RPC",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Industry consultancy assignments with earnings received.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "patents",
+    "label": "Patents Filed, Published & Granted",
+    "group": "RPC",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "IPR filings with application numbers and current status.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "entrepreneurship",
+    "label": "Startups & Incubation",
+    "group": "RPC",
+    "frameworks": [
+      "NIRF",
+      "THE"
+    ],
+    "description": "Incubated ventures, funding raised and technology transfers.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "phd-awarded",
+    "label": "PhDs Awarded",
+    "group": "GO",
+    "frameworks": [
+      "NIRF",
+      "QS",
+      "THE"
+    ],
+    "description": "Doctoral degrees awarded with supervisor and thesis details.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "graduation-outcomes",
+    "label": "Graduation & Examination Outcomes",
+    "group": "GO",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Students graduating in stipulated time, with result statistics.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "placement-higher-studies",
+    "label": "Placement, Median Salary & Higher Studies",
+    "group": "GO",
+    "frameworks": [
+      "NIRF",
+      "QS",
+      "NAAC"
+    ],
+    "description": "Placement offers, median annual package and higher-study admissions.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "diversity",
+    "label": "Regional, Gender & Social Diversity",
+    "group": "OI",
+    "frameworks": [
+      "NIRF",
+      "QS",
+      "THE"
+    ],
+    "description": "Student and faculty distribution by state, gender and social category.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF"
+    ]
+  },
+  {
+    "id": "international-outlook",
+    "label": "International Students & Collaborations",
+    "group": "OI",
+    "frameworks": [
+      "NIRF",
+      "QS",
+      "THE"
+    ],
+    "description": "Foreign enrolment, exchange programmes and active international MoUs.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "student-facilities",
+    "label": "Student Facilities, Sports & Cultural Activities",
+    "group": "OI",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Hostel occupancy, sports facilities, clubs and student support services.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "outreach-programmes",
+    "label": "Continuing Education & Outreach",
+    "group": "OI",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Short-term courses, executive programmes and community outreach.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "alumni-contribution",
+    "label": "Alumni Network & Contributions",
+    "group": "PR",
+    "frameworks": [
+      "NIRF",
+      "QS",
+      "NAAC"
+    ],
+    "description": "Registered alumni, endowments and financial contributions received.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "perception",
+    "label": "Peer Perception & Media Presence",
+    "group": "PR",
+    "frameworks": [
+      "NIRF",
+      "QS",
+      "THE"
+    ],
+    "description": "Employer and academic peer references, media coverage, public engagement.",
+    "proofFormats": [
+      "XLSX",
+      "CSV",
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "institute-profile",
+    "label": "Institute Profile & Statutory Details",
+    "group": "INSTITUTIONAL",
+    "frameworks": [
+      "NIRF",
+      "QS",
+      "THE",
+      "NAAC"
+    ],
+    "description": "Establishment details, approvals, accreditation status and institute profile.",
+    "proofFormats": [
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "governance-records",
+    "label": "Governance & Statutory Body Records",
+    "group": "INSTITUTIONAL",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Minutes and resolutions of BoG, Finance Committee and Senate.",
+    "proofFormats": [
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "audited-statements",
+    "label": "Audited Financial Statements",
+    "group": "INSTITUTIONAL",
+    "frameworks": [
+      "NIRF",
+      "NAAC"
+    ],
+    "description": "Audited annual accounts and utilisation certificates.",
+    "proofFormats": [
+      "PDF",
+      "DOCX"
+    ]
+  }
+]

@@ -1,5 +1,6 @@
 \documentclass[11pt]{article}
 \usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage[table]{xcolor}
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{longtable}
@@ -11,11 +12,17 @@
 \usepackage{ragged2e}
 \usepackage{lastpage}
 \usepackage{pgfgantt}
+\usepackage{mathpazo}
+\usepackage[scaled=0.92]{helvet}
 
-\hypersetup{colorlinks=true, linkcolor=blue!40!black, urlcolor=blue!40!black}
+\definecolor{primary}{RGB}{0, 75, 141}     % Deep Blue
+\definecolor{secondary}{RGB}{204, 85, 0}   % Burnt Orange
+\definecolor{lightbg}{RGB}{245, 247, 250}  % Light background
 
-\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{0.6em}{}
-\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+\hypersetup{colorlinks=true, linkcolor=primary, urlcolor=primary}
+
+\titleformat{\section}{\normalfont\Large\bfseries\color{primary}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries\color{secondary}}{\thesubsection}{0.6em}{}
 \titlespacing*{\section}{0pt}{18pt}{8pt}
 \titlespacing*{\subsection}{0pt}{12pt}{5pt}
 
@@ -38,15 +45,15 @@
 \thispagestyle{empty}
 \begin{center}
 \vspace*{1.0cm}
-{\large\bfseries IIT Mandi}\\[4pt]
-{\normalsize Office of the Dean of Resources \& Alumni Affairs (DORA)}\\[1.8cm]
-{\Large\bfseries Project Proposal and Working Agreement}\\[10pt]
-{\huge\bfseries Automated Ranking Portal}\\[6pt]
-{\Large\bfseries (ARP)}\\[10pt]
+{\large\bfseries\color{primary} IIT Mandi}\\[4pt]
+{\normalsize\color{darkgray} Office of the Dean of Resources \& Alumni Affairs (DORA)}\\[1.8cm]
+{\Large\bfseries\color{secondary} Project Proposal and Working Agreement}\\[10pt]
+{\huge\bfseries\color{primary} Automated Ranking Portal}\\[6pt]
+{\Large\bfseries\color{primary} (ARP)}\\[10pt]
 {\large\bfseries An Institutional Ranking Data Aggregation, Processing, and Analytics Platform}\\[1.2cm]
-\rule{0.85\textwidth}{0.4pt}\\[10pt]
+{\color{primary}\rule{0.85\textwidth}{1.5pt}}\\[10pt]
 {\normalsize A proposal submitted for consideration and approval by the\\ Office of the Dean of Resources \& Alumni Affairs (DORA), IIT Mandi}\\[10pt]
-\rule{0.85\textwidth}{0.4pt}
+{\color{primary}\rule{0.85\textwidth}{1.5pt}}
 \vspace{1.2cm}
 
 \begin{minipage}[t]{0.48\textwidth}
@@ -82,9 +89,9 @@ Because data arrives via email in multimodal formats (Excel sheets, Word documen
 
 The Platform covers three connected areas of DORA's work:
 \begin{enumerate}[leftmargin=1.6em, itemsep=3pt]
-\item \textbf{Data Collection and Governance}: Department nodal officer management, multimodal document ingestion via email/upload, secure document repositories for proofs, and automated deadline tracking.
+\item \textbf{Data Collection and Governance}: Department nodal officer management, multimodal document ingestion via the portal, secure document repositories for proofs, and automated deadline tracking.
 \item \textbf{Processing and Validation}: Automated data unification, AI-assisted error spotting, maker-checker correction workflows, and audit trails for all data modifications.
-\item \textbf{Export and Analytics}: Agency-specific template generation (NIRF, QS, THE), executive dashboards for historical tracking, and department-wise performance scorecards.
+\item \textbf{Export and Analytics}: Agency-specific template generation (NIRF, QS, THE), executive dashboards for historical tracking, and department-wise contribution/performance analytics.
 \end{enumerate}
 
 While the idea is simple to state, the underlying logic involves substantial data schema unification and pipeline complexity (Section~\ref{sec:scope}), so the Platform is best understood as an extensive data governance and compliance engine coupled with a leadership-facing analytics web application. This document also serves as a working agreement defining scope, reporting, review, and compensation for the Development Team.
@@ -112,15 +119,15 @@ The scope below reflects the current high-level understanding of requirements. A
 
 \subsection{Flexible Data Ingestion Engine}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item Automated integration with a designated institutional Gmail account to securely and continuously fetch incoming data submissions.
-\item Support for varied data submission formats depending on the specific ranking requirement, including Google Forms, Excel spreadsheets, unstructured Word documents, and PDFs.
+\item Secure submission of all department data exclusively through the portal by authenticated Nodal Officers, eliminating dependency on email-based collection.
+\item Submission of required data through Platform-specific web forms and standardised Excel templates, with supporting documents uploaded alongside as evidence.
 \item Conversion of multimodal raw data into a single, unified internal schema that maps institutional metrics across different ranking methodologies.
 \end{itemize}
 
 \subsection{Secure Document Proof Repository}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item A centralized, searchable repository to store all raw documents submitted by departments (e.g., scanned proof of research grants, faculty awards).
-\item Document linkage to specific data points (e.g., clicking on a ``Sponsored Research Revenue'' figure allows the auditor to instantly view the attached grant sanction PDF).
+\item A centralized, searchable repository to store all raw documents submitted by departments (e.g., scanned proof of research grants, faculty awards) ensuring permanent evidence linkage.
+\item Strict data provenance mapping: every single data point must be permanently linked to its source proof (e.g., clicking on a ``Sponsored Research Revenue'' figure allows the auditor to instantly trace its origin and view the exact grant sanction PDF).
 \item Document versioning to ensure historical records are maintained when a department submits updated or corrected files.
 \end{itemize}
 
@@ -161,6 +168,7 @@ The scope below reflects the current high-level understanding of requirements. A
 \item Heuristic and AI-driven analysis comparing current year submissions against historical trends to detect statistical anomalies.
 \item Example: Automatically flagging a department if their reported research publications drop by 80\% compared to the previous year, prompting administrative review.
 \item Severity grading of flags (e.g., Critical vs. Warning) to help administrators prioritize data auditing efforts.
+\item \textbf{Reliability Principle and Grounding:} The AI layer is an enhancement, never a dependency. The system is designed to work safely with sensible fallbacks if AI services are unavailable. All AI flags must be grounded in approved portal data, avoiding hallucinated policies or numbers.
 \end{itemize}
 
 \subsection{Maker-Checker Workflow for Data Corrections}
@@ -172,7 +180,7 @@ The scope below reflects the current high-level understanding of requirements. A
 
 \subsection{Audit Log and Data Change Tracking}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item Immutable recording of every create, edit, approve, reject, and export action across the platform, including the old value, new value, actor, and timestamp.
+\item Immutable recording of every create, edit, approve, reject, and export action across the platform, including the old value, new value, actor, and timestamp, guaranteeing complete data provenance.
 \item Dedicated interface for internal auditors to filter, search, and export the audit log to ensure data integrity prior to external submission.
 \end{itemize}
 
@@ -209,15 +217,15 @@ The scope below reflects the current high-level understanding of requirements. A
 \item Visual gap analysis highlighting metrics where the institute is falling behind peer benchmarks or its own historical averages.
 \end{itemize}
 
-\subsection{Department-wise Performance Scorecards}
+\subsection{Department-wise Contribution/Performance Analytics}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item Granular dashboards that rank internal departments based on their contribution to the overall institutional score (e.g., which department brought in the most research funding or had the highest placement rate).
-\item Ability for department heads to view their own scorecard to identify areas of excellence and areas requiring improvement.
+\item Granular dashboards that analyze internal department contributions to the overall institutional score (e.g., which department brought in the most research funding or had the highest placement rate).
+\item Ability for department heads to view their own analytics to identify areas of excellence and areas requiring improvement.
 \end{itemize}
 
 \subsection{Automated Briefing Generation}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item Ability to generate a standardized, boardroom-ready PDF briefing detailing the year's ranking submission statistics, major discrepancies caught by the system, and projected ranking outcomes.
+\item Ability to generate a standardized, boardroom-ready PDF briefing detailing the year's ranking submission statistics, major discrepancies caught by the system, and projected ranking outcomes (which are scenario-based estimates only).
 \end{itemize}
 
 \subsection*{Part E --- Cross-Cutting Requirements}
@@ -229,7 +237,7 @@ The Platform will support strict role-based access control (RBAC) as follows:
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
 \item \textbf{Admin/Staff (Data Officer):} Full access to trigger ingestion, review and approve Nodal Officer submissions, initiate correction requests, and generate agency exports.
 \item \textbf{Department Nodal Officer:} Restricted access to upload data/proofs for their specific department only, and to respond to assigned correction requests. Cannot view other departments' raw data.
-\item \textbf{Leadership/Director:} Read-only access to all executive dashboards, scorecards, and final generated reports.
+\item \textbf{Leadership/Director:} Read-only access to all executive dashboards, analytics, and final generated reports.
 \item \textbf{Auditor:} Read-only access to raw proofs, the audit log, and historical submission trails to ensure compliance.
 \end{itemize}
 
@@ -251,17 +259,30 @@ To build and operate the Platform, the Development Team will require the followi
 \item Historical data entry or digitization of unstructured paper records from previous decades.
 \end{itemize}
 
-Any new feature or change requested by DORA beyond the scope above will be evaluated for feasibility on the spot, at the time it is raised. If accepted for inclusion, the Team and DORA will proceed accordingly, and will mutually revise the project timeline (Section~\ref{sec:timeline}) and, where applicable, compensation (Section~\ref{sec:compensation}) to reflect the additional work.
+Any new feature or change requested by DORA beyond the scope above will be evaluated for feasibility. If accepted for inclusion, any change in scope, cost, or timeline shall require written prior approval from DORA before implementation begins.
 
 % ---------------- SECTION 3 ----------------
 \section{Development Approach}
 
 \subsection{Iterative Development}
 \label{sec:iterative}
-A complete, final system architecture cannot be reasonably fixed at the outset given the complexity in Section~\ref{sec:scope}. The Platform will therefore be developed iteratively: new requirements raised by DORA will be assessed for feasibility on the spot (Section~\ref{sec:oos}) and, if accepted, added to the working scope in a subsequent iteration, with the Team compensated for the additional work under Section~\ref{sec:compensation}. Material changes to scope, timeline, or compensation will be documented as a signed addendum to this agreement.
+A complete, final system architecture cannot be reasonably fixed at the outset given the complexity in Section~\ref{sec:scope}. The Platform will therefore be developed iteratively: new requirements raised by DORA will be assessed for feasibility (Section~\ref{sec:oos}). Any resulting changes to the working scope, project timeline, or compensation shall strictly require prior written approval and will be documented as a signed addendum to this agreement.
 
 \subsection{Version Control and Work Tracking}
-All source code will be maintained in a dedicated GitHub repository, and all work will be tracked and submitted via GitHub Pull Requests (PRs), which serve as the primary record of individual contribution.
+All source code will be maintained in an Institute-controlled (DORA-owned) GitHub repository from the outset. All work will be tracked and submitted via GitHub Pull Requests (PRs), which serve as the primary record of individual contribution. The platform and its data will be hosted exclusively on Institute-provisioned servers.
+
+\subsection{Institutional Deployment and Production Readiness}
+In line with best practices for institutional systems, the Platform will pass through stringent production gates before real data is loaded:
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{Ownership and Control:} IIT Mandi retains full control of the production database, storage, domains, deployment accounts, and the underlying data schema from day one.
+\item \textbf{Reproducible Handover:} The team will deliver installation, configuration, backup/restore, and deployment runbooks, ensuring an Institute technical owner can independently manage staging and production instances.
+\item \textbf{Controlled Pilot and Go/No-Go:} Before a campus-wide launch, the system will undergo a controlled pilot with selected departments to validate KPIs, followed by a formal go/no-go decision. The pilot must strictly meet the following \textbf{Measurable KPIs}:
+  \begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+    \item \textit{AI Reliability:} $>$95\% accuracy in flagging data discrepancies, with 0\% false positives on critical institutional metrics.
+    \item \textit{Data Auditability:} 100\% of data modifications must be accurately tied to a recorded user session and timestamp in the immutable audit log.
+    \item \textit{System Resilience:} A witnessed disaster recovery drill must confirm the target 24-hour RPO and 8-hour RTO are achievable.
+  \end{itemize}
+\end{itemize}
 
 % ---------------- SECTION 4 ----------------
 \section{Team Structure}
@@ -279,30 +300,38 @@ Team members 1 and 2 shall jointly serve as Team Leads and primary points of con
 % ---------------- SECTION 5 ----------------
 \section{Timeline and Prioritized Milestones}
 \label{sec:timeline}
-Based on administrative requirements, the development pipeline is strictly prioritized to deliver maximum immediate value. The timeline is divided into three distinct phases, targeting an overall completion window ending \textbf{1 December 2026} (Section~\ref{sec:duration}).
+Based on administrative requirements, the development pipeline is strictly prioritized to deliver maximum immediate value. The timeline is divided into four distinct phases, targeting an overall completion window ending \textbf{14 December 2026} (Section~\ref{sec:duration}).
 
-\subsection{Phase 1: High Priority (First Demo)}
+\subsection{Phase 1: Core NIRF Workflow (High Priority)}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item \textbf{NIRF Ranking Support:} End-to-end support for the NIRF ranking system and its four required categories.
-\item \textbf{Public Frontend:} Publicly accessible visualizations showing year-wise ranking trends.
-\item \textbf{Competitor Analysis:} Visual comparison functionalities benchmarking against other relevant 2nd-generation IITs.
-\item \textbf{Basic Prototype Workflow:} A functional end-to-end prototype demonstrating basic frontend and backend connectivity.
-\item \textbf{Institute Organogram:} Creation of the institutional hierarchy mapping for structured data collection.
+\item \textbf{Deliverable:} A functional end-to-end system for the NIRF data collection, validation, approval, and export lifecycle.
+\item \textbf{Scope:} Institute organogram setup, admin targeted data requests, node-officer upload portal, maker-checker validation workflow, and automated generation of the NIRF DCS Excel exports.
+\item \textbf{Acceptance Criteria:} The system successfully generates a complete, compliant NIRF export based on mock data inputs, and the maker-checker audit trail correctly logs all data modifications.
+\item \textbf{Estimated Effort:} 80 person-hours per week (20 hours per member).
 \end{itemize}
 
-\subsection{Phase 2: Core Data Collection (Immediately After Prototype)}
+\subsection{Phase 2: Historical Analytics \& Multi-Ranking Export}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item \textbf{Admin Section Selection:} Capability for the admin to select target sections based on the organogram and initiate data requests.
-\item \textbf{Data Collection Workflow:} Integration of forms, files, and document-based data submission pathways.
-\item \textbf{Historical Data Repository:} Structured storage and querying capabilities for at least the past three years of historical ranking data.
+\item \textbf{Deliverable:} Executive analytics dashboards and integration for additional ranking agencies.
+\item \textbf{Scope:} QS, THE, and MDRA schema mapping and exports. Department-wise contribution/performance analytics, and automated boardroom-briefing generation.
+\item \textbf{Acceptance Criteria:} Leadership dashboards accurately visualize historical trends and gap analyses. The platform can export valid templates for at least one additional agency (e.g., QS).
+\item \textbf{Estimated Effort:} 80 person-hours per week (20 hours per member).
 \end{itemize}
 
-\subsection{Phase 3: Advanced Features \& Deployment (Later Development)}
+\subsection{Phase 3: Public Visualizations \& System Hardening}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item \textbf{Multi-Ranking Support:} Expansion of export and schema mapping to QS, THE, and MDRA rankings.
-\item \textbf{Detailed Workflows \& Reminders:} Automated email reminders, advanced deadline management, and complex workflow tracking.
-\item \textbf{Historical-Value Comparison:} Contextual previous-value display and difference calculation during new data entry.
-\item \textbf{Security \& Production:} Advanced access controls, audit logging, and final production deployment on actual domains.
+\item \textbf{Deliverable:} Public-facing visualization portal and advanced system compliance.
+\item \textbf{Scope:} Public ranking trend visualizations, competitor benchmarking. Full implementation of automated reminders, contextual historical-value comparisons during data entry, and comprehensive RBAC testing.
+\item \textbf{Acceptance Criteria:} Public portal is accessible without authentication and accurately plots dummy historical data. Automated reminders trigger appropriately based on predefined deadlines.
+\item \textbf{Estimated Effort:} 80 person-hours per week (20 hours per member).
+\end{itemize}
+
+\subsection{Phase 4: UAT, Handover, and Post-Deployment Support}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{Deliverable:} Production-ready deployment, complete documentation, and trained staff.
+\item \textbf{Scope:} Detailed User Acceptance Testing (UAT) with actual DORA staff, comprehensive technical and user manual documentation, training sessions for nodal officers, and a defined post-deployment support period. \textbf{Addition of Controlled Pilot:} A closed pilot with a selected subset of departments, allowing KPI measurement before a full migration and go/no-go decision.
+\item \textbf{Acceptance Criteria:} DORA staff formally signs off on UAT. Handover of the Institute-controlled repository is complete. User manuals are provided. The service is functionally operable without dependency on the Development Team.
+\item \textbf{Estimated Effort:} 70 person-hours per week (17.5 hours per member).
 \end{itemize}
 
 \begin{center}
@@ -314,30 +343,31 @@ Based on administrative requirements, the development pipeline is strictly prior
   title height=1,
   bar height=0.5,
   bar label font=\scriptsize,
-  title label font=\scriptsize,
+  title label font=\scriptsize\color{primary},
   milestone label font=\scriptsize,
-  group label font=\scriptsize\bfseries,
-  bar/.append style={fill=black!55},
+  group label font=\scriptsize\bfseries\color{secondary},
+  bar/.append style={fill=primary!80, draw=primary, rounded corners=2pt},
   bar label node/.append style={align=right},
-  ]{1}{15}
-  \gantttitle{Prioritized Project Timeline: Weeks}{15} \\
-  \gantttitlelist{1,...,15}{1} \\
-  \ganttgroup{Phase 1: High Priority / Demo}{1}{4} \\
-  \ganttbar{NIRF Schema \& Organogram Setup}{1}{1} \\
-  \ganttbar{Public Visualizations \& Comparisons}{2}{3} \\
-  \ganttbar{Basic End-to-End Prototype}{3}{4} \\
-  \ganttgroup{Phase 2: Core Data Collection}{5}{9} \\
-  \ganttbar{Admin Data Requests \& Workflows}{5}{7} \\
-  \ganttbar{Historical Data Querying Engine}{8}{9} \\
-  \ganttgroup{Phase 3: Advanced \& Deployment}{10}{15} \\
-  \ganttbar{QS, THE, MDRA Integrations}{10}{11} \\
-  \ganttbar{Reminders \& Historical Comparison}{12}{13} \\
-  \ganttbar{Security, Audit Logs \& UAT}{14}{14} \\
-  \ganttbar{Production Deployment}{15}{15}
+  ]{1}{12}
+  \gantttitle{Prioritized Project Timeline: Weeks}{12} \\
+  \gantttitlelist{1,...,12}{1} \\
+  \ganttgroup{Phase 1: Core NIRF Workflow}{1}{4} \\
+  \ganttbar{Organogram \& Data Collection}{1}{2} \\
+  \ganttbar{Maker-Checker \& NIRF Export}{3}{4} \\
+  \ganttgroup{Phase 2: Analytics \& Ext.}{5}{7} \\
+  \ganttbar{QS, THE, MDRA Schema Map}{5}{6} \\
+  \ganttbar{Executive \& Dept Analytics}{7}{7} \\
+  \ganttgroup{Phase 3: Public \& Hardening}{8}{10} \\
+  \ganttbar{Public Visualizations}{8}{9} \\
+  \ganttbar{Reminders \& History Query}{10}{10} \\
+  \ganttgroup{Phase 4: UAT \& Handover}{11}{12} \\
+  \ganttbar{Security Audit \& UAT}{11}{11} \\
+  \ganttbar{Documentation \& Training}{12}{12} \\
+  \ganttbar{Production Go-Live}{12}{12}
 \end{ganttchart}
 \end{center}
 
-\textit{Note: this Gantt chart illustrates the sequence of the prioritized phases. Actual phase durations, dependencies, and start dates will be agreed with DORA and revised as scope evolves under Section~\ref{sec:oos}.}
+\textit{Note: this Gantt chart illustrates the sequence of the prioritized phases. Actual phase durations, dependencies, and start dates will be agreed with DORA and revised as scope evolves under Section~\ref{sec:oos}. Please see Appendix A for a detailed Milestone Matrix.}
 
 % ---------------- SECTION 6 ----------------
 \section{Reporting, Review, and Communication}
@@ -359,10 +389,78 @@ All key communication and decisions exchanged between the Team and DORA, includi
 \label{sec:compensation}
 
 \subsection{Stipend}
-Each member of the Development Team shall be compensated at a rate of Rs.~270 per hour of documented, verifiable work.
+Each member of the Development Team shall be compensated at a rate of Rs.~250 per hour of documented, verifiable work. To ensure budget predictability, the following weekly compensation ceiling is established (based on a maximum of 20 billable hours per member):
 
-\subsection{Non-Monetary Compensation}
-In addition to the hourly stipend, each Team member shall be provided with one (1) Claude Code access subscription/license per month, for the duration of their active participation in the project, to be provided or reimbursed by the Institution.
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{5cm} p{4cm} p{4cm}}
+\rowcolor{primary}
+\textcolor{white}{\textbf{Resource}} & \textcolor{white}{\textbf{Max Hours / Week}} & \textcolor{white}{\textbf{Max Budget / Week}} \\
+\rowcolor{lightbg}
+Per Team Member & 20 Hours & Rs.~5,000 \\
+\rowcolor{white}
+\textbf{Total Team (4 Members)} & \textbf{80 Hours} & \textbf{Rs.~20,000} \\
+\end{tabular}
+\end{table}
+
+Any hours exceeding this ceiling must receive prior written approval from DORA.
+
+\subsection{Estimated Cumulative Cost}
+Based on the phase-wise estimated efforts and the 12-week project timeline, the projected cumulative cost of the Development Team is calculated comprehensively as follows:
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{1.5cm} p{2cm} p{6cm} p{2cm} p{2cm}}
+\rowcolor{primary}
+\textcolor{white}{\textbf{Phase}} & \textcolor{white}{\textbf{Duration}} & \textcolor{white}{\textbf{Calculation (Members $\times$ Hrs/Wk $\times$ Wks)}} & \textcolor{white}{\textbf{Total Hrs}} & \textcolor{white}{\textbf{Est. Cost}} \\
+\rowcolor{lightbg}
+Phase 1 & 4 Weeks & 4 Members $\times$ 20 Hrs/Wk $\times$ 4 Wks & 320 Hours & Rs.~80,000 \\
+\rowcolor{white}
+Phase 2 & 3 Weeks & 4 Members $\times$ 20 Hrs/Wk $\times$ 3 Wks & 240 Hours & Rs.~60,000 \\
+\rowcolor{lightbg}
+Phase 3 & 3 Weeks & 4 Members $\times$ 20 Hrs/Wk $\times$ 3 Wks & 240 Hours & Rs.~60,000 \\
+\rowcolor{white}
+Phase 4 & 2 Weeks & 4 Members $\times$ 17.5 Hrs/Wk $\times$ 2 Wks & 140 Hours & Rs.~35,000 \\
+\rowcolor{secondary}
+\textcolor{white}{\textbf{Total}} & \textcolor{white}{\textbf{12 Wks}} & \textbf{Calculated at a rate of Rs.~250/hr} & \textcolor{white}{\textbf{940 Hrs}} & \textcolor{white}{\textbf{Rs.~235,000}} \\
+\end{tabular}
+\end{table}
+
+\textit{Detailed Billable Hours Breakdown:}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{Phase 1 (Weeks 1--4):} Core NIRF Workflow requires maximum intensity. 4 members working up to the 20 hours/week ceiling over 4 weeks equates to $4 \times 20 \times 4 = 320$ hours. At Rs.~250/hr, the cost is Rs.~80,000.
+\item \textbf{Phase 2 (Weeks 5--7):} Analytics \& Extensions continue at peak effort. 4 members $\times$ 20 hours/week $\times$ 3 weeks equates to $4 \times 20 \times 3 = 240$ hours. Cost is Rs.~60,000.
+\item \textbf{Phase 3 (Weeks 8--10):} Hardening phase continues with high intensity. 4 members $\times$ 20 hours/week $\times$ 3 weeks equates to $4 \times 20 \times 3 = 240$ hours. Cost is Rs.~60,000.
+\item \textbf{Phase 4 (Weeks 11--12):} UAT and Handover require slightly reduced engagement. 4 members $\times$ 17.5 hours/week $\times$ 2 weeks equates to $4 \times 17.5 \times 2 = 140$ hours. Cost is Rs.~35,000.
+\end{itemize}
+
+\textit{Note: This cumulative cost is an estimate based on projected efforts. Payment is strictly based on actual verifiable hours worked, capped at the absolute maximum project ceiling of 960 hours (Rs.~2,40,000) for the 12-week period.}
+
+\subsection{Development Tool Subscription}
+
+To support the accelerated development schedule and parallel work of the four-member Development Team, the following development-support resource is proposed:
+
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+
+\item \textbf{Purpose:} AI-assisted support for repository-level development, debugging, code review, technical investigation, and documentation during the intensive development period.
+
+\item \textbf{Proposed Tool:} Claude Pro, including Claude Code and project-level context capabilities relevant to the Platform's multi-component development workflow.
+
+\item \textbf{Individual Access \& Rationale:} One subscription per team member is required to support concurrent development across frontend, backend, database, testing, and deployment workstreams. Anthropic's legal Terms of Service strictly prohibit sharing a single individual account across multiple users. Furthermore, building a robust, scalable system of this complexity requires processing thousands of lines of code and maintaining large context windows. A single shared account would immediately hit strict rate limits, severely bottlenecking the entire team. Individual subscriptions ensure parallel development streams remain unblocked, allowing the team to deliver a high-quality, production-ready system within the aggressive 12-week timeline.
+
+\item \textbf{Duration and Cost:} Two months for four members at the prevailing individual monthly rate of USD~20 per user, resulting in an estimated total of USD~160, excluding applicable taxes or local pricing adjustments.
+
+\item \textbf{Approval and Usage:} Procurement or reimbursement shall require prior written approval from DORA and shall remain subject to applicable Institute rules. Institutional or personal confidential data shall not be submitted to external AI services without explicit authorization and appropriate safeguards.
+
+\end{itemize}
+
+\subsection{Cost Comparison with Third-Party Alternatives}
+If a similar bespoke, data-sensitive enterprise platform were to be commissioned from a third-party software development agency, the development cost (including dedicated UI/UX design, full-stack engineering, cloud architecture, and security testing) would typically range between Rs.~10,00,000 to Rs.~25,00,000 or more, often accompanied by exorbitant recurring Annual Maintenance Contracts (AMC). By utilizing the technical expertise of our own students, the Institute is not only obtaining a highly customized, secure solution at a fraction of the market cost but also retaining complete data sovereignty and fostering in-house talent.
+
+% \subsection{Non-Monetary Compensation}
+% In addition to the hourly stipend, any development tool or software subscription (e.g., Claude Code access) shall be procured or reimbursed only with prior written approval and strictly as per Institute rules.
 
 \subsection{Payment Schedule}
 Compensation shall be calculated and disbursed on a monthly basis. Payment for hours worked in a given calendar month shall be released during the first week of the following month, subject to submission and administrative acceptance of that month's weekly reports.
@@ -373,27 +471,60 @@ Payment in a given month is contingent on submission of that month's weekly repo
 % ---------------- SECTION 8 ----------------
 \section{Intellectual Property and Ownership}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item All source code, documentation, designs, data, and other work products created or populated by the Development Team under this engagement shall be the property of the Institution, subject to applicable institutional policy on student-developed intellectual property. This includes full institutional ownership of the underlying data and codebase, not merely a license to use the Platform.
+\item All source code, documentation, designs, data, and other work products created or populated by the Development Team under this engagement shall be the exclusive property of the Institution. The source code repository must be Institute-controlled at all times. This includes full institutional ownership of the underlying data and codebase, not merely a license to use the Platform.
 \item The Development Team shall be permitted to reference this project as part of their academic or professional portfolio, subject to prior written consent of DORA regarding the extent of disclosure, and excluding any confidential data.
 \end{itemize}
 
 % ---------------- SECTION 9 ----------------
-\section{Data Privacy and Confidentiality}
+\section{Information Security, Data Privacy, and Confidentiality}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item The Platform will process sensitive data related to institutional, faculty, and student records.
-\item Access to production data shall be limited to what is strictly necessary for development, testing, and debugging, and shall follow any data protection guidelines issued by the Institution.
+\item \textbf{Information Security \& RBAC:} The Platform shall implement strict Role-Based Access Control (RBAC) as defined in Section~\ref{sec:roles}. Security measures against unauthorized access, SQL injection, and cross-site scripting must be incorporated.
+\item \textbf{Backup and Disaster Recovery:} Automated daily backups of the database and document repository must be implemented. A disaster recovery plan shall be formulated to restore services with minimal downtime in case of critical failure.
+\item The Platform will process sensitive data related to institutional, faculty, and student records. Access to production data shall be limited to what is strictly necessary for development, testing, and debugging, and shall follow any data protection guidelines issued by the Institution.
 \item The Development Team shall not use, disclose, or retain institutional data for any purpose outside the scope of this engagement, both during and after the engagement period.
+\item \textbf{AI Privacy, Grounding, and Auditability:} As the Platform utilizes AI for discrepancy flagging, answers and flags must be grounded in approved institutional data. The model must operate within a strict data boundary, ensuring sensitive personal records are not exposed to external LLMs without contractual safeguards. All AI requests must be logged for auditability, with clear routing for human escalation.
+\item \textbf{Data Minimization and Transparency:} The platform must collect only data required for the approved workflow and maintain a data inventory describing each field, its purpose, retention period, and deletion action.
 \end{itemize}
 
 % ---------------- SECTION 10 ----------------
 \section{Duration and Termination}
 \label{sec:duration}
 \begin{itemize}[leftmargin=1.4em, itemsep=3pt]
-\item This agreement shall commence on the date of signature by both parties. The Team targets completion and handover of the Platform to DORA by \textbf{1 December 2026}. This target date is subject to change based on more or fewer requirements being added to scope over the course of the engagement (Section~\ref{sec:oos}); the Development Team will make its best effort to complete the project as soon as possible.
+\item This agreement shall commence on the date of signature by both parties. The Team targets completion and handover of the Platform to DORA by \textbf{14 December 2026} (a 12-week period starting 22 September 2026). This target date is subject to change based on more or fewer requirements being added to scope over the course of the engagement (Section~\ref{sec:oos}); the Development Team will make its best effort to complete the project as soon as possible.
 \item In the event of termination, compensation shall be payable for all verified work completed up to the effective date of termination, following Section~\ref{sec:compensation}.
 \end{itemize}
 
 % ---------------- SECTION 11 ----------------
+\section{Post-Deployment Maintenance and Long-Term Sustainability}
+\label{sec:sustainability}
+
+\subsection{Responsibility Allocation Matrix}
+Once the 12-week development period concludes and the Platform is handed over in production, the ongoing maintenance and governance must be distributed according to the following institutional owners:
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{4.5cm} p{10cm}}
+\rowcolor{primary}
+\textcolor{white}{\textbf{Domain}} & \textcolor{white}{\textbf{Accountable Institutional Owner}} \\
+\rowcolor{lightbg}
+\textbf{Business Policy \& Content} & \textbf{DORA:} Responsible for deciding NIRF/QS reporting logic, nodal officer rosters, and resolving flagged discrepancies. \\
+\rowcolor{white}
+\textbf{Platform Operations} & \textbf{IIT Mandi IT Services (or designated technical unit):} Responsible for managing server hosting, domain names, periodic data backups, and technical incident response. \\
+\rowcolor{lightbg}
+\textbf{Data Protection \& Security} & \textbf{IIT Mandi Security Authority:} Responsible for annual penetration testing, access reviews, and compliance governance. \\
+\end{tabular}
+\end{table}
+
+\subsection{Recurring Costs and Sustainability}
+The estimated budget in Section~\ref{sec:compensation} covers the \textit{one-time development cost}. To ensure the Platform's long-term sustainability (Years 1--3 and beyond), DORA and the Finance office must provision an annual operating budget to cover the following recurring infrastructure costs:
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Managed relational database hosting and AWS S3 (or equivalent) secure object storage.
+\item Institutional domain names, TLS/SSL certificates, and transactional email/SMS service quotas.
+\item API token usage costs for the AI-Assisted Discrepancy Flagging models (based on a finalized cost ceiling).
+\end{itemize}
+
+% ---------------- SECTION 12 ----------------
 \section{Acceptance and Signatures}
 By signing below, both parties acknowledge that they have read, understood, and agree to the terms described in this document, including the understanding that the technical scope in Section~\ref{sec:scope} is indicative and will evolve iteratively as described in Section~\ref{sec:iterative}.
 
@@ -426,4 +557,60 @@ Date:\underline{\hspace{5.5cm}}
 2. \underline{\hspace{6cm}} & Signature: \underline{\hspace{3.5cm}} \\
 \end{tabular}
 
+\clearpage
+\appendix
+\section{Appendix A: Milestone and Deliverable Matrix}
+
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{2cm} p{3.5cm} p{4.5cm} p{1.8cm} p{2.2cm}}
+\rowcolor{primary}
+\textcolor{white}{\textbf{Phase}} & \textcolor{white}{\textbf{Key Deliverables}} & \textcolor{white}{\textbf{Acceptance Criteria}} & \textcolor{white}{\textbf{Effort}} & \textcolor{white}{\textbf{Timeline}} \\
+\rowcolor{lightbg}
+\textbf{Phase 1}: Core NIRF Workflow & End-to-end NIRF data collection, validation, and export platform & System generates a valid NIRF Excel export from mock inputs; maker-checker workflow correctly records audit logs. & 80 hrs/week & Weeks 1--4 \\
+\rowcolor{white}
+\textbf{Phase 2}: Analytics & Executive dashboards and QS/THE schema mappings & Dashboards correctly visualize historical data; export works for at least one additional ranking agency. & 80 hrs/week & Weeks 5--7 \\
+\rowcolor{lightbg}
+\textbf{Phase 3}: Public \& Hardening & Public ranking visualizations, historical query, and reminders & Public portal accessible without login; automated email reminders trigger on deadlines. & 80 hrs/week & Weeks 8--10 \\
+\rowcolor{white}
+\textbf{Phase 4}: UAT \& Handover & Production deployment, technical/user documentation, and training & DORA signs off on UAT; GitHub repo handed over; staff training sessions completed successfully. & 70 hrs/week & Weeks 11--12 \\
+\end{tabular}
+\caption{One-Page Milestone and Deliverable Matrix}
+\end{table}
+
+\vspace{1cm}
+\section{Appendix B: Proposed System Architecture}
+
+\textbf{Frontend (Client Layer):}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Built using Next.js/React.js to provide a highly responsive, dynamic user experience across desktop and mobile form factors.
+\item Implementation of a strict Role-Based Access Control (RBAC) routing mechanism to securely isolate public views, authenticated Nodal Officer portals, and privileged Admin/Executive dashboards.
+\item Utilization of institutional navy-and-saffron branding and consistent UX patterns (e.g., empty-state guidance, loading states, and multi-step form confirmations).
+\end{itemize}
+
+\textbf{Backend (Application Layer):}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Next.js API Routes (Node.js) architected for idempotency, ensuring secure handling of data ingestion, maker-checker validation workflows, and dynamic multi-agency schema mapping logic.
+\item Resilient document parsing engine built to process multimodal submissions (Excel, PDF, Word) safely in isolated environments to mitigate malware risks.
+\item Integration with Institute's unified authentication and Single Sign-On (SSO) systems, enforcing Multi-Factor Authentication (MFA) for all privileged administrative accounts.
+\end{itemize}
+
+\textbf{Data, Storage, and Security Layer:}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item A managed Relational Database (e.g., PostgreSQL) designed with a robust schema-migration process. It stores structured ranking metrics, user rosters, and append-only immutable audit logs to guarantee strict data provenance.
+\item Encrypted Secure Object Storage (e.g., AWS S3 or an Institute-provisioned equivalent) enforcing restricted access URLs with expiring tokens for the centralized document proof repository.
+\item End-to-end security measures including TLS for data-in-transit, encryption-at-rest for sensitive database fields, and isolated environment management for credentials.
+\item A defined Disaster Recovery Plan (DRP) including automated, encrypted daily backups designed to meet a target Recovery Point Objective (RPO) of 24 hours and a Recovery Time Objective (RTO) of 8 hours, subject to Institute approval.
+\end{itemize}
+
+\textbf{Deployment, Hosting, and CI/CD Operations:}
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item Production deployment on Institute-provisioned servers maintaining absolute data sovereignty. Network access will be restricted to designated campus IPs where mandated.
+\item A fully Institute-controlled GitHub repository serving as the single source of truth for version control, issue tracking, and architectural documentation.
+\item An automated CI/CD pipeline bridging separate testing, staging, and production environments. Every pull request will trigger automated dependency/vulnerability scanning (SAST/DAST) before merge.
+\item Implementation of structured operational runbooks specifying support hours, severity levels, escalation contacts, and predefined release rollback procedures.
+\end{itemize}
+
 \end{document}
+  

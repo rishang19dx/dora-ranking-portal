@@ -1,0 +1,169 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lastpage}
+
+% Color palette
+\definecolor{primary}{RGB}{0, 75, 141}     % Deep Navy Blue
+\definecolor{secondary}{RGB}{204, 85, 0}   % Burnt Saffron
+\definecolor{lightbg}{RGB}{245, 247, 250}  % Light grey
+\definecolor{accentgreen}{RGB}{24, 134, 75}
+
+\hypersetup{colorlinks=true, linkcolor=primary, urlcolor=primary}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\bfseries Unified Team Work Report -- Phase 1}
+\fancyhead[R]{\small\color{primary} DORA, IIT Mandi}
+\fancyfoot[C]{\small Page \thepage\ of \pageref{LastPage}}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\titleformat{\section}{\normalfont\large\bfseries\color{primary}}{\thesection}{0.5em}{}[\vspace{-2pt}\color{primary}\rule{\textwidth}{0.6pt}]
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries\color{primary} INDIAN INSTITUTE OF TECHNOLOGY MANDI}\\[2pt]
+{\normalsize\bfseries Office of the Dean of Resources \& Alumni Affairs (DORA)}\\[4pt]
+{\Large\bfseries Unified Team Work Report -- Phase 1: Core NIRF Workflow}\\[2pt]
+{\small\bfseries Reporting Timeline: 12 August 2026 -- 14 October 2026 (64 Calendar Days; 9 Calendar Weeks)}\\[2pt]
+{\small Repository: \url{https://github.com/rishang19dx/dora-ranking-portal}}
+\end{center}
+
+\vspace{0.2cm}
+
+% ---------------- SECTION 1: HOURS SUMMARY ----------------
+\section{Team Hours Summary}
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{3.2cm} p{4.2cm} p{3.2cm} p{2.8cm} r}
+\toprule
+\rowcolor{primary}
+\textcolor{white}{\textbf{Member Name}} & \textcolor{white}{\textbf{Project Role}} & \textcolor{white}{\textbf{Active Period}} & \textcolor{white}{\textbf{Weekly Avg.}} & \textcolor{white}{\textbf{Total Hours}} \\
+\midrule
+\textbf{Rishang Yadav} & Team Lead \& Core Architect & 12 Aug -- 14 Oct (9 wks) & 4.44 h/wk ($\le 8.0$) & \textbf{40.0 h} \\
+\rowcolor{lightbg}
+\textbf{Krishna} & Backend Workflow \& Access Eng. & 19 Aug -- 09 Sep (3 wks) & 4.00 h/wk ($\le 8.0$) & \textbf{12.0 h} \\
+\textbf{Yash Sharma} & Full-Stack Eng. \& Cache Security & 26 Aug -- 08 Sep (2 wks) & 4.00 h/wk ($\le 8.0$) & \textbf{8.0 h} \\
+\rowcolor{lightbg}
+\textbf{Lokesh} & Ingestion \& Organogram Base & 19 Aug -- 09 Sep (3 wks) & 2.33 h/wk ($\le 8.0$) & \textbf{7.0 h} \\
+\midrule
+\rowcolor{secondary!15}
+\textbf{Total Team Effort} & \textbf{4 Student Developers} & \textbf{12 Aug -- 14 Oct 2026} & \textbf{All Avg. $\le$ 8.0 h/wk} & \textbf{67.0 h} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Weekly Hours Distribution Matrix}
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{llccccc}
+\toprule
+\rowcolor{primary}
+\textcolor{white}{\textbf{Week}} & \textcolor{white}{\textbf{Date Range}} & \textcolor{white}{\textbf{Rishang}} & \textcolor{white}{\textbf{Krishna}} & \textcolor{white}{\textbf{Yash}} & \textcolor{white}{\textbf{Lokesh}} & \textcolor{white}{\textbf{Weekly Total}} \\
+\midrule
+\textbf{Week 1} & 12 Aug -- 18 Aug 2026 & 6.0 & 0.0 & 0.0 & 0.0 & \textbf{6.0 h} \\
+\rowcolor{lightbg}
+\textbf{Week 2} & 19 Aug -- 25 Aug 2026 & 8.0 & 4.0 & 0.0 & 3.0 & \textbf{15.0 h} \\
+\textbf{Week 3} & 26 Aug -- 01 Sep 2026 & 6.0 & 4.0 & 3.5 & 4.0 & \textbf{17.5 h} \\
+\rowcolor{lightbg}
+\textbf{Week 4} & 02 Sep -- 08 Sep 2026 & 7.0 & 4.0 & 4.5 & 0.0 & \textbf{15.5 h} \\
+\textbf{Week 5} & 09 Sep -- 15 Sep 2026 & 5.0 & 0.0 & 0.0 & 0.0 & \textbf{5.0 h} \\
+\rowcolor{lightbg}
+\textbf{Weeks 6--8} & 16 Sep -- 06 Oct 2026 & 4.0 & 0.0 & 0.0 & 0.0 & \textbf{4.0 h} \\
+\textbf{Week 9} & 07 Oct -- 14 Oct 2026 & 4.0 & 0.0 & 0.0 & 0.0 & \textbf{4.0 h} \\
+\midrule
+\rowcolor{secondary!15}
+\textbf{Total} & \textbf{12 Aug -- 14 Oct (9 Weeks)} & \textbf{40.0 h} & \textbf{12.0 h} & \textbf{8.0 h} & \textbf{7.0 h} & \textbf{67.0 h} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{Note on institutional compliance: In accordance with institute guidelines, no contributor exceeds an average of 8.0 hours per week across active weeks. Every single week for all contributors remains well within or at institutional limits (peak week is Week 2 for Rishang at 8.0h).}
+
+% ---------------- SECTION 2: WORK ACCOMPLISHED ----------------
+\section{Summary of Work Accomplished}
+
+\begin{itemize}[leftmargin=1.4em, itemsep=3pt]
+\item \textbf{Rishang Yadav (40.0 Hours) -- Core Architecture, System Engineering, PR Reviews \& PR \#1 Merge:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Authored technical benchmarking notes and formal project proposals (\texttt{ranking\_portal\_proposal.tex}, 429 lines; \texttt{drmp\_proposal.tex}, 396 lines; \texttt{ranking\_portal\_technical\_notes.tex}, 152 lines).
+  \item Initialized Next.js 15 App Router architecture, Bento 2.0 design system, ranking card components, modal views, and glassmorphism styling across 10 commits (+16,002 lines pushed between 19 and 22 August).
+  \item Designed the PostgreSQL domain schema via Prisma (\texttt{prisma/schema.prisma}, 275 lines) modeling institutions, schools, departments, nodal officers, ranking cycles, and submissions.
+  \item Implemented role-based routing architecture with Next.js Route Groups (\texttt{(public)}, \texttt{(dashboard)/admin}, \texttt{(dashboard)/nodal-officer}) and dynamic sidebar layout navigation.
+  \item Conducted technical reviews of contributor pull requests: Lokesh's caching API (\texttt{9ff3246}), Yash's cache security and upload form (\texttt{fa507b8}), and Krishna's 32-file access management branch (\texttt{a52adde}).
+  \item Executed cross-module integration testing and negative upload validation.
+  \item Merged Pull Request \#1 (\texttt{5466559}) on 14 October 2026, executing milestone branch reconciliation and integrating 47 files (+10,506 / $-$808 lines) combining Krishna's access architecture and Yash's cache security into \texttt{main}.
+  \end{itemize}
+
+\item \textbf{Krishna (12.0 Hours) -- Access Management, Organogram Hierarchy \& Workflow Dispatch:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Modeled the typed Institute Organogram hierarchy in \texttt{src/lib/organogram.ts} (577 lines, 56 distinct institutional units across 5 tiers) and created the searchable/selectable tree component (\texttt{OrgTree.tsx}, 300 lines).
+  \item Built the NIRF Data Catalogue (\texttt{data-catalogue.ts}, 320 lines) mapping 28 requestable metrics to custodial units.
+  \item Developed the 3-step administrative Data Request Composer (\texttt{admin/data-requests/new/page.tsx}, 730 lines) with per-section metric narrowing, live recipient resolution, and simulated outbox email previews.
+  \item Engineered zero-trust tokenized access provisioning (\texttt{access.ts}, \texttt{dispatch.ts}): SHA-256 hashed single-section upload grants with automatic expiration, link rotation on reminders, and automatic revocation.
+  \item Created the restricted upload portal (\texttt{portal/[token]/page.tsx}, \texttt{PortalUploader.tsx}) with server-side mime validation, file size enforcement (25 MB), and checksum audit logging.
+  \end{itemize}
+
+\item \textbf{Yash Sharma (8.00 Hours) -- Cache Security, Scraper Hardening \& Nodal Upload UI:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Hardened the Next.js cache revalidation endpoint (\texttt{/api/revalidate}) with shared-secret authorization (\texttt{REVALIDATION\_SECRET}) and updated the Python scraper callback in \texttt{app.py} to inject the secret.
+  \item Built the departmental Nodal Officer Submission form (\texttt{nodal-officer/submissions/new/page.tsx}, +324 / $-$188 lines) with metric category selectors, tabular raw data file upload, proof document upload, and maker-checker \texttt{PENDING} status feedback.
+  \item Resolved merge conflicts in \texttt{package-lock.json} to preserve Next.js 15 React DOM typings, purged committed Python bytecode, and updated \texttt{.gitignore}.
+  \end{itemize}
+
+\item \textbf{Lokesh (7.0 Hours) -- NIRF Ingestion, Caching API \& Organogram Baseline:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Built a Python FastAPI wrapper (\texttt{custom\_api\_nirf/app.py}, 131 lines) serving local NIRF rankings with in-memory LRU caching (\texttt{@lru\_cache(maxsize=32)}).
+  \item Structured and generated 6 benchmark JSON ranking datasets for 2024 and 2025 across Engineering, Innovation, and Overall categories (3,530 lines).
+  \item Authored the initial Institute Organogram architectural diagram in Mermaid flowchart format (\texttt{Institute\_Organogram.md}, 113 lines) establishing the executive, deanship, and school hierarchy.
+  \item Authored the three-layer caching integration guide (\texttt{Integration\_Docs.md}, 60 lines).
+  \end{itemize}
+\end{itemize}
+
+% ---------------- SECTION 3: MILESTONES ACHIEVED ----------------
+\section{Phase 1 Milestones Achieved}
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{6.2cm} p{6.0cm} p{3.2cm}}
+\toprule
+\rowcolor{primary}
+\textcolor{white}{\textbf{Phase 1 Milestone Deliverable}} & \textcolor{white}{\textbf{Key Artifacts / Code Paths}} & \textcolor{white}{\textbf{Verification Status}} \\
+\midrule
+Institute Organogram Hierarchy & \texttt{src/lib/organogram.ts} (56 units), \texttt{OrgTree.tsx} & \textcolor{accentgreen}{\textbf{Completed \& Verified}} \\
+\rowcolor{lightbg}
+NIRF Data Scope \& Catalogue & \texttt{src/lib/data-catalogue.ts} (28 metric categories) & \textcolor{accentgreen}{\textbf{Completed \& Verified}} \\
+Targeted Multi-Section Composer & \texttt{admin/data-requests/new/page.tsx} & \textcolor{accentgreen}{\textbf{Completed \& Verified}} \\
+\rowcolor{lightbg}
+Zero-Trust Tokenized Nodal Access & \texttt{access.ts}, \texttt{dispatch.ts} (SHA-256 grants) & \textcolor{accentgreen}{\textbf{Completed \& Verified}} \\
+Restricted Proof Upload Portal & \texttt{portal/[token]/page.tsx}, \texttt{PortalUploader.tsx} & \textcolor{accentgreen}{\textbf{Completed \& Verified}} \\
+\rowcolor{lightbg}
+Maker-Checker Submission States & Department-scoped upload form, \texttt{PENDING} state & \textcolor{accentgreen}{\textbf{Completed \& Verified}} \\
+NIRF Data Caching \& Secret Webhook & \texttt{/api/revalidate}, \texttt{custom\_api\_nirf/app.py} & \textcolor{accentgreen}{\textbf{Completed \& Verified}} \\
+\rowcolor{lightbg}
+Phase 1 Codebase Unification (PR \#1) & Commit \texttt{5466559} (47 files merged into \texttt{main}) & \textcolor{accentgreen}{\textbf{Merged \& Verified}} \\
+Production Build \& Type Integrity & Strict TypeScript compliance, zero build errors & \textcolor{accentgreen}{\textbf{Passed (\texttt{npm run build})}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

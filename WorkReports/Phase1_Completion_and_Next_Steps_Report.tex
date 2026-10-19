@@ -1,0 +1,294 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lastpage}
+
+% Color palette
+\definecolor{primary}{RGB}{0, 75, 141}     % Deep Navy Blue
+\definecolor{secondary}{RGB}{204, 85, 0}   % Burnt Saffron
+\definecolor{lightbg}{RGB}{245, 247, 250}  % Light grey
+\definecolor{accentgreen}{RGB}{24, 134, 75}
+\definecolor{accentamber}{RGB}{217, 119, 6}
+
+\hypersetup{colorlinks=true, linkcolor=primary, urlcolor=primary}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\bfseries DORA Ranking Portal -- Progress \& Next Steps Report}
+\fancyhead[R]{\small\color{primary} IIT Mandi}
+\fancyfoot[C]{\small Page \thepage\ of \pageref{LastPage}}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\titleformat{\section}{\normalfont\large\bfseries\color{primary}}{\thesection}{0.5em}{}[\vspace{-2pt}\color{primary}\rule{\textwidth}{0.6pt}]
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+
+\titleformat{\subsection}{\normalfont\normalsize\bfseries\color{secondary}}{\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{8pt}{3pt}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries\color{primary} INDIAN INSTITUTE OF TECHNOLOGY MANDI}\\[2pt]
+{\normalsize\bfseries Office of the Dean of Resources \& Alumni Affairs (DORA)}\\[4pt]
+{\Large\bfseries Project Progress, Phase 1 Completion \& Next Steps Roadmap Report}\\[2pt]
+{\small\bfseries Automated Ranking \& Data Management Portal (DORA Ranking Portal)}\\[2pt]
+{\small Reporting Date: 19 October 2026 \quad$|$\quad Repository: \url{https://github.com/rishang19dx/dora-ranking-portal}}
+\end{center}
+
+\vspace{0.2cm}
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{p{3.5cm} p{11.5cm}}
+\toprule
+\rowcolor{primary}
+\multicolumn{2}{l}{\textcolor{white}{\textbf{Project Identification \& Governance Metadata}}} \\
+\midrule
+\rowcolor{lightbg}
+\textbf{Project Name:} & Automated Ranking \& Data Management Portal (DORA Ranking Portal) \\
+\textbf{Institutional Client:} & Office of the Dean of Resources \& Alumni Affairs (DORA), IIT Mandi \\
+\rowcolor{lightbg}
+\textbf{Development Team:} & Rishang Yadav (Lead Architect), Krishna, Yash Sharma, Lokesh \\
+\textbf{Active Timeline:} & 12 August 2026 -- 19 October 2026 (Phase 1 Sprint \& Repository Unification) \\
+\rowcolor{lightbg}
+\textbf{Current Status:} & \textbf{Phase 1: Core NIRF Workflow 100\% Completed, Merged \& Verified} \\
+\textbf{Target Completion:} & Mid-December 2026 (12-Week Total Project Lifecycle across Phases 1--4) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{-0.2cm}
+
+% ---------------- SECTION 1: EXECUTIVE SUMMARY ----------------
+\section{Executive Summary}
+
+The \textbf{DORA Ranking Portal} is an enterprise-grade institutional web platform engineered for the Office of the Dean of Resources \& Alumni Affairs (DORA) at the Indian Institute of Technology Mandi. Its primary mission is to replace manual, email-dependent, and decentralized ranking data collection workflows with a secure, automated, organogram-aligned, and audit-compliant data collection and intelligence engine.
+
+As of \textbf{19 October 2026}, the engineering team has successfully concluded, verified, and unified \textbf{Phase 1 (Core NIRF Workflow)}. All contributor feature branches have been reconciled and merged into the canonical \texttt{main} branch (culminating in pull request merge \texttt{5466559} and sync merge \texttt{b1e5c5b}), establishing an integrated, production-ready foundation with zero build errors and strict TypeScript adherence. 
+
+This report presents a thorough breakdown of all deliverables completed during Phase 1, summarizes the architectural decisions and verification outcomes, and defines the prioritized \textbf{Next Steps Roadmap (Phases 2, 3, and 4)} leading to complete institutional handover by December 2026.
+
+% ---------------- SECTION 2: WHAT HAS BEEN COMPLETED ----------------
+\section{Completed Work \& Technical Deliverables (Phase 1)}
+
+Phase 1 focused on building the core engine for the National Institutional Ranking Framework (NIRF) data collection lifecycle. Key technical deliverables achieved include:
+
+\subsection{1. Core Web Architecture \& Bento 2.0 Academic Design System}
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Framework Foundation:} Deployed Next.js 15 utilizing the React 19 App Router architecture, providing server-side rendering (SSR), Incremental Static Regeneration (ISR), and route groups.
+\item \textbf{Role-Based Routing Architecture:} Implemented clean URL namespacing using Next.js route groups: \texttt{(public)} for unauthenticated visitor ranking views, \texttt{(dashboard)/admin} for executive controls, and \texttt{(dashboard)/nodal-officer} for departmental submissions.
+\item \textbf{Bento 2.0 Visual Language:} Crafted an academic visual design utilizing frosted glassmorphism surfaces (\texttt{bg-white/70 backdrop-blur-2xl}), IIT Mandi deep navy and burnt saffron palette tokens, Framer Motion staggered animations, and refined iconography.
+\end{itemize}
+
+\subsection{2. Institutional Organogram Hierarchy Engine}
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Organogram as Code:} Transformed the informal markdown diagram into a strictly typed institutional tree in \texttt{src/lib/organogram.ts} (577 lines) containing \textbf{56 distinct administrative and academic units} across 5 hierarchical tiers: \texttt{GOVERNANCE}, \texttt{EXECUTIVE}, \texttt{ACADEMIC}, \texttt{ADMINISTRATIVE}, and \texttt{FUNCTIONAL}.
+\item \textbf{Searchable Organogram Tree UI:} Created a reusable, selectable hierarchy navigation component (\texttt{OrgTree.tsx}, 300 lines) with real-time text filtering, node expansion, and coverage status indicators.
+\item \textbf{Roster Seeding:} Seeded official institutional mailboxes from the organogram as default contacts, surfacing explicit coverage warnings for unassigned sections before request dispatch.
+\end{itemize}
+
+\subsection{3. NIRF Data Scope Catalogue \& Custodianship Mapping}
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Granular Data Scopes:} Designed the data catalogue in \texttt{src/lib/data-catalogue.ts} (320 lines) mapping \textbf{28 requestable NIRF parameters} across the 5 core NIRF criteria: Teaching, Learning \& Resources (TLR), Research and Professional Practice (RPC), Graduation Outcomes (GO), Outreach and Inclusivity (OI), and Perception (PR).
+\item \textbf{Bi-Directional Suggestion Engine:} Each institutional unit declares its specific data scopes. The admin request composer suggests units holding selected metrics, and automatically narrows each recipient's upload scope to items they legitimately custody.
+\end{itemize}
+
+\subsection{4. Administrative Request Composer \& Targeted Dispatch Service}
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{3-Step Request Composer:} Built the administrative composer interface (\texttt{admin/data-requests/new/page.tsx}, 730 lines) featuring:
+  \begin{enumerate}[leftmargin=1.2em, itemsep=1pt]
+  \item \textit{Metric Selection:} Interactive category selectors for NIRF, QS, and THE data requirements.
+  \item \textit{Section Targeting:} Organogram tree selection with live recipient resolution and coverage warnings.
+  \item \textit{Dispatch Configuration:} Due date parameters, customized instructions, and outbox email preview.
+  \end{enumerate}
+\item \textbf{Transactional Dispatch Service:} Engineered \texttt{dispatch.ts} (339 lines) supporting automated grant issuance, multi-recipient tracking, and email previews logged to \texttt{.data/outbox/}.
+\end{itemize}
+
+\subsection{5. Zero-Trust Tokenized Upload Portal \& Security Controls}
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Hashed, Single-Use Access Grants:} Architected \texttt{access.ts} (110 lines) issuing single-purpose upload grants. Only SHA-256 digests of tokens are stored in the database; tokens carry a 45-day TTL, rotate upon reminder issuance, and immediately revoke upon request closure or officer reassignment.
+\item \textbf{Restricted Portal Interface:} Created the tokenized upload portal (\texttt{portal/[token]/page.tsx} and \texttt{PortalUploader.tsx}) strictly scoped server-side to the officer's specific assigned section and metric items.
+\item \textbf{Defensive Ingestion Security:} Enforces server-side MIME-type whitelisting (\texttt{.xlsx}, \texttt{.csv}, \texttt{.pdf}, \texttt{.docx}), file size caps of 25~MB, and SHA-256 checksum audit logging on all uploaded artifacts.
+\end{itemize}
+
+\subsection{6. Departmental Nodal Officer Portal \& Maker-Checker Audit Trail}
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Department-Scoped Upload Form:} Replaced generic wizards with a focused submission form (\texttt{nodal-officer/submissions/new/page.tsx}) tailored for departmental officers to provide structured data and proof evidence.
+\item \textbf{Maker-Checker State Workflow:} Codified strict institutional submission states: \texttt{DRAFT} $\rightarrow$ \texttt{SUBMITTED / PENDING} $\rightarrow$ \texttt{CORRECTION\_REQUESTED} $\rightarrow$ \texttt{APPROVED}, enforcing segregation of duties between data submitters and administrative verifiers.
+\end{itemize}
+
+\subsection{7. High-Performance Multi-Tier Caching \& Webhook Security}
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Custom NIRF FastAPI Service:} Integrated an in-memory caching backend (\texttt{custom\_api\_nirf/app.py}, 131 lines) utilizing Python's \texttt{@lru\_cache(maxsize=32)} to serve 6 structured NIRF benchmark datasets (2024 and 2025 across Engineering, Innovation, and Overall categories).
+\item \textbf{Shared-Secret ISR Invalidation:} Hardened the Next.js revalidation route (\texttt{/api/revalidate}) with mandatory pre-shared secret authorization (\texttt{REVALIDATION\_SECRET}), rejecting unauthorized cache invalidation attempts.
+\end{itemize}
+
+\subsection{8. Codebase Unification, Dependency Resolution \& Repository Sync}
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Milestone Integration (PR \#1):} Formally reviewed and merged Pull Request \#1 (\texttt{5466559}) combining Krishna's 32-file access architecture and Yash's cache security into \texttt{main} (+10,506 / $-$808 lines).
+\item \textbf{Full Branch Synchronization:} Reconciled and merged \texttt{origin/custom\_nirf\_n\_organogram} into \texttt{main} (\texttt{b1e5c5b}), resolving all lockfile dependencies and excluding Python bytecode artifacts permanently.
+\end{itemize}
+
+% ---------------- SECTION 3: STATUS MATRIX ----------------
+\section{Phase 1 Milestone Deliverables Matrix}
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{5.5cm} p{5.5cm} p{2.2cm} r}
+\toprule
+\rowcolor{primary}
+\textcolor{white}{\textbf{Phase 1 Deliverable}} & \textcolor{white}{\textbf{Key Artifacts / Code Paths}} & \textcolor{white}{\textbf{Acceptance Criteria}} & \textcolor{white}{\textbf{Status}} \\
+\midrule
+Next.js 15 App Architecture & Route groups, Bento 2.0 design, glassmorphism & SSR/ISR active, zero layout clash & \textcolor{accentgreen}{\textbf{Completed}} \\
+\rowcolor{lightbg}
+Institute Organogram Hierarchy & \texttt{src/lib/organogram.ts}, \texttt{OrgTree.tsx} & 56 units across 5 tiers typed & \textcolor{accentgreen}{\textbf{Completed}} \\
+NIRF Data Catalogue & \texttt{src/lib/data-catalogue.ts} (28 metrics) & Parameter-to-unit mapping verified & \textcolor{accentgreen}{\textbf{Completed}} \\
+\rowcolor{lightbg}
+Targeted Data Request Composer & \texttt{admin/data-requests/new/page.tsx} & 3-step wizard with live scoping & \textcolor{accentgreen}{\textbf{Completed}} \\
+Zero-Trust Tokenized Access & \texttt{access.ts}, \texttt{dispatch.ts} (SHA-256) & Expiring links, single-section scope & \textcolor{accentgreen}{\textbf{Completed}} \\
+\rowcolor{lightbg}
+Restricted Proof Upload Portal & \texttt{portal/[token]/page.tsx}, \texttt{PortalUploader.tsx} & 25MB cap, MIME check, audit logs & \textcolor{accentgreen}{\textbf{Completed}} \\
+Maker-Checker Workflow Form & \texttt{nodal-officer/submissions/new/page.tsx} & Validated inputs, \texttt{PENDING} state & \textcolor{accentgreen}{\textbf{Completed}} \\
+\rowcolor{lightbg}
+Multi-Tier Caching \& Webhook & \texttt{/api/revalidate}, \texttt{custom\_api\_nirf/app.py} & Shared-secret revalidation active & \textcolor{accentgreen}{\textbf{Completed}} \\
+Repository Branch Unification & Merges \texttt{5466559} \& \texttt{b1e5c5b} into \texttt{main} & All branches merged, build clean & \textcolor{accentgreen}{\textbf{Completed}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{-0.2cm}
+
+% ---------------- SECTION 4: NEXT STEPS ROADMAP ----------------
+\section{Next Steps Roadmap (Phases 2, 3, and 4)}
+
+With the data ingestion and workflow foundation complete, the project advances to analytics, multi-agency exports, public visualizations, and production handover:
+
+\subsection{Phase 2: Historical Analytics, Leadership Dashboards \& Multi-Agency Export (Weeks 5--7)}
+\textbf{Objective:} Provide executive leadership with actionable intelligence, parameter gap analysis, and multi-agency reporting.
+\begin{itemize}[leftmargin=1.4em, itemsep=2.5pt]
+\item \textbf{PostgreSQL \& Prisma Production Migration:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Migrate runtime persistence from the local file-backed repository (\texttt{.data/portal-store.json}) to a live, managed PostgreSQL database instance using the existing 275-line \texttt{prisma/schema.prisma}.
+  \item Implement database migration scripts (\texttt{prisma migrate deploy}) and automated seeders for institutional schools and departments.
+  \end{itemize}
+\item \textbf{Executive Analytics \& Trend Dashboards:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Build executive visual dashboards plotting IIT Mandi's multi-year scores across TLR, RPC, GO, OI, and PR.
+  \item Implement gap analysis algorithms that calculate score deltas against peer 2nd-generation IITs (e.g. IIT Ropar, IIT Patna, IIT Indore) to highlight priority areas for score improvement.
+  \end{itemize}
+\item \textbf{Multi-Ranking Agency Schema Mapping:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Extend data catalogue mappings beyond NIRF to encompass \textbf{QS World University Rankings}, \textbf{Times Higher Education (THE)}, and \textbf{MDRA Best Colleges}.
+  \item Engineer export transformations that format verified departmental submissions into agency-compliant Excel/CSV templates.
+  \end{itemize}
+\item \textbf{Automated Boardroom Briefing Generator:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Build an automated one-click PDF generation engine that synthesizes submission status, verified parameters, and score trends into executive briefing decks for Director and Senate meetings.
+  \end{itemize}
+\end{itemize}
+
+\subsection{Phase 3: Public Visualizations, Automated Reminders \& System Hardening (Weeks 8--10)}
+\textbf{Objective:} Deliver public transparency, automated notification schedules, and enterprise-grade security hardening.
+\begin{itemize}[leftmargin=1.4em, itemsep=2.5pt]
+\item \textbf{Public-Facing Ranking Portal:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Launch the unauthenticated \texttt{(public)} route featuring interactive charts of IIT Mandi's ranking trajectory, highlighting engineering breakthroughs, research citations, and patents.
+  \item Implement responsive mobile optimization and WCAG 2.1 AA accessibility standards for public dissemination.
+  \end{itemize}
+\item \textbf{Automated Background Reminder Engine:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Transition from simulated outbox logging to live transactional email delivery via IIT Mandi SMTP or Resend API.
+  \item Deploy a scheduled background cron daemon triggering automated email reminders at predefined intervals ($T-7\text{ days}$, $T-3\text{ days}$, $T-24\text{ hours}$ before due dates) with automatic token rotation.
+  \end{itemize}
+\item \textbf{Institutional Authentication \& SSO:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Integrate Google OAuth Single Sign-On (SSO) restricted to \texttt{@iitmandi.ac.in} email domains via NextAuth.js.
+  \item Enforce Multi-Factor Authentication (MFA) requirements for administrative accounts.
+  \end{itemize}
+\item \textbf{AI-Assisted Discrepancy Flagging:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1.5pt]
+  \item Introduce heuristic anomaly checks comparing incoming numerical submissions against prior-year baselines, flagging sudden deviations ($> 20\%$) for administrative verification prior to approval.
+  \end{itemize}
+\end{itemize}
+
+\subsection{Phase 4: Controlled Pilot, UAT, Documentation \& Production Handover (Weeks 11--12)}
+\textbf{Objective:} Validate platform usability in real conditions, train institutional staff, and achieve permanent handover.
+\begin{itemize}[leftmargin=1.4em, itemsep=2.5pt]
+\item \textbf{Controlled Pilot Rollout:} Conduct a live pilot with 2--3 selected academic units (e.g. School of Computing \& Electrical Engineering and School of Basic Sciences) to stress-test real upload workflows.
+\item \textbf{User Acceptance Testing (UAT):} Facilitate structured UAT sessions with DORA staff; track and remediate feedback items.
+\item \textbf{Comprehensive Documentation:} Provide complete Developer API guides, Administrative Operational Runbooks, and Nodal Officer User Manuals.
+\item \textbf{Production Handover:} Deploy on Institute-provisioned servers; complete knowledge transfer to IIT Mandi IT Services.
+\end{itemize}
+
+% ---------------- SECTION 5: TIMELINE & RESOURCE ALLOCATION ----------------
+\section{Project Phasing Timeline \& Schedule}
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{2.8cm} p{4.6cm} p{4.2cm} r}
+\toprule
+\rowcolor{primary}
+\textcolor{white}{\textbf{Phase / Milestone}} & \textcolor{white}{\textbf{Primary Focus \& Deliverables}} & \textcolor{white}{\textbf{Target Schedule}} & \textcolor{white}{\textbf{Status}} \\
+\midrule
+\textbf{Phase 1}: Core NIRF & Organogram, Request Composer, Upload Portal & 12 Aug -- 19 Oct 2026 & \textcolor{accentgreen}{\textbf{100\% Completed}} \\
+\rowcolor{lightbg}
+\textbf{Phase 2}: Analytics & Postgres Migration, Dashboards, QS/THE & 20 Oct -- 09 Nov 2026 (W5--W7) & \textcolor{accentamber}{\textbf{In Progress / Next}} \\
+\textbf{Phase 3}: Public \& Security & Public Portal, Automated Reminders, SSO & 10 Nov -- 30 Nov 2026 (W8--W10) & \textbf{Upcoming} \\
+\rowcolor{lightbg}
+\textbf{Phase 4}: Pilot \& Handover & Pilot Testing, UAT, Staff Training, Handover & 01 Dec -- 14 Dec 2026 (W11--W12) & \textbf{Upcoming} \\
+\midrule
+\rowcolor{secondary!15}
+\textbf{Full Lifecycle} & \textbf{End-to-End Enterprise Deployment} & \textbf{12 Aug -- 14 Dec 2026} & \textbf{On Schedule} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{-0.2cm}
+
+% ---------------- SECTION 6: RISK ANALYSIS & PREREQUISITES ----------------
+\section{Prerequisites, Technical Risks \& Institutional Mitigation}
+
+To guarantee smooth execution across Phases 2 through 4, the following institutional dependencies and mitigations are established:
+
+\begin{enumerate}[leftmargin=1.4em, itemsep=2.5pt]
+\item \textbf{Database Server Provisioning:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1pt]
+  \item \textit{Requirement:} Provisioning of an institutional PostgreSQL 16+ instance by IIT Mandi IT Services.
+  \item \textit{Mitigation:} Until institutional hosting is live, development and pilot operations utilize a containerized PostgreSQL environment with zero code refactoring required.
+  \end{itemize}
+\item \textbf{Authentication Credentials:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1pt]
+  \item \textit{Requirement:} Google Cloud Console OAuth 2.0 Client ID provisioned under the institutional domain.
+  \item \textit{Mitigation:} Standard OAuth credentials will be restricted to the \texttt{iitmandi.ac.in} hosted domain, with fallback to tokenized magic links.
+  \end{itemize}
+\item \textbf{Outbound Email Quota:}
+  \begin{itemize}[leftmargin=1.2em, itemsep=1pt]
+  \item \textit{Requirement:} Institutional SMTP gateway access or approved transactional service (Resend / AWS SES) to dispatch reminder notifications without spam filtering.
+  \item \textit{Mitigation:} \texttt{mailer.ts} already includes simulated outbox logging for offline testing and immediate plug-and-play SMTP configuration.
+  \end{itemize}
+\end{enumerate}
+
+\vspace{0.4cm}
+
+\begin{center}
+\small\color{gray}
+--- Report compiled and verified for administrative review and Phase 2 scheduling ---
+\end{center}
+
+\end{document}

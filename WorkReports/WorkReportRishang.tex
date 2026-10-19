@@ -1,0 +1,197 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lastpage}
+
+\definecolor{primary}{RGB}{0, 75, 141}     % Deep Blue
+\definecolor{secondary}{RGB}{204, 85, 0}   % Burnt Orange
+\definecolor{lightbg}{RGB}{245, 247, 250}  % Light background
+
+\hypersetup{colorlinks=true, linkcolor=primary, urlcolor=primary}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small Weekly Work Report -- Rishang Yadav (rishang19dx)}
+\fancyhead[R]{\small dora-ranking-portal}
+\fancyfoot[C]{\small Page \thepage\ of \pageref{LastPage}}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+\begin{document}
+
+{\Large\bfseries Weekly Work Report}\\[4pt]
+{\large\bfseries\color{primary} DORA Ranking Portal -- System Architecture, Core Platform \& Technical Oversight}\\[6pt]
+\begin{tabular}{@{}ll@{}}
+\textbf{Contributor:} & Rishang Yadav (\texttt{b23173@students.iitmandi.ac.in} / GitHub: \texttt{rishang19dx}) \\
+\textbf{Role:} & Team Lead, Core System Architect \& Full-Stack Developer \\
+\textbf{Period:} & 12 August 2026 -- 14 October 2026 (64 calendar days; 9 calendar weeks) \\
+\textbf{Repository:} & \url{https://github.com/rishang19dx/dora-ranking-portal} \\
+\textbf{Source commits:} & 11 commits: 10 core development commits (\texttt{e70330d}--\texttt{724b58c}) plus \\
+& Phase 1 integration merge commit \texttt{5466559} (Merge Pull Request \#1)
+\end{tabular}
+
+\vspace{0.4cm}
+\section*{Basis of this report (please read)}
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Scope.} Covers core architectural engineering, full-stack Next.js/React development, PostgreSQL domain modeling, UI/UX design systems, role-based routing, build stabilization, technical oversight, multi-contributor pull request reviews, and final repository branch reconciliation and release merges authored by Rishang Yadav as Team Lead.
+\item \textbf{Commit record and ground truth.} The author holds the highest number of commits in the repository (10 direct development commits pushed between 19 and 22 August with +16,002 lines) plus the repository milestone merge commit \texttt{5466559} on 14 October 2026 (merging Pull Request \#1, integrating 47 files, +10,506 / $-$808 lines into \texttt{main}), in addition to leading architectural oversight and PR review across contributor branches.
+\item \textbf{Timeline and calendar structure.} The active project timeline begins on \textbf{12 August 2026} and concludes with the repository merge on \textbf{14 October 2026}, totaling \textbf{64 calendar days} organized across \textbf{9 calendar weeks} (Weeks 1 to 9).
+\item \textbf{Effort distribution model.} Total verified effort is \textbf{40.0 hours}. Over the 9-week project duration, this corresponds to an average of \textbf{4.44 hours/week}, well below the institutional ceiling of 8.0 hours/week. Furthermore, no single week exceeds 8.0 hours (peak week is Week 2 at 8.0 h during initial platform authoring). Effort prominently covers technical oversight, code reviews, and security audits across contributor pull requests (Lokesh's caching API, Yash's cache security and upload form, and Krishna's 32-file access management branch), in addition to core platform engineering and repository synchronization.
+\item \textbf{Rate and compensation.} In accordance with administrative directives, this report provides solely an objective estimate of hours and deliverables. No monetary or stipend computations are performed herein; compensation rates will be determined by the administration at a later stage.
+\item \textbf{Validation and build status.} All code strictly passes \texttt{npm run build}, Next.js App Router dynamic route compilation, TypeScript type validation, and Tailwind CSS tree-shaking with zero errors.
+\end{itemize}
+
+\section*{Summary of Effort}
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{llrr}
+\toprule
+\textbf{Week} & \textbf{Dates \& Focus} & \textbf{Commits / Activities} & \textbf{Effort (h)} \\
+\midrule
+1 & 12 Aug--18 Aug: Kick-off, benchmarking, requirements \& proposals & \texttt{e70330d} (prep) & 6.0 \\
+2 & 19 Aug--25 Aug: Core platform, Prisma schema, RBAC, Bento UI & 10 commits (\texttt{e70330d}--\texttt{724b58c}) & 8.0 \\
+3 & 26 Aug--01 Sep: Ingestion contracts, API testing \& Lokesh PR review & PR review (\texttt{9ff3246}) \& specs & 6.0 \\
+4 & 02 Sep--08 Sep: Webhook security supervision \& Yash PR review & PR review (\texttt{fa507b8}) \& sync & 7.0 \\
+5 & 09 Sep--15 Sep: In-depth audit of Krishna 32-file access PR & PR review (\texttt{a52adde}) & 5.0 \\
+6--8 & 16 Sep--06 Oct: Cross-module PR integration testing \& negative checks & System testing \& verification & 4.0 \\
+9 & 07 Oct--14 Oct: Merge PR \#1 (\texttt{phase-1-kds}), branch sync \& release & Merge commit \texttt{5466559} & 4.0 \\
+\midrule
+\textbf{Total} & \textbf{12 Aug--14 Oct 2026 (9 Weeks / 64 calendar days)} & \textbf{11 commits (incl. PR \#1 merge)} & \textbf{40.0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Commit-by-Commit and Activity Effort Allocation}
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{2.2cm} p{2.2cm} p{7.2cm} r}
+\toprule
+\textbf{Ref / Hash} & \textbf{Date (IST)} & \textbf{Description \& Scope of Work} & \textbf{Effort (h)} \\
+\midrule
+\texttt{e70330d} (prep) & 12--18 Aug & Research, proposal LaTeX docs (\texttt{ranking\_portal\_proposal.tex}, \texttt{drmp\_proposal.tex}), tech notes, initial Next.js scaffold & 6.0 \\
+\texttt{e70330d} & 19 Aug, 02:13 & Initial platform commit: Bento 2.0 UI components, views, layouts & 3.0 \\
+\texttt{1de67a5} & 19 Aug, 02:27 & UI enhancements: palette, typography, page containers (+131 / $-$69) & 0.5 \\
+\texttt{431f583} & 19 Aug, 15:48 & RBAC architecture, Prisma schema (275 lines), route groups (+2,291) & 2.5 \\
+\texttt{bb75206} & 19 Aug, 15:50 & Documentation: updated project README (+33 / $-$31) & 0.5 \\
+\texttt{d075be0} & 19 Aug, 16:49 & Glassmorphism effects, Framer animations, landing page redesign (+96) & 0.5 \\
+\texttt{9de27f1}--\texttt{724b58c} & 22 Aug & Build stabilization: animation types, modal refactor, \texttt{decision\_history.md} & 1.0 \\
+\midrule
+\multicolumn{3}{l}{\textit{Subtotal: Core Platform Development, Architecture \& Proposals (Weeks 1--2)}} & \textbf{14.0 h} \\
+\midrule
+Review \texttt{9ff3246} & 26 Aug--01 Sep & Detailed technical review of Lokesh's caching API and Mermaid organogram & 3.5 \\
+Ingestion Specs & 26 Aug--01 Sep & Defined metric categories (TLR, RPC, etc.) and tested memory caching & 2.5 \\
+\midrule
+\multicolumn{3}{l}{\textit{Subtotal: Ingestion Contracts, API Benchmarking \& PR Review (Week 3)}} & \textbf{6.0 h} \\
+\midrule
+Review \texttt{fa507b8} & 02--08 Sep & Technical review of Yash's cache security, webhook token \& nodal upload UI & 4.5 \\
+Lockfile \& Sync & 02--08 Sep & Resolved package-lock React 19 typings and dependency synchronization & 2.5 \\
+\midrule
+\multicolumn{3}{l}{\textit{Subtotal: Contributor PR Supervision, Code Review \& Type Hardening (Week 4)}} & \textbf{7.0 h} \\
+\midrule
+Review \texttt{a52adde} & 09--15 Sep & Comprehensive architectural audit of Krishna's 32-file access management branch & 5.0 \\
+\midrule
+\multicolumn{3}{l}{\textit{Subtotal: Access Architecture Review \& Security Audit (Week 5)}} & \textbf{5.0 h} \\
+\midrule
+Testing & 16 Sep--06 Oct & Cross-module PR lifecycle tests, negative upload checks \& store verification & 4.0 \\
+\midrule
+\multicolumn{3}{l}{\textit{Subtotal: Cross-Module PR Integration Testing (Weeks 6--8)}} & \textbf{4.0 h} \\
+\midrule
+\texttt{5466559} & 14 Oct, 16:15 & Merge PR \#1 (\texttt{phase-1-kds}): Final branch reconciliation, conflict resolution, 47 files merged (+10,506 / $-$808 lines), build verification & 4.0 \\
+\midrule
+\multicolumn{3}{l}{\textit{Subtotal: Phase 1 Final Integration \& PR Merge Milestone (Week 9)}} & \textbf{4.0 h} \\
+\midrule
+\textbf{Total} & & \textbf{Consolidated verified effort for active period} & \textbf{40.0 h} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Weekly Breakdown of Work and Milestones}
+
+\subsection*{Week 1 (12--18 Aug 2026): Kick-off, Requirements Analysis \& Technical Proposals}
+\textbf{Logged Effort:} 6.0 Hours \quad \textbf{Focus:} Project Inception, Benchmarking \& Proposal Authoring
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Requirements Analysis:} Evaluated the manual, email-driven ranking workflow at IIT Mandi across NIRF, QS, and THE data submissions to identify failure modes, data duplication, and reporting bottlenecks.
+\item \textbf{Architecture Planning:} Formulated the foundational tech stack: Next.js 15 (React 19, App Router) for server-side rendering, Tailwind CSS for styling, TypeScript for type safety, and PostgreSQL with Prisma ORM.
+\item \textbf{Proposal Drafting:} Authored the project proposal (\texttt{Proposals/ranking\_portal\_proposal.tex}, 429 lines), DRMP proposal (\texttt{drmp\_proposal.tex}, 396 lines), and technical research notes (\texttt{ranking\_portal\_technical\_notes.tex}, 152 lines).
+\item \textbf{Scaffolding:} Initialized the GitHub repository, establishing branching hygiene, ESLint rules, and project configuration.
+\end{itemize}
+
+\subsection*{Week 2 (19--25 Aug 2026): Core Platform Architecture, Bento 2.0 UI \& Prisma Modeling}
+\textbf{Logged Effort:} 8.0 Hours \quad \textbf{Focus:} Implementation of 10 Commits (+16,000 lines)
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Initial Platform Build (\texttt{e70330d}):} Pushed 51 files (+13,409 lines) establishing the Next.js 15 application, Bento 2.0 dashboard layout, ranking cards, detail modals, and navigation components.
+\item \textbf{Domain Modeling (\texttt{431f583}):} Designed the relational schema (\texttt{prisma/schema.prisma}, 275 lines) modeling \texttt{Institution}, \texttt{School}, \texttt{Department}, \texttt{Faculty}, \texttt{NodalOfficer}, \texttt{RankingCycle}, and \texttt{Submission}.
+\item \textbf{Role-Based Routing (\texttt{431f583}):} Implemented Route Groups (\texttt{(public)}, \texttt{(dashboard)/admin}, \texttt{(dashboard)/nodal-officer}) and dynamic sidebar switching in \texttt{DashboardLayout.tsx}.
+\item \textbf{UI Polish (\texttt{1de67a5}, \texttt{d075be0}):} Integrated glassmorphism card surfaces (\texttt{bg-white/70 backdrop-blur-2xl}) and Framer Motion staggered entry animations.
+\item \textbf{Build Stabilization (\texttt{9de27f1}--\texttt{724b58c}):} Resolved strict TypeScript errors in animation props, added \texttt{ToastProvider.tsx}, and documented decisions in \texttt{decision\_history.md}.
+\end{itemize}
+
+\subsection*{Week 3 (26 Aug--01 Sep 2026): Ingestion Specifications, Caching Review \& Lokesh PR Audit}
+\textbf{Logged Effort:} 6.0 Hours \quad \textbf{Focus:} Ingestion Contracts, Schema Design \& PR Code Review
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Schema Specifications:} Defined contract interfaces for NIRF metric categories: Teaching, Learning \& Resources (TLR), Research and Professional Practice (RPC), Graduation Outcomes (GO), Outreach and Inclusivity (OI), and Perception (PR).
+\item \textbf{PR Code Review (\texttt{9ff3246}):} Conducted a detailed technical review of teammate Lokesh's caching and organogram pull request (\texttt{origin/custom\_nirf\_n\_organogram}). Evaluated FastAPI endpoints, in-memory LRU caching logic (\texttt{@lru\_cache(maxsize=32)}), and Mermaid flowchart representation (\texttt{Institute\_Organogram.md}).
+\item \textbf{Testing Scraper Endpoints:} Benchmarked cache warming and retrieval latency across 6 JSON benchmark datasets for 2024 and 2025 rankings.
+\item \textbf{Teammate Coordination:} Provided branching, merge hygiene, and interface integration guidance for Yash Sharma and Krishna.
+\end{itemize}
+
+\subsection*{Week 4 (02--08 Sep 2026): Security Supervision, Yash PR Review \& Lockfile Hardening}
+\textbf{Logged Effort:} 7.0 Hours \quad \textbf{Focus:} Security Enforcement, Form Refinement, Code Review \& Type Sync
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{PR Code Review (\texttt{fa507b8}):} Extensively reviewed Yash Sharma's pull request covering the custom NIRF caching scraper callback, ISR revalidation route, and nodal upload UI across 19 files (+4,581 / $-$636 lines).
+\item \textbf{Security Boundary Audit:} Verified the shared-secret authorization boundary on \texttt{/api/revalidate}, confirming unauthenticated HTTP requests are rejected with a 401 status.
+\item \textbf{Form Refinement:} Evaluated and tested the departmental Nodal Officer Submission form (\texttt{nodal-officer/submissions/new/page.tsx}), verifying client-side validation and \texttt{PENDING} confirmation state handling.
+\item \textbf{Build Verification \& Type Sync:} Resolved dependency conflicts in \texttt{package-lock.json} preserving React 19 DOM typings, purged committed Python bytecode from source control, and confirmed zero build regressions.
+\end{itemize}
+
+\subsection*{Week 5 (09--15 Sep 2026): In-Depth Architectural Audit of Krishna's 32-File Access PR}
+\textbf{Logged Effort:} 5.0 Hours \quad \textbf{Focus:} Organogram-Driven Access Architecture Audit \& PR Review
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Comprehensive PR Review (\texttt{a52adde}):} Directed and audited Krishna's 32-file pull request implementing access management and workflow dispatch (+5,926 / $-$173 lines).
+\item \textbf{Organogram Hierarchy Verification:} Inspected \texttt{src/lib/organogram.ts} (577 lines, 56 distinct units across 5 institutional tiers) and the reusable tree component (\texttt{OrgTree.tsx}, 300 lines) for structural correctness.
+\item \textbf{Security Audit of Access Grants:} Evaluated single-use, hashed, time-expiring tokens (\texttt{access.ts}), confirming upload grants are strictly restricted to assigned sections with automatic link rotation on reminders.
+\item \textbf{Persistence Verification:} Audited file-backed store synchronization in \texttt{src/lib/server/store.ts} against the mirrored PostgreSQL Prisma schema.
+\end{itemize}
+
+\subsection*{Weeks 6--8 (16 Sep--06 Oct 2026): Cross-Module PR Integration Testing \& Lifecycle Checks}
+\textbf{Logged Effort:} 4.0 Hours \quad \textbf{Focus:} Multi-Branch Integration, Negative Tests \& Persistence Parity
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Cross-Branch Lifecycle Testing:} Exercised complete administrative lifecycle on a dev server combining all contributor branches: officer creation $\rightarrow$ request dispatch $\rightarrow$ outbox email $\rightarrow$ tokenized upload $\rightarrow$ status aggregation.
+\item \textbf{Negative Test Execution:} Verified rejection of forged tokens, expired links, out-of-scope metrics, non-compliant extensions, and files exceeding the 25 MB ceiling.
+\item \textbf{Store Parity:} Confirmed atomic read-modify-write synchronization between the file-backed store (\texttt{store.ts}) and PostgreSQL Prisma models.
+\end{itemize}
+
+\subsection*{Week 9 (07--14 Oct 2026): Phase 1 Integration \& PR \#1 Merge Milestone}
+\textbf{Logged Effort:} 4.0 Hours \quad \textbf{Focus:} Merge Pull Request \#1 (\texttt{5466559}), Branch Reconciliation \& Release Verification
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+\item \textbf{Branch Reconciliation:} Reconciled contributor branches (\texttt{phase-1-kds/organogram-and-collections-UI} and \texttt{feature/phase1-updates}) against \texttt{main}, resolving configuration, dependency, and type conflicts.
+\item \textbf{PR \#1 Merge Execution (\texttt{5466559}):} Formally merged Pull Request \#1 authored by Rishang Yadav on 14 October 2026 at 16:15 IST, integrating 47 files (+10,506 / $-$808 lines) into \texttt{main}.
+\item \textbf{Codebase Unification:} Integrated Krishna's organogram hierarchy (\texttt{organogram.ts}, \texttt{OrgTree.tsx}), zero-trust tokenized access provisioning (\texttt{access.ts}, \texttt{dispatch.ts}), restricted upload portal, Yash's cache revalidation security, and nodal officer submission UI.
+\item \textbf{Full Production Build Validation:} Executed and verified clean compilation via \texttt{npm run build} across all App Router routes and static assets, achieving a 100\% stable, unified Phase 1 codebase.
+\end{itemize}
+
+\section*{Key Technical Decisions Logged}
+\begin{enumerate}[leftmargin=1.6em, itemsep=2pt]
+\item \textbf{Next.js 15 App Router Architecture:} Adopted route groups \texttt{(public)} and \texttt{(dashboard)} to isolate landing page access from privileged administrative workflows with zero layout duplication.
+\item \textbf{Prisma Relational Modeling:} Codified 275 lines of Prisma schema defining the institutional data hierarchy and immutable audit logs.
+\item \textbf{Bento 2.0 Design System:} Engineered a unified visual language reflecting IIT Mandi's academic stature, utilizing glassmorphism, Framer Motion animations, and phosphor/lucide icons.
+\item \textbf{Tokenized Zero-Trust Access:} Architected the access control model where nodal officers receive hashed, single-use, expiring links with server-side mime and size enforcement.
+\item \textbf{Unified Branch Integration (PR \#1):} Executed full codebase merge (\texttt{5466559}) resolving multi-contributor conflicts while preserving strict build and type integrity.
+\end{enumerate}
+
+\end{document}

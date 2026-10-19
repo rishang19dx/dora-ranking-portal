@@ -1,34 +1,18 @@
 {
   "name": "iit-mandi-ranking-portal",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
+  "description": "IIT Mandi DORA Ranking Portal - React SPA + Django REST Framework",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@phosphor-icons/react": "^2.1.10",
-    "@prisma/client": "^7.9.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.33.0",
-    "motion": "^12.0.0",
-    "next": "^15.1.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "recharts": "^3.10.0",
-    "tailwind-merge": "^2.6.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^8",
-    "eslint-config-next": "15.1.0",
-    "postcss": "^8",
-    "prisma": "^7.9.1",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "dev": "./scripts/dev.sh",
+    "dev:backend": "cd backend && ./venv/bin/python manage.py runserver 0.0.0.0:8000",
+    "dev:frontend": "cd frontend && bun run dev",
+    "build": "cd frontend && bun run build",
+    "test": "cd backend && ./venv/bin/pytest tests/ && cd ../frontend && bun run build",
+    "test:backend": "cd backend && ./venv/bin/pytest tests/ -v",
+    "test:frontend": "cd frontend && bun run build",
+    "backend:migrate": "cd backend && ./venv/bin/python manage.py migrate",
+    "backend:seed": "cd backend && ./venv/bin/python manage.py seed_organogram",
+    "backend:scrape": "cd backend && ./venv/bin/python manage.py scrape_nirf"
   }
 }

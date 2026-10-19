@@ -1,119 +1,138 @@
 # Automated Ranking Portal (ARP) - IIT Mandi
 
-The **Automated Ranking Portal (ARP)** is a centralized platform designed to streamline the collection, management, and visualization of institutional data for various ranking frameworks (NIRF, QS, THE) at IIT Mandi. 
+The **Automated Ranking Portal (ARP)** is a centralized platform designed to streamline the collection, management, verification, and visualization of institutional ranking data (NIRF, QS, THE) at IIT Mandi.
 
-This repository contains the full-stack Next.js 15 application, featuring a "Bento 2.0" design aesthetic, a rigorous role-based routing architecture, and a PostgreSQL backend powered by Prisma ORM.
+The system is architected as a decoupled monorepo featuring a **React 19 Single Page Application (SPA)** with Bento 2.0 aesthetics and an enterprise-grade **Django 5.1 REST Framework** backend.
+
+---
 
 ## ✨ Key Features
 
-- **Interactive Institute Organogram**: The academic, administrative and functional hierarchy of IIT Mandi (`src/lib/organogram.ts`) rendered as a searchable, filterable, selectable tree. Every unit declares the ranking data it is custodian of, so data collection follows the exact structure of the institute.
-- **Targeted Data Requests**: A three-step composer (sections → required data → message) that resolves the selected organogram sections to their nodal officers, narrows the requested items per section, and dispatches a templated email to each recipient.
-- **Nodal Officer Roster**: Full CRUD management of designated officers per department/section, seeded from the mailboxes published in the organogram, with coverage warnings for sections that have no officer.
-- **Automated Portal Provisioning**: Dispatching a request issues one single-purpose upload link per (officer, section, request). Only the SHA-256 digest of the token is stored; links expire, rotate on every reminder, and are revoked when a request is closed or an officer is removed.
-- **Role-Based Routing Architecture**: Implements Next.js Route Groups `(public)` and `(dashboard)` to enforce strict layout separation for three distinct workflows:
-  - **Public Portal**: Read-only landing page for viewing verified rankings, institutional highlights, and public announcements.
-  - **Admin Dashboard**: Comprehensive portal for DORA administrators to manage data collection cycles, oversee nodal officers, and review submissions.
-  - **Nodal Officer Portal**: Department-scoped dashboard featuring a sleek, step-by-step data upload wizard.
-- **Bento 2.0 UI Architecture**: A premium interface utilizing asymmetric grid layouts, pure white cards with diffusion shadows, and strict 1px borders.
-- **Framer Motion Engine**: Fluid, spring-based micro-interactions across all dashboards. Features a completely custom, lightweight Toast Notification System for instant user feedback.
-- **Data Governance Workflows**: Designed to support strict maker-checker protocols (`DRAFT -> SUBMITTED -> CORRECTION_REQUESTED -> APPROVED`) backed by immutable decision history logs.
+- **Interactive Institute Organogram**: The complete academic, administrative, and functional hierarchy of IIT Mandi (57 organizational units) rendered as a searchable, filterable, selectable tree with data custodianship mappings.
+- **Targeted Data Requests**: A three-step composer that selects organogram sections, maps required metrics per section, and dispatches templated notification requests.
+- **Nodal Officer Roster**: Full CRUD management of designated departmental officers, seeded from published institutional mailboxes, with visual coverage indicators.
+- **Automated Secure Portal Provisioning**: Dispatching a request generates unique, single-purpose upload links (`/portal/:token`). Raw tokens are never stored; only **SHA-256 digests** are persisted in the database.
+- **Proof File Vault**: Secure document upload handling supporting PDF, CSV, Excel, and Word files up to 25MB with automated SHA-256 integrity checksum calculation.
+- **Integrated NIRF Ranking Engine**: Ingests, caches, and indexes multi-year NIRF data (Engineering, Overall, Innovation) with instant 2nd-generation IIT comparisons.
+- **Bento 2.0 Academic Aesthetics**: Asymmetric card grids, soft diffusion shadows, and IIT Mandi institutional palette (Sage, Dusty Rose, Soft Gold, Slate Blue, and Navy).
+
+---
 
 ## 🛠 Tech Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
-- **Database**: PostgreSQL
-- **ORM**: Prisma (v7+)
+### Frontend (`frontend/`)
+- **Framework**: [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Routing**: [React Router v6](https://reactrouter.com/)
+- **State & Caching**: [TanStack React Query v5](https://tanstack.com/query)
 - **Styling**: [Tailwind CSS v3](https://tailwindcss.com/)
-- **Animation**: [Framer Motion](https://motion.dev/)
-- **Icons**: [Phosphor Icons](https://phosphoricons.com/)
+- **Animation**: [Motion / Framer Motion](https://motion.dev/)
+- **Icons**: Phosphor Icons & Lucide React
+
+### Backend (`backend/`)
+- **Framework**: [Django 5.1](https://www.djangoproject.com/) + [Django REST Framework](https://www.django-rest-framework.org/)
+- **Authentication**: JWT via [SimpleJWT](https://django-rest-framework-simplejwt.readthedocs.io/) with custom claims
+- **Database**: SQLite (default local development) / PostgreSQL 16 (production)
+- **Testing**: Pytest + `pytest-django`
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-Make sure you have Node.js, npm, and PostgreSQL installed on your machine.
+- Python 3.10+
+- Bun (or Node.js 20+)
 
-### Installation
+### Running Locally (Concurrent Development)
 
-1. Clone the repository:
+1. **Install Dependencies & Setup**:
    ```bash
-   git clone <repository-url>
-   cd iit-mandi-ranking-portal
+   # Setup Python virtualenv in backend
+   cd backend
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   python manage.py migrate
+   python manage.py seed_organogram
+   cd ..
+
+   # Setup Frontend
+   cd frontend
+   bun install # or: npm install
+   cd ..
    ```
 
-2. Install the dependencies:
+2. **Start Development Servers**:
    ```bash
-   npm install
+   bun run dev # or: npm run dev
    ```
+   - **Frontend UI**: [http://localhost:5173](http://localhost:5173)
+   - **Django REST API**: [http://127.0.0.1:8000/api/](http://127.0.0.1:8000/api/)
+   - **Default Admin Account**: `admin` / `admin123`
 
-3. Generate the Prisma Client:
-   ```bash
-   npx prisma generate
-   ```
+---
 
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+## 🐳 Docker Deployment
 
-5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the public landing page.
+The repository includes a production-ready `docker-compose.yml` orchestrating PostgreSQL, Django DRF, and an Nginx reverse-proxied React SPA:
+
+```bash
+docker compose up --build -d
+```
+
+- **Web Application**: [http://localhost:3000](http://localhost:3000)
+- **REST API & Media Proxies**: Handled automatically via Nginx on `/api/` and `/media/`.
+
+---
+
+## 🧪 Testing
+
+Run the unified monorepo test suite (Django backend tests + React production build):
+
+```bash
+bun run test # or: npm run test
+```
+
+Or test each service individually:
+```bash
+# Backend pytest suite (4/4 passing)
+cd backend && ./venv/bin/pytest tests/ -v
+
+# Frontend TypeScript check and production build
+cd frontend && bun run build
+```
+
+---
 
 ## 📁 Project Structure
 
 ```text
-src/
-├── app/
-│   ├── (public)/         # Public landing layout and pages
-│   ├── (dashboard)/      # Protected dashboard wrappers
-│   │   ├── admin/        # Admin toolset
-│   │   │   ├── organogram/       # Interactive institute hierarchy
-│   │   │   ├── nodal-officers/   # Roster of designated officers
-│   │   │   ├── data-collection/  # Dispatched request tracker
-│   │   │   └── data-requests/    # Request composer and detail view
-│   │   └── nodal-officer/# Nodal Officer toolset (Upload Wizard)
-│   ├── portal/[token]/   # Restricted, login-free proof upload portal
-│   ├── api/              # Route handlers (organogram, officers, requests, uploads)
-│   ├── layout.tsx        # Root layout, Fonts, and Toast Provider
-│   └── globals.css       # Tailwind directives
-├── components/
-│   ├── organogram/OrgTree.tsx # Reusable selectable hierarchy tree
-│   ├── DashboardLayout.tsx # Dynamic role-based sidebar
-│   └── ToastProvider.tsx   # Custom Framer Motion notification system
-├── lib/
-│   ├── organogram.ts     # Institute hierarchy + data custodianship
-│   ├── data-catalogue.ts # Requestable ranking data items per framework
-│   └── server/           # Store, mailer, access tokens, dispatch service
-prisma/
-├── schema.prisma         # Relational database models
-prisma.config.ts          # Prisma v7 connection configuration
+dora-ranking-portal/
+├── backend/                             # Django 5.1 REST backend
+│   ├── dora_backend/                    # Settings, CORS, JWT, URLs
+│   ├── apps/
+│   │   ├── accounts/                    # User model & JWT authentication
+│   │   ├── organogram/                  # 57 OrgUnits & Nodal Officers
+│   │   ├── data_requests/               # Requests, SHA-256 tokens, uploads
+│   │   └── rankings/                    # NIRF datasets, scraper, 2nd-gen IITs
+│   ├── tests/
+│   │   └── test_backend.py              # Automated backend test suite
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/                            # React 19 SPA (Vite + TypeScript)
+│   ├── src/
+│   │   ├── components/                  # Bento cards, OrgTree, modals
+│   │   ├── views/                       # PublicLanding, RankingsView, Admin, Portal
+│   │   ├── services/api.ts              # Axios client with JWT refresh
+│   │   ├── routes.tsx                   # React Router v6 configuration
+│   │   └── main.tsx                     # React Query & Toast providers
+│   ├── nginx.conf                       # Production reverse-proxy config
+│   ├── Dockerfile                       # Multi-stage Bun + Nginx container
+│   └── package.json
+├── scripts/
+│   └── dev.sh                           # Unified local dev runner
+├── docker-compose.yml                   # PostgreSQL + Django + React stack
+└── package.json                         # Monorepo runner scripts
 ```
 
-## 📬 Data Collection Workflow
-
-1. **Map** - `/admin/organogram` renders the institute hierarchy. Each section shows whether a nodal officer covers it and what is outstanding.
-2. **Staff** - `/admin/nodal-officers` manages the roster. The roster is seeded from the mailboxes published in the organogram and flags every data-owning section with no officer.
-3. **Request** - `/admin/data-requests/new` selects sections, suggests the data items those sections own, and previews the exact email each recipient will receive.
-4. **Provision** - Dispatch emails every resolved officer a restricted link (`/portal/<token>`) scoped to one section and one request.
-5. **Collect** - Officers upload proof per data item. Files are checksummed (SHA-256); a section flips to `PARTIAL`, then `SUBMITTED` once every requested item has evidence.
-6. **Follow up** - `/admin/data-collection` tracks progress; reminders rotate links, and closing a request revokes them.
-
-### Configuration
-
-| Variable | Purpose |
-| --- | --- |
-| `PORTAL_DATA_DIR` | Directory for the portal store, uploads and local mail outbox (default `.data`) |
-| `APP_BASE_URL` | Base URL used to build upload links (falls back to `APP_URL`) |
-| `PORTAL_ACCESS_TTL_DAYS` | Lifetime of a provisioned upload link (default 45) |
-| `RESEND_API_KEY` / `MAIL_FROM` | Email transport. Without a key, messages are written to `<PORTAL_DATA_DIR>/outbox/` and reported as `SIMULATED` |
-
-The workflow currently persists to a JSON store behind `src/lib/server/store.ts`. The equivalent Prisma models (`OrgUnit`, `NodalOfficer`, `DataRequest`, `PortalAccessGrant`, `ProofUpload`) are already defined in `prisma/schema.prisma`, so moving to Postgres only replaces that module.
-
-## 🗺 Roadmap
-
-The frontend UX foundation is complete. The immediate next phase involves finalizing the backend connections:
-
-1. **Database Syncing**: Pushing the Prisma schema to the PostgreSQL instance (`npx prisma db push`).
-2. **NextAuth.js Integration**: Securing the `/admin` and `/nodal-officer` routes strictly behind Google OAuth (restricted to `@iitmandi.ac.in` domains).
-3. **API Development**: Creating Next.js Server Actions to process form uploads and attachments to Amazon S3.
-
 ---
-*Developed for IIT Mandi.*
+*Developed for IIT Mandi — Dean of Resource Generation & Alumni Affairs (DORA).*

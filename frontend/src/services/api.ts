@@ -8,6 +8,7 @@ import type {
   PortalContext,
   ProofUpload,
   NirfRankItem,
+  TrendsApiResponse,
   User,
 } from '../types';
 
@@ -103,9 +104,14 @@ export const organogramService = {
   },
 };
 
-export const nodalOfficersService = {
-  async list(): Promise<NodalOfficer[]> {
+export const nodalOfficerService = {
+  async getAll(): Promise<NodalOfficer[]> {
     const res = await api.get('/api/nodal-officers/');
+    return res.data;
+  },
+
+  async getById(id: string): Promise<NodalOfficer> {
+    const res = await api.get(`/api/nodal-officers/${id}/`);
     return res.data;
   },
 
@@ -115,7 +121,7 @@ export const nodalOfficersService = {
   },
 
   async update(id: string, data: Partial<NodalOfficer>): Promise<NodalOfficer> {
-    const res = await api.patch(`/api/nodal-officers/${id}/`, data);
+    const res = await api.put(`/api/nodal-officers/${id}/`, data);
     return res.data;
   },
 
@@ -123,38 +129,30 @@ export const nodalOfficersService = {
     await api.delete(`/api/nodal-officers/${id}/`);
   },
 
-  async getAccess(id: string) {
-    const res = await api.get(`/api/nodal-officers/${id}/access/`);
+  async issueAccess(officerId: string, payload: { requestId: string; orgUnitId: string; dataItemIds: string[]; expiresInHours?: number }): Promise<{ token: string; url: string; expiresAt: string }> {
+    const res = await api.post(`/api/nodal-officers/${officerId}/access/`, payload);
     return res.data;
   },
 };
 
-export const dataRequestsService = {
-  async list(): Promise<DataRequest[]> {
-    const res = await api.get('/api/data-requests/');
+export const dataRequestService = {
+  async getAll(params?: { status?: string; framework?: string }): Promise<DataRequest[]> {
+    const res = await api.get('/api/data-requests/', { params });
     return res.data;
   },
 
-  async get(id: string): Promise<DataRequest> {
+  async getById(id: string): Promise<DataRequest> {
     const res = await api.get(`/api/data-requests/${id}/`);
     return res.data;
   },
 
-  async create(payload: {
-    title: string;
-    framework: string;
-    cycleYear: number;
-    subject: string;
-    message: string;
-    deadline: string;
-    sections: { unitId: string; dataItemIds: string[] }[];
-  }): Promise<DataRequest & { issuedGrants?: any[] }> {
-    const res = await api.post('/api/data-requests/', payload);
+  async create(data: any): Promise<DataRequest> {
+    const res = await api.post('/api/data-requests/', data);
     return res.data;
   },
 
-  async action(id: string, action: 'remind' | 'close') {
-    const res = await api.post(`/api/data-requests/${id}/actions/`, { action });
+  async performAction(id: string, action: 'submit' | 'approve' | 'reject' | 'archive', payload?: any): Promise<DataRequest> {
+    const res = await api.post(`/api/data-requests/${id}/actions/`, { action, ...payload });
     return res.data;
   },
 };
@@ -188,6 +186,11 @@ export const rankingsService = {
 
   async getSecondGenIITs(year: number | string, category: string): Promise<{ count: number; data: NirfRankItem[] }> {
     const res = await api.get(`/api/v1/rankings/${year}/${category}/2nd-gen-iits/`);
+    return res.data;
+  },
+
+  async getTrends(category?: string): Promise<TrendsApiResponse> {
+    const res = await api.get('/api/v1/rankings/trends/', { params: category ? { category } : {} });
     return res.data;
   },
 

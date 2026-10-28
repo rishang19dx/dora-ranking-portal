@@ -1,7 +1,7 @@
 [
     {
         "institute_id": "IR-O-U-0456",
-        "name": "Indian Institute of Technology MadrasMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)88.3787.3085.7665.68100.00",
+        "name": "Indian Institute of Technology Madras",
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 86.42,
@@ -9,7 +9,7 @@
     },
     {
         "institute_id": "IR-O-U-0220",
-        "name": "Indian Institute of Science, BengaluruMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)83.6086.5082.1758.4699.70",
+        "name": "Indian Institute of Science, Bengaluru",
         "city": "Bengaluru",
         "state": "Karnataka",
         "score": 83.28,
@@ -17,7 +17,7 @@
     },
     {
         "institute_id": "IR-O-U-0306",
-        "name": "Indian Institute of Technology BombayMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)83.8582.3583.3659.0589.32",
+        "name": "Indian Institute of Technology Bombay",
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 81.37,
@@ -25,7 +25,7 @@
     },
     {
         "institute_id": "IR-O-I-1074",
-        "name": "Indian Institute of Technology DelhiMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)76.5786.2377.4866.2393.48",
+        "name": "Indian Institute of Technology Delhi",
         "city": "New Delhi",
         "state": "Delhi",
         "score": 80.31,
@@ -33,7 +33,7 @@
     },
     {
         "institute_id": "IR-O-I-1075",
-        "name": "Indian Institute of Technology KanpurMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)89.8469.0981.9660.8374.12",
+        "name": "Indian Institute of Technology Kanpur",
         "city": "Kanpur",
         "state": "Uttar Pradesh",
         "score": 77.56,
@@ -41,7 +41,7 @@
     },
     {
         "institute_id": "IR-O-U-0573",
-        "name": "Indian Institute of Technology KharagpurMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)76.6574.9480.1857.2975.24",
+        "name": "Indian Institute of Technology Kharagpur",
         "city": "Kharagpur",
         "state": "West Bengal",
         "score": 74.77,
@@ -49,7 +49,7 @@
     },
     {
         "institute_id": "IR-O-N-15",
-        "name": "All India Institute of Medical Sciences DelhiMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)79.0971.2668.6671.2982.97",
+        "name": "All India Institute of Medical Sciences Delhi",
         "city": "New Delhi",
         "state": "Delhi",
         "score": 74.27,
@@ -57,7 +57,7 @@
     },
     {
         "institute_id": "IR-O-U-0560",
-        "name": "Indian Institute of Technology RoorkeeMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)76.5570.4879.1462.9152.89",
+        "name": "Indian Institute of Technology Roorkee",
         "city": "Roorkee",
         "state": "Uttarakhand",
         "score": 71.52,
@@ -65,7 +65,7 @@
     },
     {
         "institute_id": "IR-O-U-0053",
-        "name": "Indian Institute of Technology GuwahatiMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)76.3364.4381.3561.9643.43",
+        "name": "Indian Institute of Technology Guwahati",
         "city": "Guwahati",
         "state": "Assam",
         "score": 69.04,
@@ -73,7 +73,7 @@
     },
     {
         "institute_id": "IR-O-U-0109",
-        "name": "Jawaharlal Nehru UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)74.9345.2797.3472.2857.71",
+        "name": "Jawaharlal Nehru University",
         "city": "New Delhi",
         "state": "Delhi",
         "score": 68.53,
@@ -81,7 +81,7 @@
     },
     {
         "institute_id": "IR-O-U-0500",
-        "name": "Banaras Hindu UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)73.5951.0194.9461.5750.25",
+        "name": "Banaras Hindu University",
         "city": "Varanasi",
         "state": "Uttar Pradesh",
         "score": 67.56,
@@ -89,7 +89,7 @@
     },
     {
         "institute_id": "IR-O-U-0013",
-        "name": "Indian Institute of Technology HyderabadMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)78.9656.5973.3359.2154.34",
+        "name": "Indian Institute of Technology Hyderabad",
         "city": "Hyderabad",
         "state": "Telangana",
         "score": 66.69,
@@ -97,7 +97,7 @@
     },
     {
         "institute_id": "IR-O-U-0108",
-        "name": "Jamia Millia IslamiaMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)71.2949.2892.7283.1029.78",
+        "name": "Jamia Millia Islamia",
         "city": "New Delhi",
         "state": "Delhi",
         "score": 66.0,
@@ -105,7 +105,7 @@
     },
     {
         "institute_id": "IR-O-U-0234",
-        "name": "Manipal Academy of Higher Education, ManipalMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)78.1155.9477.3467.3325.34",
+        "name": "Manipal Academy of Higher Education, Manipal",
         "city": "Manipal",
         "state": "Karnataka",
         "score": 64.94,
@@ -113,7 +113,7 @@
     },
     {
         "institute_id": "IR-O-U-0120",
-        "name": "University of DelhiMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)56.7556.4298.5467.5743.93",
+        "name": "University of Delhi",
         "city": "Delhi",
         "state": "Delhi",
         "score": 64.81,
@@ -121,7 +121,7 @@
     },
     {
         "institute_id": "IR-O-U-0496",
-        "name": "Aligarh Muslim UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)74.0245.9193.8161.1533.15",
+        "name": "Aligarh Muslim University",
         "city": "Aligarh",
         "state": "Uttar Pradesh",
         "score": 64.17,
@@ -129,7 +129,7 @@
     },
     {
         "institute_id": "IR-O-U-0575",
-        "name": "Jadavpur UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)68.8351.3589.9249.9448.20",
+        "name": "Jadavpur University",
         "city": "Kolkata",
         "state": "West Bengal",
         "score": 63.84,
@@ -137,7 +137,7 @@
     },
     {
         "institute_id": "IR-O-U-0436",
-        "name": "Amrita Vishwa VidyapeethamMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)76.5147.8277.6373.8336.07",
+        "name": "Amrita Vishwa Vidyapeetham",
         "city": "Coimbatore",
         "state": "Tamil Nadu",
         "score": 63.81,
@@ -145,7 +145,7 @@
     },
     {
         "institute_id": "IR-O-U-0490",
-        "name": "Vellore Institute of TechnologyMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)61.5161.9579.4261.1139.35",
+        "name": "Vellore Institute of Technology",
         "city": "Vellore",
         "state": "Tamil Nadu",
         "score": 62.97,
@@ -153,7 +153,7 @@
     },
     {
         "institute_id": "IR-O-U-0439",
-        "name": "Anna UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)60.3263.5171.5848.9364.13",
+        "name": "Anna University",
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 62.77,
@@ -161,7 +161,7 @@
     },
     {
         "institute_id": "IR-O-U-0473",
-        "name": "S.R.M. Institute of Science and TechnologyMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)71.6955.4376.9268.5517.02",
+        "name": "S.R.M. Institute of Science and Technology",
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 62.07,
@@ -169,7 +169,7 @@
     },
     {
         "institute_id": "IR-O-I-1441",
-        "name": "Saveetha Institute of Medical and Technical SciencesMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)72.5960.8772.8266.075.79",
+        "name": "Saveetha Institute of Medical and Technical Sciences",
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 61.79,
@@ -177,7 +177,7 @@
     },
     {
         "institute_id": "IR-O-U-0391",
-        "name": "Birla Institute of Technology and Science, PilaniMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)66.0657.8375.1958.4928.11",
+        "name": "Birla Institute of Technology and Science, Pilani",
         "city": "Pilani",
         "state": "Rajasthan",
         "score": 60.87,
@@ -185,7 +185,7 @@
     },
     {
         "institute_id": "IR-O-U-0363",
-        "name": "Siksha `O` AnusandhanMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)74.0942.1974.0672.7437.65",
+        "name": "Siksha `O` Anusandhan",
         "city": "Bhubaneswar",
         "state": "Odisha",
         "score": 60.73,
@@ -193,7 +193,7 @@
     },
     {
         "institute_id": "IR-O-U-0042",
-        "name": "University of HyderabadMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)72.6945.5881.3962.2625.60",
+        "name": "University of Hyderabad",
         "city": "Hyderabad",
         "state": "Telangana",
         "score": 60.55,
@@ -201,7 +201,7 @@
     },
     {
         "institute_id": "IR-O-U-0570",
-        "name": "Calcutta UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)70.0142.1192.1950.1731.61",
+        "name": "Calcutta University",
         "city": "Kolkata",
         "state": "West Bengal",
         "score": 60.25,
@@ -209,7 +209,7 @@
     },
     {
         "institute_id": "IR-O-U-0304",
-        "name": "Homi Bhabha National InstituteMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)76.2952.4576.9553.847.42",
+        "name": "Homi Bhabha National Institute",
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 60.13,
@@ -217,7 +217,7 @@
     },
     {
         "institute_id": "IR-O-U-0356",
-        "name": "Kalinga Institute of Industrial TechnologyMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)74.7442.0179.5376.3513.72",
+        "name": "Kalinga Institute of Industrial Technology",
         "city": "Bhubaneswar",
         "state": "Odisha",
         "score": 59.94,
@@ -225,7 +225,7 @@
     },
     {
         "institute_id": "IR-O-U-0139",
-        "name": "Indian Institute of Technology GandhinagarMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)76.4041.5369.9769.2124.82",
+        "name": "Indian Institute of Technology Gandhinagar",
         "city": "Gandhinagar",
         "state": "Gujarat",
         "score": 58.77,
@@ -233,7 +233,7 @@
     },
     {
         "institute_id": "IR-O-U-0701",
-        "name": "Indian Institute of Technology (Banaras Hindu University) VaranasiMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)57.1654.9576.2557.9740.09",
+        "name": "Indian Institute of Technology (Banaras Hindu University) Varanasi",
         "city": "Varanasi",
         "state": "Uttar Pradesh",
         "score": 58.69,
@@ -241,7 +241,7 @@
     },
     {
         "institute_id": "IR-O-U-0467",
-        "name": "National Institute of Technology TiruchirappalliMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)57.7448.1474.2164.6255.37",
+        "name": "National Institute of Technology Tiruchirappalli",
         "city": "Tiruchirappalli",
         "state": "Tamil Nadu",
         "score": 58.6,
@@ -249,7 +249,7 @@
     },
     {
         "institute_id": "IR-O-U-0747",
-        "name": "Chandigarh UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)68.5039.6678.1877.5224.56",
+        "name": "Chandigarh University",
         "city": "Mohali",
         "state": "Punjab",
         "score": 58.3,
@@ -257,7 +257,7 @@
     },
     {
         "institute_id": "IR-O-U-0273",
-        "name": "Indian Institute of Technology IndoreMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)65.5450.9171.7860.7319.49",
+        "name": "Indian Institute of Technology Indore",
         "city": "Indore",
         "state": "Madhya Pradesh",
         "score": 57.31,
@@ -265,7 +265,7 @@
     },
     {
         "institute_id": "IR-O-U-0357",
-        "name": "National Institute of Technology RourkelaMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)63.9450.5475.2259.6017.02",
+        "name": "National Institute of Technology Rourkela",
         "city": "Rourkela",
         "state": "Odisha",
         "score": 57.04,
@@ -273,7 +273,7 @@
     },
     {
         "institute_id": "IR-O-U-0205",
-        "name": "Indian Institute of Technology (Indian School of Mines) DhanbadMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)59.6955.0571.7259.2022.93",
+        "name": "Indian Institute of Technology (Indian School of Mines) Dhanbad",
         "city": "Dhanbad",
         "state": "Jharkhand",
         "score": 56.97,
@@ -281,7 +281,7 @@
     },
     {
         "institute_id": "IR-O-U-0222",
-        "name": "JSS Academy of Higher Education and ResearchMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)76.6832.1269.6676.9515.07",
+        "name": "JSS Academy of Higher Education and Research",
         "city": "Mysuru",
         "state": "Karnataka",
         "score": 55.79,
@@ -289,7 +289,7 @@
     },
     {
         "institute_id": "IR-O-U-0323",
-        "name": "Savitribai Phule Pune UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)61.0739.1789.6552.5924.29",
+        "name": "Savitribai Phule Pune University",
         "city": "Pune",
         "state": "Maharashtra",
         "score": 55.69,
@@ -297,7 +297,7 @@
     },
     {
         "institute_id": "IR-O-U-0260",
-        "name": "Kerala UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)74.5226.7294.8258.194.52",
+        "name": "Kerala University",
         "city": "Thiruvananthapuram",
         "state": "Kerala",
         "score": 55.61,
@@ -305,7 +305,7 @@
     },
     {
         "institute_id": "IR-O-U-0368",
-        "name": "Jawaharlal Institute of Post Graduate Medical Education and ResearchMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)72.8633.4771.0170.1124.02",
+        "name": "Jawaharlal Institute of Post Graduate Medical Education and Research",
         "city": "Puducherry",
         "state": "Pondicherry",
         "score": 55.51,
@@ -313,7 +313,7 @@
     },
     {
         "institute_id": "IR-O-U-0020",
-        "name": "Koneru Lakshmaiah Education Foundation University (K L College of Engineering)More DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)67.8741.5471.7866.4816.38",
+        "name": "Koneru Lakshmaiah Education Foundation University (K L College of Engineering)",
         "city": "Vaddeswaram",
         "state": "Andhra Pradesh",
         "score": 55.47,
@@ -321,7 +321,7 @@
     },
     {
         "institute_id": "IR-O-U-0006",
-        "name": "Andhra UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)75.4426.0585.1964.6810.13",
+        "name": "Andhra University",
         "city": "Visakhapatnam",
         "state": "Andhra Pradesh",
         "score": 54.97,
@@ -329,7 +329,7 @@
     },
     {
         "institute_id": "IR-O-U-0305",
-        "name": "Indian Institute of Science Education and Research PuneMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)72.8041.0961.5362.2821.53",
+        "name": "Indian Institute of Science Education and Research Pune",
         "city": "Pune",
         "state": "Maharashtra",
         "score": 54.86,
@@ -337,7 +337,7 @@
     },
     {
         "institute_id": "IR-O-I-1480",
-        "name": "Thapar Institute of Engineering and Technology (Deemed-to-be-university)More DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)65.0043.3671.1963.8317.02",
+        "name": "Thapar Institute of Engineering and Technology (Deemed-to-be-university)",
         "city": "Patiala",
         "state": "Punjab",
         "score": 54.83,
@@ -345,7 +345,7 @@
     },
     {
         "institute_id": "IR-O-U-0447",
-        "name": "Bharathiar UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)64.0442.4578.1654.0518.27",
+        "name": "Bharathiar University",
         "city": "Coimbatore",
         "state": "Tamil Nadu",
         "score": 54.81,
@@ -353,7 +353,7 @@
     },
     {
         "institute_id": "IR-O-U-0379",
-        "name": "Lovely Professional UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)57.1049.7566.6369.8122.10",
+        "name": "Lovely Professional University",
         "city": "Phagwara",
         "state": "Punjab",
         "score": 54.58,
@@ -361,7 +361,7 @@
     },
     {
         "institute_id": "IR-O-U-0237",
-        "name": "National Institute of Technology Karnataka, Surathkal More DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)55.7543.4174.3962.7935.25",
+        "name": "National Institute of Technology Karnataka, Surathkal",
         "city": "Surathkal",
         "state": "Karnataka",
         "score": 54.44,
@@ -369,7 +369,7 @@
     },
     {
         "institute_id": "IR-O-U-0476",
-        "name": "Shanmugha Arts Science Technology and Research AcademyMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)69.4137.6471.4766.2311.24",
+        "name": "Shanmugha Arts Science Technology and Research Academy",
         "city": "Thanjavur",
         "state": "Tamil Nadu",
         "score": 54.14,
@@ -377,7 +377,7 @@
     },
     {
         "institute_id": "IR-O-U-0378",
-        "name": "Indian Institute of Technology RoparMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)68.8139.9567.5065.2214.74",
+        "name": "Indian Institute of Technology Ropar",
         "city": "Rupnagar",
         "state": "Punjab",
         "score": 54.12,
@@ -385,7 +385,7 @@
     },
     {
         "institute_id": "IR-O-U-0497",
-        "name": "Amity UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)56.7750.3171.9265.599.75",
+        "name": "Amity University",
         "city": "Gautam Budh Nagar",
         "state": "Uttar Pradesh",
         "score": 54.04,
@@ -393,7 +393,7 @@
     },
     {
         "institute_id": "IR-O-U-0458",
-        "name": "Kalasalingam Academy of Research and EducationMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)69.7532.3674.5674.3010.50",
+        "name": "Kalasalingam Academy of Research and Education",
         "city": "Srivilliputhur",
         "state": "Tamil Nadu",
         "score": 54.02,
@@ -401,7 +401,7 @@
     },
     {
         "institute_id": "IR-O-U-0253",
-        "name": "Cochin University of Science and TechnologyMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)71.6835.5373.7656.1014.74",
+        "name": "Cochin University of Science and Technology",
         "city": "Cochin",
         "state": "Kerala",
         "score": 53.99,
@@ -409,7 +409,7 @@
     },
     {
         "institute_id": "IR-O-U-0329",
-        "name": "Symbiosis InternationalMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)72.5327.4978.5364.7917.34",
+        "name": "Symbiosis International",
         "city": "Pune",
         "state": "Maharashtra",
         "score": 53.93,
@@ -417,7 +417,7 @@
     },
     {
         "institute_id": "IR-O-U-0025",
-        "name": "National Institute of Technology WarangalMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)61.7642.2272.7557.8422.10",
+        "name": "National Institute of Technology Warangal",
         "city": "Warangal",
         "state": "Telangana",
         "score": 53.74,
@@ -425,7 +425,7 @@
     },
     {
         "institute_id": "IR-O-U-0263",
-        "name": "National Institute of Technology CalicutMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)66.2132.4472.8268.1626.88",
+        "name": "National Institute of Technology Calicut",
         "city": "Kozhikode",
         "state": "Kerala",
         "score": 53.66,
@@ -433,7 +433,7 @@
     },
     {
         "institute_id": "IR-O-U-0448",
-        "name": "Bharathidasan UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)65.1339.1479.7853.338.99",
+        "name": "Bharathidasan University",
         "city": "Tiruchirappalli",
         "state": "Tamil Nadu",
         "score": 53.47,
@@ -441,7 +441,7 @@
     },
     {
         "institute_id": "IR-O-U-0308",
-        "name": "Institute of Chemical TechnologyMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)55.9145.6875.0855.3923.48",
+        "name": "Institute of Chemical Technology",
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 53.38,
@@ -449,7 +449,7 @@
     },
     {
         "institute_id": "IR-O-U-0052",
-        "name": "Gauhati UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)71.8224.1188.2860.987.42",
+        "name": "Gauhati University",
         "city": "Guwahati",
         "state": "Assam",
         "score": 53.28,
@@ -457,7 +457,7 @@
     },
     {
         "institute_id": "IR-O-U-0498",
-        "name": "Babasaheb Bhimrao Ambedkar UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)69.3125.4680.9478.637.82",
+        "name": "Babasaheb Bhimrao Ambedkar University",
         "city": "Lucknow",
         "state": "Uttar Pradesh",
         "score": 53.26,
@@ -465,7 +465,7 @@
     },
     {
         "institute_id": "IR-O-U-0564",
-        "name": "UPESMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)64.1141.1960.6265.7627.62",
+        "name": "UPES",
         "city": "Dehradun",
         "state": "Uttarakhand",
         "score": 53.05,
@@ -473,7 +473,7 @@
     },
     {
         "institute_id": "IR-O-U-0078",
-        "name": "Panjab UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)54.3142.0174.0763.3829.55",
+        "name": "Panjab University",
         "city": "Chandigarh",
         "state": "Chandigarh",
         "score": 52.99,
@@ -481,7 +481,7 @@
     },
     {
         "institute_id": "IR-O-U-0572",
-        "name": "Indian Institute of Science Education and Research KolkataMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)68.8939.5366.7954.5215.73",
+        "name": "Indian Institute of Science Education and Research Kolkata",
         "city": "Mohanpur",
         "state": "West Bengal",
         "score": 52.91,
@@ -489,7 +489,7 @@
     },
     {
         "institute_id": "IR-O-U-0107",
-        "name": "Jamia HamdardMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)68.6634.4570.2066.1712.32",
+        "name": "Jamia Hamdard",
         "city": "New Delhi",
         "state": "Delhi",
         "score": 52.83,
@@ -497,7 +497,7 @@
     },
     {
         "institute_id": "IR-O-I-1110",
-        "name": "Dr. D. Y. Patil VidyapeethMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)74.4626.1263.1061.7437.45",
+        "name": "Dr. D. Y. Patil Vidyapeeth",
         "city": "Pune",
         "state": "Maharashtra",
         "score": 52.72,
@@ -505,7 +505,7 @@
     },
     {
         "institute_id": "IR-O-U-0377",
-        "name": "Indian Institute of Science Education and Research MohaliMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)67.3832.8970.8166.1417.34",
+        "name": "Indian Institute of Science Education and Research Mohali",
         "city": "Mohali",
         "state": "Punjab",
         "score": 52.58,
@@ -513,7 +513,7 @@
     },
     {
         "institute_id": "IR-O-I-1357",
-        "name": "University of MadrasMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)69.3138.5065.4753.2218.27",
+        "name": "University of Madras",
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 52.58,
@@ -521,7 +521,7 @@
     },
     {
         "institute_id": "IR-O-U-0098",
-        "name": "Delhi Technological UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)63.1837.8767.5056.6529.07",
+        "name": "Delhi Technological University",
         "city": "New Delhi",
         "state": "Delhi",
         "score": 52.38,
@@ -529,7 +529,7 @@
     },
     {
         "institute_id": "IR-O-U-0262",
-        "name": "Mahatma Gandhi UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)71.3637.2770.9751.094.09",
+        "name": "Mahatma Gandhi University",
         "city": "Kottayam",
         "state": "Kerala",
         "score": 52.3,
@@ -537,7 +537,7 @@
     },
     {
         "institute_id": "IR-O-U-0395",
-        "name": "Indian Institute of Technology JodhpurMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)71.5034.9163.5667.128.99",
+        "name": "Indian Institute of Technology Jodhpur",
         "city": "Jodhpur",
         "state": "Rajasthan",
         "score": 52.24,
@@ -545,7 +545,7 @@
     },
     {
         "institute_id": "IR-O-U-0196",
-        "name": "University of KashmirMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)71.1431.2579.7251.143.66",
+        "name": "University of Kashmir",
         "city": "Srinagar",
         "state": "Jammu and Kashmir",
         "score": 52.14,
@@ -553,7 +553,7 @@
     },
     {
         "institute_id": "IR-O-U-0027",
-        "name": "Osmania UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)64.7528.7785.3358.0510.87",
+        "name": "Osmania University",
         "city": "Hyderabad",
         "state": "Telangana",
         "score": 52.02,
@@ -561,7 +561,7 @@
     },
     {
         "institute_id": "IR-O-U-0295",
-        "name": "Datta Meghe Institute of Higher Education and ResearchMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)71.4938.3361.2664.141.41",
+        "name": "Datta Meghe Institute of Higher Education and Research",
         "city": "Wardha",
         "state": "Maharashtra",
         "score": 51.75,
@@ -569,7 +569,7 @@
     },
     {
         "institute_id": "IR-O-U-0184",
-        "name": "Indian Institute of Technology MandiMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)65.4838.3961.9670.3710.87",
+        "name": "Indian Institute of Technology Mandi",
         "city": "Mandi",
         "state": "Himachal Pradesh",
         "score": 51.68,
@@ -577,7 +577,7 @@
     },
     {
         "institute_id": "IR-O-U-0064",
-        "name": "Indian Institute of Technology PatnaMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)60.2542.0470.1254.1011.24",
+        "name": "Indian Institute of Technology Patna",
         "city": "Patna",
         "state": "Bihar",
         "score": 51.24,
@@ -585,7 +585,7 @@
     },
     {
         "institute_id": "IR-O-U-0691",
-        "name": "All India Institute of Medical Sciences RishikeshMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)74.0735.3550.6869.1313.37",
+        "name": "All India Institute of Medical Sciences Rishikesh",
         "city": "Rishikesh",
         "state": "Uttarakhand",
         "score": 51.22,
@@ -593,7 +593,7 @@
     },
     {
         "institute_id": "IR-O-U-0574",
-        "name": "Indian Statistical Institute, KolkataMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)68.0532.9967.5945.2727.37",
+        "name": "Indian Statistical Institute, Kolkata",
         "city": "Kolkata",
         "state": "West Bengal",
         "score": 51.1,
@@ -601,7 +601,7 @@
     },
     {
         "institute_id": "IR-O-U-0435",
-        "name": "Alagappa UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)65.8835.3073.7651.917.82",
+        "name": "Alagappa University",
         "city": "Karaikudi",
         "state": "Tamil Nadu",
         "score": 51.07,
@@ -609,7 +609,7 @@
     },
     {
         "institute_id": "IR-O-U-0334",
-        "name": "Visvesvaraya National Institute of Technology NagpurMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)62.9637.2568.6055.8216.70",
+        "name": "Visvesvaraya National Institute of Technology Nagpur",
         "city": "Nagpur",
         "state": "Maharashtra",
         "score": 51.03,
@@ -617,7 +617,7 @@
     },
     {
         "institute_id": "IR-O-U-0272",
-        "name": "Indian Institute of Science Education and Research BhopalMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)69.1431.9965.9667.876.20",
+        "name": "Indian Institute of Science Education and Research Bhopal",
         "city": "Bhopal",
         "state": "Madhya Pradesh",
         "score": 50.94,
@@ -625,7 +625,7 @@
     },
     {
         "institute_id": "IR-O-U-0555",
-        "name": "Graphic Era UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)59.9033.8662.9366.0832.50",
+        "name": "Graphic Era University",
         "city": "Dehradun",
         "state": "Uttarakhand",
         "score": 50.58,
@@ -633,7 +633,7 @@
     },
     {
         "institute_id": "IR-O-U-0381",
-        "name": "Punjab Agricultural UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)74.1932.4364.1249.587.82",
+        "name": "Punjab Agricultural University",
         "city": "Ludhiana",
         "state": "Punjab",
         "score": 50.55,
@@ -641,7 +641,7 @@
     },
     {
         "institute_id": "IR-O-C-16604",
-        "name": "Sri Sivasubramaniya Nadar College of EngineeringMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)61.3039.4067.3257.1410.50",
+        "name": "Sri Sivasubramaniya Nadar College of Engineering",
         "city": "Kalavakkam",
         "state": "Tamil Nadu",
         "score": 50.43,
@@ -649,7 +649,7 @@
     },
     {
         "institute_id": "IR-O-U-0410",
-        "name": "Malaviya National Institute of TechnologyMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)58.0242.6669.7052.4710.13",
+        "name": "Malaviya National Institute of Technology",
         "city": "Jaipur",
         "state": "Rajasthan",
         "score": 50.41,
@@ -657,7 +657,7 @@
     },
     {
         "institute_id": "IR-O-U-0689",
-        "name": "All India Institute of Medical Sciences JodhpurMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)72.7033.9356.3660.626.20",
+        "name": "All India Institute of Medical Sciences Jodhpur",
         "city": "Jodhpur",
         "state": "Rajasthan",
         "score": 49.94,
@@ -665,7 +665,7 @@
     },
     {
         "institute_id": "IR-O-N-10",
-        "name": "SVKM`s Narsee Monjee Institute of Management Studies More DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)74.0024.8364.3865.175.37",
+        "name": "SVKM`s Narsee Monjee Institute of Management Studies",
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 49.59,
@@ -673,7 +673,7 @@
     },
     {
         "institute_id": "IR-O-U-0474",
-        "name": "Sathyabama Institute of Science and TechnologyMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)59.0536.3063.3270.6411.96",
+        "name": "Sathyabama Institute of Science and Technology",
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 49.52,
@@ -681,7 +681,7 @@
     },
     {
         "institute_id": "IR-O-U-0235",
-        "name": "Mysore UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)70.8019.3579.5157.967.02",
+        "name": "Mysore University",
         "city": "Mysuru",
         "state": "Karnataka",
         "score": 49.45,
@@ -689,7 +689,7 @@
     },
     {
         "institute_id": "IR-O-U-0195",
-        "name": "University of JammuMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)72.9523.4374.9152.722.32",
+        "name": "University of Jammu",
         "city": "Jammu",
         "state": "Jammu and Kashmir",
         "score": 49.4,
@@ -697,7 +697,7 @@
     },
     {
         "institute_id": "IR-O-U-0523",
-        "name": "King George`s Medical UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)72.1227.4562.8156.249.37",
+        "name": "King George`s Medical University",
         "city": "Lucknow",
         "state": "Uttar Pradesh",
         "score": 48.98,
@@ -705,7 +705,7 @@
     },
     {
         "institute_id": "IR-O-U-0190",
-        "name": "Shoolini University of Biotechnology and Management SciencesMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)54.6439.2468.7065.984.52",
+        "name": "Shoolini University of Biotechnology and Management Sciences",
         "city": "Solan",
         "state": "Himachal Pradesh",
         "score": 48.95,
@@ -713,7 +713,7 @@
     },
     {
         "institute_id": "IR-O-U-0217",
-        "name": "Christ UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)58.3422.0566.4972.8439.72",
+        "name": "Christ University",
         "city": "Bengaluru",
         "state": "Karnataka",
         "score": 48.66,
@@ -721,7 +721,7 @@
     },
     {
         "institute_id": "IR-O-U-0446",
-        "name": "Bharath Institute of Higher Education and ResearchMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)67.4622.6267.7371.199.37",
+        "name": "Bharath Institute of Higher Education and Research",
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 48.64,
@@ -729,7 +729,7 @@
     },
     {
         "institute_id": "IR-O-U-0055",
-        "name": "National Institute of Technology SilcharMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)50.8843.7069.9356.425.37",
+        "name": "National Institute of Technology Silchar",
         "city": "Silchar",
         "state": "Assam",
         "score": 48.55,
@@ -737,7 +737,7 @@
     },
     {
         "institute_id": "IR-O-U-0577",
-        "name": "National Institute of Technology DurgapurMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)57.8132.7471.0557.9711.24",
+        "name": "National Institute of Technology Durgapur",
         "city": "Durgapur",
         "state": "West Bengal",
         "score": 48.29,
@@ -745,7 +745,7 @@
     },
     {
         "institute_id": "IR-O-U-0136",
-        "name": "Gujarat UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)67.9717.5381.9957.004.09",
+        "name": "Gujarat University",
         "city": "Ahmedabad",
         "state": "Gujarat",
         "score": 48.16,
@@ -753,7 +753,7 @@
     },
     {
         "institute_id": "IR-O-U-0642",
-        "name": "Shiv Nadar UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)71.4325.5159.7466.794.09",
+        "name": "Shiv Nadar University",
         "city": "Gautam Buddha Nagar",
         "state": "Uttar Pradesh",
         "score": 48.12,
@@ -761,7 +761,7 @@
     },
     {
         "institute_id": "IR-O-I-1486",
-        "name": "Sri Ramachandra Institute of Higher Education and ResearchMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)72.7322.2262.4662.998.21",
+        "name": "Sri Ramachandra Institute of Higher Education and Research",
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 48.1,
@@ -769,7 +769,7 @@
     },
     {
         "institute_id": "IR-O-U-0003",
-        "name": "Acharya Nagarjuna UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)64.3817.0082.9765.002.32",
+        "name": "Acharya Nagarjuna University",
         "city": "Guntur",
         "state": "Andhra Pradesh",
         "score": 47.73,
@@ -777,7 +777,7 @@
     },
     {
         "institute_id": "IR-O-U-0331",
-        "name": "Tata Institute of Social SciencesMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)66.9615.8371.4972.1911.96",
+        "name": "Tata Institute of Social Sciences",
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 47.56,
@@ -785,7 +785,7 @@
     },
     {
         "institute_id": "IR-O-U-0686",
-        "name": "All India Institute of Medical Sciences PatnaMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)69.5720.4960.0066.0819.19",
+        "name": "All India Institute of Medical Sciences Patna",
         "city": "Patna",
         "state": "Bihar",
         "score": 47.55,
@@ -793,7 +793,7 @@
     },
     {
         "institute_id": "IR-O-U-0470",
-        "name": "Periyar UniversityMore DetailsClose |  | TLR (100)RPC (100)GO (100)OI (100)PERCEPTION (100)61.5129.4669.5859.862.32",
+        "name": "Periyar University",
         "city": "Salem",
         "state": "Tamil Nadu",
         "score": 47.43,

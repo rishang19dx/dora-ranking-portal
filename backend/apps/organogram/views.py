@@ -4,8 +4,10 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 from .models import OrgUnit, NodalOfficer
 from .serializers import OrgUnitSerializer, NodalOfficerSerializer, NodalOfficerWriteSerializer
+from apps.data_requests.mailer import send_mail, render_template, INVITE_TEMPLATE
 
 FIXTURES_DIR = Path(__file__).resolve().parent / 'fixtures'
 
@@ -77,3 +79,53 @@ class NodalOfficerAccessView(APIView):
         officer = get_object_or_404(NodalOfficer, pk=pk)
         grants = PortalAccessGrant.objects.filter(officer=officer, revoked_at__isnull=True)
         return Response(PortalAccessGrantSerializer(grants, many=True).data)
+
+    def post(self, request, pk):
+        from django.utils import timezone
+        from apps.data_requests.models import PortalAccessGrant
+        from apps.organogram.models import OfficerStatus
+        officer = get_object_or_404(NodalOfficer, pk=pk)
+        action = request.data.get('action', 'INVITE').upper()
+
+        if action == 'REVOKE':
+            revoked = PortalAccessGrant.objects.filter(officer=officer, revoked_at__isnull=True).update(revoked_at=timezone.now())
+            officer.status = OfficerStatus.REVOKED
+            officer.save()
+            return Response({
+                'officer': NodalOfficerSerializer(officer).data,
+                'message': f'Portal access revoked. {revoked} active link{"s" if revoked != 1 else ""} invalidated.'
+            })
+
+        if action == 'RESTORE':
+            officer.status = OfficerStatus.ACTIVE
+            officer.save()
+            return Response({
+                'officer': NodalOfficerSerializer(officer).data,
+                'message': 'Officer restored. Issue a fresh request to provision new upload links.'
+            })
+
+        if action == 'INVITE':
+            officer.last_invited_at = timezone.now()
+            if officer.status == OfficerStatus.REVOKED:
+                officer.status = OfficerStatus.INVITED
+            officer.save()
+
+            app_base_url = getattr(settings, 'APP_BASE_URL', 'http://localhost:5173')
+            sections_str = ", ".join([u.short_name or u.name for u in officer.assigned_units.all()]) or "assigned sections"
+            vars_dict = {
+                'officer': officer.name,
+                'sections': sections_str,
+                'portal': app_base_url,
+                'from': getattr(settings, 'MAIL_FROM', 'DORA Office <dora@iitmandi.ac.in>'),
+            }
+            subject = f"Nodal Officer access - IIT Mandi Ranking Portal"
+            body = render_template(INVITE_TEMPLATE, vars_dict)
+            mail_res = send_mail(to=officer.email, subject=subject, body=body)
+
+            return Response({
+                'officer': NodalOfficerSerializer(officer).data,
+                'delivery': mail_res,
+                'message': f'Invitation {"written to local outbox" if mail_res.get("status") == "SIMULATED" else "sent"} for {officer.email}.'
+            })
+
+        return Response({'error': f'Unknown action: {action}'}, status=status.HTTP_400_BAD_REQUEST)

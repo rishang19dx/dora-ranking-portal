@@ -22,5 +22,6 @@ backend/venv/
 backend/media/
 backend/staticfiles/
 frontend/dist/
+work_logs/
 
 

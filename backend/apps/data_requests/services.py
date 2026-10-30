@@ -16,6 +16,7 @@ from .models import (
     TargetStatus,
 )
 from apps.organogram.models import OrgUnit, NodalOfficer
+from .mailer import send_mail, render_template, DEFAULT_REQUEST_TEMPLATE
 
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode('utf-8')).hexdigest()
@@ -119,15 +120,53 @@ def dispatch_data_request(
                 'portalUrl': portal_url,
             })
 
+            # Template variables
+            unit_label = unit.short_name or unit.name
+            deadline_str = str(data_request.deadline)
+            if hasattr(data_request.deadline, 'strftime'):
+                deadline_str = data_request.deadline.strftime('%d %B %Y')
+
+            vars_dict = {
+                'officer': officer.name,
+                'email': officer.email,
+                'section': unit_label,
+                'sectionFullName': unit.name,
+                'framework': data_request.framework,
+                'cycle': str(data_request.cycle_year),
+                'title': data_request.title,
+                'reference': data_request.reference,
+                'deadline': deadline_str,
+                'dataItems': "\n".join([f"  - {item_id}" for item_id in data_item_ids]),
+                'portalLink': portal_url,
+            }
+
+            rendered_subject = render_template(subject, vars_dict)
+            body_template = message or DEFAULT_REQUEST_TEMPLATE
+            rendered_body = render_template(body_template, vars_dict)
+            if portal_url not in rendered_body:
+                rendered_body += f"\n\nRestricted upload portal link:\n{portal_url}"
+
+            mail_res = send_mail(
+                to=officer.email,
+                subject=rendered_subject,
+                body=rendered_body
+            )
+
+            delivery_status = (
+                DeliveryStatus.SENT if mail_res.get('status') == 'SENT'
+                else (DeliveryStatus.FAILED if mail_res.get('status') == 'FAILED' else DeliveryStatus.SIMULATED)
+            )
+
             # Record delivery
             delivery = RequestDelivery.objects.create(
                 request=data_request,
                 officer=officer,
                 org_unit=unit,
                 email=officer.email,
-                subject=subject,
-                status=DeliveryStatus.SIMULATED,
-                kind=DeliveryKind.DISPATCH
+                subject=rendered_subject,
+                status=delivery_status,
+                kind=DeliveryKind.DISPATCH,
+                error=mail_res.get('error', '')
             )
             deliveries.append(delivery)
 

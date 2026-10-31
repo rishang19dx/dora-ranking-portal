@@ -125,3 +125,75 @@ This document serves as an immutable chronological log of key decisions taken by
 - `src/app/(dashboard)/admin/{organogram,nodal-officers,data-collection,data-requests}/**` (Admin UI)
 - `src/app/portal/[token]/**` (Restricted upload portal)
 - `src/components/DashboardLayout.tsx`, `prisma/schema.prisma`, `.env.example`, `.gitignore`, `README.md`
+
+## 2026-10-31: Structured, Validated, Auditable NIRF Data Forms Engine (Overall, Engineering, Innovation, SDG)
+
+**Context:** The portal previously had restricted upload access where nodal officers only uploaded proof files with no structured data entry. A single-source-of-truth schema `nirf_form_schema.json` (v1.0.0) covers 28 sections across four NIRF categories (Overall, Engineering, Innovation, Sustainable Institutions / SDG) for cycle 2027.
+
+**Decisions Made:**
+1. **Organogram Correction & Kind Architecture (WP0):**
+   - Added `kind` field (`SCHOOL`, `CENTRE`, `OFFICE`) to `OrgUnit` in `apps/organogram/models.py`.
+   - Updated organogram tree to 80 units: renamed SCEE and SCENE to their official school names, added new schools (`smme`, `scs`, `sps`) and children bodies, added new centres (`cqst`, `amrc`, `iksmha`, `c3dar`, `c4dfed`, `cair`, `chci`, `biox`), added new offices (`catalyst`, `ihub`, `cnp-cell`, `ranking-cell`, `reservation-cell`, `grievance-redressal-committee`, `womens-cell`).
+   - Safely retired obsolete unit `se` (`se-faculty-body`), migrating existing officer assignments to `smme`.
+   - Never invented emails: newly added units default to `email = null`.
+2. **Catalogue Additions (WP1):**
+   - Appended 5 new catalogue items (`pcs-facilities`, `nep-iks-governance`, `sustainability-practices`, `health-wellbeing-community`, `innovation-education`) bringing total to 33 items.
+3. **Programme Registry (WP2):**
+   - Created `Programme` model (`apps/organogram/models.py`) with fields `id`, `unit`, `name`, `nirfLevel` (UG4, UG5, PG2, PG3, PG6, DOC), `active`, `startAcademicYear`, `endAcademicYear`.
+   - Built CRUD API and bulk CSV/XLSX import endpoint (`/api/programmes/`, `/api/programmes/import/`).
+   - Built frontend `AdminProgrammes.tsx` management interface with level filtering and bulk import modal.
+4. **Schema Registry & Relative Year Engine (WP3):**
+   - Created Django app `apps/submissions`.
+   - Model `FormSchema` storing active schema versions and checksums. Management command `load_form_schema` provides idempotent loading.
+   - Built bidirectional Year Engine in Python (`year_engine.py`) and TypeScript (`yearEngine.ts`), computing all reference years relative to cycle year (e.g. cycle 2027 -> AY(3) 2025-26, 2024-25, 2023-24; placement batch rules: UG4 entry = grad-3, lateral = grad-2, PG2 entry = grad-1).
+5. **Per-Person Faculty Decision & School Confirmation Workflow (WP4 & WP5):**
+   - **Superceded earlier "aggregate only" decision:** Per-person rows are strictly required by the official NIRF DCS. Implemented central ownership under Faculty Affairs (`faculty-service-matters`) with per-school confirmation via `RecordVerification` (`PENDING -> CONFIRMED | DISPUTED`). An admin approval of faculty details is blocked until all schools confirm their faculty rows.
+   - Modeled `SectionSubmission`, `SubmissionRecord` (for per-person records), and `SubmissionAuditLog` (append-only, immutable).
+   - Enforced PII privacy: Personal Identifying Information (faculty names, emails, employee IDs) is masked for non-elevated users and never logged in audit log deltas.
+6. **Maker-Checker State Machine & Concurrency Control:**
+   - Enforced state flow: `DRAFT -> SUBMITTED -> CORRECTION_REQUESTED -> APPROVED` (with audited admin reopen).
+   - Optimistic concurrency control via `revision` column.
+7. **Generic Schema-Driven Frontend Form Engine (`FormRenderer.tsx`) (WP6):**
+   - Generically interprets `grid` (row axes: `fixed`, `programme`, `programmeBatch`, `levelBatch`, `years`; column axes: `fields`, `years`), `questionnaire` (booleans, enums with `allowOther`, multiEnum pills, numbers, longText), and `records` (dynamic tables, bulk CSV/XLSX import).
+   - Live read-only `derive` cell calculation (e.g. `total = male + female`, `amountInWordsInr` in Indian numbering: Lakh / Crore).
+   - Client-side validation mirroring server rules (`sumEquals`, `lte`, `lteSum`, `requiredIf`, `dateOrder`).
+   - Debounced autosave with visual status ("Saved", "Saving...", "Sync issue").
+   - Per-section "Not Applicable" toggle and carry-forward prefill notice.
+8. **Restricted Portal & Admin Suite Integration:**
+   - Upgraded `RestrictedPortalPage.tsx` with section cards, real-time completion progress, proof verification with SHA-256 hashes, and embedded `FormRenderer`.
+   - Replaced placeholder `NodalOfficerPortal.tsx` and `NodalOfficerSubmission.tsx` with live data and token access.
+   - Added NIRF Submissions Review queue, Unit Coverage Matrix, and Category Rollup/Export buttons in `AdminDataRequestDetail.tsx`.
+   - Added NIRF Categories preselector (`OVERALL`, `ENGINEERING`, `INNOVATION`, `SDG`) in `AdminDataRequestComposer.tsx`.
+9. **Category Rollup & DCS Excel Export (WP7):**
+   - Built `rollup.py` to aggregate approved unit submissions and central figures.
+   - Built `dcs_export.py` using `openpyxl` producing DCS workbooks formatted with IIT Mandi's official headings.
+10. **Automated Verification (WP8):**
+    - 15 comprehensive unit & integration tests in `backend/tests/test_submissions.py` and `test_backend.py`.
+    - Tested golden vectors from IIT Mandi's published 2026 Overall PDF (Ph.D enrolment, Ph.D graduation, UG/PG placement batches, SDG waste) with 0 validation errors.
+    - Verified SDG 2026 anomalies trigger advisory warnings.
+    - Verified complete end-to-end flow: create officers -> dispatch NIRF request -> token entry -> draft save -> proof upload -> submit -> admin correction request -> officer fix -> admin approve -> rollup -> DCS Excel export.
+
+**Files Impacted:**
+- Backend:
+  - `apps/organogram/models.py`, `apps/organogram/views.py`, `apps/organogram/urls.py`, `apps/organogram/serializers.py`
+  - `apps/organogram/fixtures/{org_units,organogram_tree,data_catalogue}.json`
+  - `apps/organogram/management/commands/seed_organogram.py`
+  - `apps/organogram/migrations/0002_orgunit_kind_programme.py`
+  - `apps/data_requests/models.py`, `apps/data_requests/views.py`, `apps/data_requests/serializers.py`, `apps/data_requests/services.py`
+  - `apps/data_requests/migrations/0002_datarequest_categories.py`
+  - `apps/submissions/` (new app: `models.py`, `views.py`, `urls.py`, `serializers.py`, `year_engine.py`, `validation_engine.py`, `cross_checks.py`, `rollup.py`, `dcs_export.py`, `fixtures/nirf_form_schema.json`, `management/commands/load_form_schema.py`)
+  - `dora_backend/settings.py`, `dora_backend/urls.py`
+  - `backend/tests/test_submissions.py`
+- Frontend:
+  - `src/lib/data-catalogue.ts`, `src/lib/organogram.ts`, `src/lib/types.ts`
+  - `src/lib/yearEngine.ts`, `src/lib/nirfUtils.ts`
+  - `src/components/forms/FormRenderer.tsx`
+  - `src/components/DashboardLayout.tsx`
+  - `src/routes.tsx`
+  - `src/views/portal/RestrictedPortalPage.tsx`
+  - `src/views/nodal-officer/NodalOfficerPortal.tsx`
+  - `src/views/nodal-officer/NodalOfficerSubmission.tsx`
+  - `src/views/admin/AdminProgrammes.tsx`
+  - `src/views/admin/AdminDataRequestComposer.tsx`
+  - `src/views/admin/AdminDataRequestDetail.tsx`
+

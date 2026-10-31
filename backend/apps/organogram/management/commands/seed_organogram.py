@@ -29,6 +29,7 @@ class Command(BaseCommand):
                     defaults={
                         'name': item['name'],
                         'short_name': item.get('shortName'),
+                        'kind': item.get('kind', 'OFFICE'),
                         'type': item['type'],
                         'head': item.get('head'),
                         'email': item.get('email'),
@@ -45,6 +46,27 @@ class Command(BaseCommand):
                     unit = unit_objs[item['id']]
                     unit.parent = unit_objs[parent_id]
                     unit.save(update_fields=['parent'])
+
+            # Pass 2.5: Handle retired units ('se', 'se-faculty-body') superseded by 'smme'
+            retire_ids = ['se', 'se-faculty-body']
+            smme_unit = unit_objs.get('smme')
+            for ret_id in retire_ids:
+                ret_unit = OrgUnit.objects.filter(id=ret_id).first()
+                if ret_unit:
+                    # Reassign NodalOfficers
+                    for officer in ret_unit.nodal_officers.all():
+                        officer.assigned_units.remove(ret_unit)
+                        if smme_unit:
+                            officer.assigned_units.add(smme_unit)
+                    # Reassign DataRequestTargets if app installed
+                    try:
+                        from apps.data_requests.models import DataRequestTarget
+                        if smme_unit:
+                            DataRequestTarget.objects.filter(org_unit=ret_unit).update(org_unit=smme_unit)
+                    except Exception:
+                        pass
+                    ret_unit.delete()
+                    self.stdout.write(self.style.WARNING(f'Retired unit {ret_id} successfully removed.'))
 
             self.stdout.write(self.style.SUCCESS(f'Successfully seeded {len(unit_objs)} OrgUnits.'))
 

@@ -70,6 +70,81 @@ const PLACEHOLDERS = [
 
 const STEPS = ['Select sections', 'Identify required data', 'Compose & dispatch'];
 
+export const NIRF_CATEGORIES = [
+  {
+    id: 'OVERALL',
+    label: 'Overall',
+    description: '16 sections covering institute-wide metrics',
+    items: [
+      'capital-expenditure',
+      'consultancy',
+      'diversity',
+      'faculty-roster',
+      'graduation-outcomes',
+      'institute-profile',
+      'nep-iks-governance',
+      'operational-expenditure',
+      'outreach-programmes',
+      'patents',
+      'pcs-facilities',
+      'phd-awarded',
+      'placement-higher-studies',
+      'sponsored-projects',
+      'student-intake',
+      'sustainability-practices',
+    ],
+  },
+  {
+    id: 'ENGINEERING',
+    label: 'Engineering',
+    description: '12 disciplines & capex/opex metrics',
+    items: [
+      'capital-expenditure',
+      'consultancy',
+      'diversity',
+      'faculty-roster',
+      'graduation-outcomes',
+      'operational-expenditure',
+      'patents',
+      'pcs-facilities',
+      'phd-awarded',
+      'placement-higher-studies',
+      'sponsored-projects',
+      'student-intake',
+    ],
+  },
+  {
+    id: 'INNOVATION',
+    label: 'Innovation',
+    description: '6 innovation, IPR & entrepreneurship metrics',
+    items: [
+      'diversity',
+      'entrepreneurship',
+      'faculty-roster',
+      'innovation-education',
+      'patents',
+      'student-intake',
+    ],
+  },
+  {
+    id: 'SDG',
+    label: 'SDG (Sustainable Institutions)',
+    description: '10 sustainability, health & green metrics',
+    items: [
+      'consultancy',
+      'diversity',
+      'faculty-roster',
+      'health-wellbeing-community',
+      'patents',
+      'pcs-facilities',
+      'phd-awarded',
+      'sponsored-projects',
+      'student-intake',
+      'sustainability-practices',
+    ],
+  },
+];
+
 export default function NewDataRequestPage() {
   return (
     <Suspense fallback={<div className="h-64 rounded-[2rem] bg-white/60 animate-pulse" />}>
@@ -98,6 +173,7 @@ function NewDataRequest() {
   const nextYear = new Date().getFullYear() + 1;
   const [framework, setFramework] = useState<RankingFramework>('NIRF');
   const [cycleYear, setCycleYear] = useState(nextYear);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['OVERALL', 'ENGINEERING', 'INNOVATION', 'SDG']);
   const [deadline, setDeadline] = useState(() => {
     const date = new Date();
     date.setDate(date.getDate() + 21);
@@ -150,6 +226,27 @@ function NewDataRequest() {
   }, [recipients, unitIds]);
 
   const effectiveCount = mailCount + fallbackRecipients.length;
+
+  const toggleCategory = (catId: string) => {
+    setTouchedItems(true);
+    const cat = NIRF_CATEGORIES.find((c) => c.id === catId);
+    if (!cat) return;
+
+    setSelectedCategories((prev) => {
+      const isSelected = prev.includes(catId);
+      const nextCats = isSelected ? prev.filter((id) => id !== catId) : [...prev, catId];
+
+      // Recompute dataItemIds from remaining selected categories
+      const allItemIds = new Set<string>();
+      nextCats.forEach((cId) => {
+        const found = NIRF_CATEGORIES.find((c) => c.id === cId);
+        if (found) found.items.forEach((item) => allItemIds.add(item));
+      });
+      setDataItemIds(Array.from(allItemIds));
+
+      return nextCats;
+    });
+  };
 
   const toggleItem = (id: string) => {
     setTouchedItems(true);
@@ -243,6 +340,7 @@ function NewDataRequest() {
           unitIds,
           dataItemIds,
           sections,
+          categories: framework === 'NIRF' ? selectedCategories : null,
         }),
       });
       const body = await response.json();
@@ -493,6 +591,46 @@ function NewDataRequest() {
                 </div>
               </label>
             </div>
+
+            {framework === 'NIRF' && (
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-900">NIRF Categories Preselection</h3>
+                    <p className="text-xs text-zinc-500">
+                      Toggle categories to automatically include all required sections across Overall, Engineering, Innovation, and SDG.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {NIRF_CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategories.includes(cat.id);
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => toggleCategory(cat.id)}
+                        className={`p-3.5 rounded-2xl border text-left transition-all ${
+                          isSelected
+                            ? 'bg-sage-50/80 border-sage-500/40 shadow-sm ring-1 ring-sage-500/20'
+                            : 'bg-zinc-50/50 border-zinc-200/60 hover:bg-zinc-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-zinc-900">{cat.label}</span>
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              isSelected ? 'bg-sage-600' : 'bg-zinc-300'
+                            }`}
+                          />
+                        </div>
+                        <p className="text-[11px] text-zinc-500 mt-1 leading-snug">{cat.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-white border border-slate-200/50 rounded-[2rem] p-6 md:p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]">

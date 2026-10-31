@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'apps.accounts',
     'apps.organogram',
     'apps.data_requests',
+    'apps.submissions',
     'apps.rankings',
 ]
 

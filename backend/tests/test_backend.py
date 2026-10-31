@@ -54,7 +54,25 @@ def test_organogram_and_officers(api_client, seeded_db):
     assert res.status_code == 200
     assert 'tree' in res.data
     assert len(res.data['units']) >= 50
-    assert len(res.data['catalogue']) == 28
+    assert len(res.data['catalogue']) == 33
+
+    # Assert WP0: all schools, centres, and offices from orgModel exist and have kinds set
+    unit_dict = {u['id']: u for u in res.data['units']}
+    for school_id in ['sbs', 'scee', 'scene', 'shss', 'smss', 'som', 'smme', 'scs', 'sps']:
+        assert school_id in unit_dict, f"Missing school {school_id}"
+        assert unit_dict[school_id]['kind'] == 'SCHOOL'
+
+    for centre_id in ['cqst', 'amrc', 'iksmha', 'c3dar', 'c4dfed', 'cair', 'chci', 'biox']:
+        assert centre_id in unit_dict, f"Missing centre {centre_id}"
+        assert unit_dict[centre_id]['kind'] == 'CENTRE'
+
+    for office_id in ['catalyst', 'ihub', 'cnp-cell', 'ranking-cell', 'reservation-cell', 'grievance-redressal-committee', 'womens-cell']:
+        assert office_id in unit_dict, f"Missing office {office_id}"
+        assert unit_dict[office_id]['kind'] == 'OFFICE'
+
+    # Retired units must not exist
+    assert 'se' not in unit_dict
+    assert 'se-faculty-body' not in unit_dict
 
     # Get nodal officers (both with and without trailing slash should return 200)
     officers_res = api_client.get('/api/nodal-officers/')

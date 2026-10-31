@@ -105,7 +105,7 @@ class DataRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataRequest
         fields = [
-            'id', 'reference', 'title', 'framework', 'cycleYear',
+            'id', 'reference', 'title', 'framework', 'cycleYear', 'categories',
             'subject', 'message', 'deadline', 'dataItemIds', 'status',
             'createdBy', 'createdAt', 'dispatchedAt', 'targets', 'uploads', 'deliveries'
         ]

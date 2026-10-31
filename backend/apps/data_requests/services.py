@@ -39,7 +39,8 @@ def dispatch_data_request(
     message: str,
     deadline,
     sections: list,  # [{'unitId': str, 'dataItemIds': list[str]}]
-    created_by: str = 'DORA Admin'
+    created_by: str = 'DORA Admin',
+    categories: list = None,
 ):
     all_data_item_ids = set()
     for s in sections:
@@ -54,6 +55,7 @@ def dispatch_data_request(
         title=title,
         framework=framework,
         cycle_year=cycle_year,
+        categories=categories or [],
         subject=subject,
         message=message,
         deadline=deadline,
@@ -116,6 +118,8 @@ def dispatch_data_request(
             issued_grants.append({
                 'grantId': grant.id,
                 'officerId': officer.id,
+                'unitId': unit.id,
+                'orgUnitId': unit.id,
                 'email': officer.email,
                 'portalUrl': portal_url,
             })

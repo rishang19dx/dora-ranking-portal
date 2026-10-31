@@ -89,7 +89,8 @@ class DataRequestListCreateView(APIView):
             message=message,
             deadline=deadline,
             sections=sections,
-            created_by=request.user.username if request.user.is_authenticated else 'DORA Admin'
+            created_by=request.user.username if request.user.is_authenticated else 'DORA Admin',
+            categories=data.get('categories', []),
         )
 
         from .mailer import transport_name

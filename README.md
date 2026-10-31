@@ -8,8 +8,14 @@ The system is architected as a decoupled monorepo featuring a **React 19 Single 
 
 ## ✨ Key Features
 
-- **Interactive Institute Organogram**: The complete academic, administrative, and functional hierarchy of IIT Mandi (57 organizational units) rendered as a searchable, filterable, selectable tree with data custodianship mappings.
-- **Targeted Data Requests**: A three-step composer that selects organogram sections, maps required metrics per section, and dispatches templated notification requests.
+- **Interactive Institute Organogram**: The complete academic, administrative, and functional hierarchy of IIT Mandi (80 organizational units) rendered as a searchable, filterable, selectable tree with data custodianship mappings.
+- **NIRF Structured Forms Engine**: Generic, single-source-of-truth schema-driven engine (`nirf_form_schema.json` v1.0.0) covering 28 sections across four categories: Overall, Engineering, Innovation, and SDG (Sustainable Institutions).
+- **Targeted Data Requests & Category Preselection**: Three-step composer that selects organogram sections, preselects NIRF categories, maps required metrics per section, and dispatches templated notification requests.
+- **Academic Programme Registry**: Institutional degree programmes mapped to offering schools and centres with NIRF levels (UG4, UG5, PG2, PG3, PG6, DOC) and bulk CSV/XLSX import.
+- **Relative Year Engine**: Computes dynamic reference years and placement cohort batches relative to cycle year (e.g. NIRF 2027).
+- **Maker-Checker Governance & Audit Trail**: State machine `DRAFT -> SUBMITTED -> CORRECTION_REQUESTED -> APPROVED` with row-level immutable audit logging and strict PII masking.
+- **Central Faculty Owner & School Confirmation**: Central owner under Faculty Affairs (`faculty-service-matters`) with per-school confirmation workflow before admin approval.
+- **Rollup & DCS Excel Export**: Category rollup summing unit numbers and outputting official DCS workbooks with IIT Mandi's headings via `openpyxl`.
 - **Nodal Officer Roster**: Full CRUD management of designated departmental officers, seeded from published institutional mailboxes, with visual coverage indicators.
 - **Automated Secure Portal Provisioning**: Dispatching a request generates unique, single-purpose upload links (`/portal/:token`). Raw tokens are never stored; only **SHA-256 digests** are persisted in the database.
 - **Proof File Vault**: Secure document upload handling supporting PDF, CSV, Excel, and Word files up to 25MB with automated SHA-256 integrity checksum calculation.
@@ -53,6 +59,7 @@ The system is architected as a decoupled monorepo featuring a **React 19 Single 
    pip install -r requirements.txt
    python manage.py migrate
    python manage.py seed_organogram
+   python manage.py load_form_schema
    cd ..
 
    # Setup Frontend
@@ -94,11 +101,11 @@ bun run test # or: npm run test
 
 Or test each service individually:
 ```bash
-# Backend pytest suite (4/4 passing)
-cd backend && ./venv/bin/pytest tests/ -v
+# Backend pytest suite (15/15 passing)
+cd backend && source venv/bin/activate && pytest
 
 # Frontend TypeScript check and production build
-cd frontend && bun run build
+cd frontend && npm run build
 ```
 
 ---
@@ -110,12 +117,14 @@ dora-ranking-portal/
 ├── backend/                             # Django 5.1 REST backend
 │   ├── dora_backend/                    # Settings, CORS, JWT, URLs
 │   ├── apps/
-│   │   ├── accounts/                    # User model & JWT authentication
-│   │   ├── organogram/                  # 57 OrgUnits & Nodal Officers
-│   │   ├── data_requests/               # Requests, SHA-256 tokens, uploads
+│   │   ├── accounts/                    # User model, JWT authentication & roles
+│   │   ├── organogram/                  # 80 OrgUnits, Programmes & Nodal Officers
+│   │   ├── data_requests/               # Requests, SHA-256 tokens, proof uploads
+│   │   ├── submissions/                 # Form schemas, submissions, validation, audit, rollup & DCS
 │   │   └── rankings/                    # NIRF datasets, scraper, 2nd-gen IITs
 │   ├── tests/
-│   │   └── test_backend.py              # Automated backend test suite
+│   │   ├── test_backend.py              # Organogram & Data Request tests
+│   │   └── test_submissions.py          # NIRF Forms, validation & workflow tests (11 tests)
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── frontend/                            # React 19 SPA (Vite + TypeScript)

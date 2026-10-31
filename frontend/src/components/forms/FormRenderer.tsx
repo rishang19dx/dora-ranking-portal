@@ -18,6 +18,7 @@ import {
   amountInWordsInr,
   evaluateDerive,
   validateBlockData,
+  getResolvedGridAxes,
 } from '../../lib/nirfUtils';
 import { useToast } from '../ToastProvider';
 
@@ -34,6 +35,8 @@ export interface FormRendererProps {
     isCarryForward?: boolean;
     records?: Record<string, any[]>;
   };
+  cycleYear?: number;
+  programmes?: any[];
   onSave?: (savedData: any) => void;
   onSubmitSuccess?: () => void;
   readOnly?: boolean;
@@ -46,6 +49,8 @@ export default function FormRenderer({
   token,
   section,
   initialData,
+  cycleYear = 2027,
+  programmes = [],
   onSave,
   onSubmitSuccess,
   readOnly: forceReadOnly = false,
@@ -85,8 +90,7 @@ export default function FormRenderer({
             next[block.id] = {};
             changed = true;
           }
-          const rows = block.resolvedRows || block.rows || [];
-          const cols = block.resolvedColumns || block.columns || [];
+          const { columns: cols, rows } = getResolvedGridAxes(block, cycleYear, programmes);
           rows.forEach((r: any) => {
             if (!next[block.id][r.id]) {
               next[block.id][r.id] = {};
@@ -112,7 +116,7 @@ export default function FormRenderer({
       });
       return changed ? next : prev;
     });
-  }, [section]);
+  }, [section, cycleYear, programmes]);
 
   // Compute live validation results
   const { errors, warnings } = useMemo(() => {
@@ -194,7 +198,7 @@ export default function FormRenderer({
 
       // Re-evaluate derived columns in the same row
       const blockDef = section.blocks?.find((b: any) => b.id === blockId);
-      const cols = blockDef?.resolvedColumns || blockDef?.columns || [];
+      const { columns: cols } = getResolvedGridAxes(blockDef, cycleYear, programmes);
       cols.forEach((col: any) => {
         if (col.derive) {
           nextRow[col.id] = evaluateDerive(col, nextRow);
@@ -518,116 +522,119 @@ export default function FormRenderer({
               </div>
 
               {/* RENDER KIND: GRID */}
-              {block.kind === 'grid' && (
-                <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm divide-y divide-slate-200">
-                      <thead className="bg-zinc-50/80 text-zinc-700 font-semibold text-xs tracking-wider">
-                        <tr>
-                          <th className="py-3 px-4 uppercase sticky left-0 bg-zinc-50 z-10 w-64">
-                            Category / Item
-                          </th>
-                          {(block.resolvedColumns || block.columns || []).map((col: any) => (
-                            <th key={col.id} className="py-3 px-4 min-w-[140px]">
-                              {col.label}
-                              {col.required && <span className="text-dusty-rose-600 ml-0.5">*</span>}
-                              {col.unit && <span className="text-zinc-400 font-normal ml-1">({col.unit})</span>}
+              {block.kind === 'grid' && (() => {
+                const { columns, rows } = getResolvedGridAxes(block, cycleYear, programmes);
+                return (
+                  <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm divide-y divide-slate-200">
+                        <thead className="bg-zinc-50/80 text-zinc-700 font-semibold text-xs tracking-wider">
+                          <tr>
+                            <th className="py-3 px-4 uppercase sticky left-0 bg-zinc-50 z-10 w-64">
+                              Category / Item
                             </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
-                        {(block.resolvedRows || block.rows || []).map((row: any) => {
-                          const rowKey = row.id;
-                          const rowData = payload[block.id]?.[rowKey] || {};
+                            {columns.map((col: any) => (
+                              <th key={col.id} className="py-3 px-4 min-w-[140px]">
+                                {col.label}
+                                {col.required && <span className="text-dusty-rose-600 ml-0.5">*</span>}
+                                {col.unit && <span className="text-zinc-400 font-normal ml-1">({col.unit})</span>}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                          {rows.map((row: any) => {
+                            const rowKey = row.id;
+                            const rowData = payload[block.id]?.[rowKey] || {};
 
-                          return (
-                            <tr key={rowKey} className="hover:bg-zinc-50/50 transition-colors">
-                              <td className="py-3 px-4 font-medium text-zinc-900 sticky left-0 bg-white shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
-                                <div>{row.label}</div>
-                                {row.subLabel && (
-                                  <div className="text-[11px] text-zinc-400 font-normal">{row.subLabel}</div>
-                                )}
-                              </td>
-                              {(block.resolvedColumns || block.columns || []).map((col: any) => {
-                                const isDerived = Boolean(col.derive);
-                                const val = rowData[col.id] ?? '';
+                            return (
+                              <tr key={rowKey} className="hover:bg-zinc-50/50 transition-colors">
+                                <td className="py-3 px-4 font-medium text-zinc-900 sticky left-0 bg-white shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
+                                  <div>{row.label}</div>
+                                  {row.subLabel && (
+                                    <div className="text-[11px] text-zinc-400 font-normal">{row.subLabel}</div>
+                                  )}
+                                </td>
+                                {columns.map((col: any) => {
+                                  const isDerived = Boolean(col.derive);
+                                  const val = rowData[col.id] ?? '';
 
-                                if (isDerived) {
+                                  if (isDerived) {
+                                    return (
+                                      <td key={col.id} className="py-2.5 px-4 bg-zinc-50/60">
+                                        <div className="flex items-center justify-between text-zinc-700 font-medium px-2.5 py-1.5 rounded-lg bg-zinc-100/70 border border-zinc-200/60 text-xs">
+                                          <span>
+                                            {col.type === 'currencyInr'
+                                              ? `₹ ${formatIndianCurrency(val)}`
+                                              : val || 0}
+                                          </span>
+                                          <span title="Calculated automatically">
+                                            <Lock className="w-3 h-3 text-zinc-400 ml-1 shrink-0" />
+                                          </span>
+                                        </div>
+                                      </td>
+                                    );
+                                  }
+
                                   return (
-                                    <td key={col.id} className="py-2.5 px-4 bg-zinc-50/60">
-                                      <div className="flex items-center justify-between text-zinc-700 font-medium px-2.5 py-1.5 rounded-lg bg-zinc-100/70 border border-zinc-200/60 text-xs">
-                                        <span>
-                                          {col.type === 'currencyInr'
-                                            ? `₹ ${formatIndianCurrency(val)}`
-                                            : val || 0}
-                                        </span>
-                                        <span title="Calculated automatically">
-                                          <Lock className="w-3 h-3 text-zinc-400 ml-1 shrink-0" />
-                                        </span>
-                                      </div>
+                                    <td key={col.id} className="py-2.5 px-4">
+                                      {col.type === 'currencyInr' ? (
+                                        <div>
+                                          <div className="relative">
+                                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">
+                                              ₹
+                                            </span>
+                                            <input
+                                              type="text"
+                                              disabled={isLocked}
+                                              value={val}
+                                              onChange={(e) =>
+                                                handleGridCellChange(block.id, rowKey, col.id, e.target.value)
+                                              }
+                                              placeholder="0"
+                                              className="w-full pl-6 pr-2.5 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-sage-500 font-mono"
+                                            />
+                                          </div>
+                                          {val ? (
+                                            <div className="text-[10px] text-zinc-500 mt-1 truncate max-w-[180px]">
+                                              {amountInWordsInr(val)}
+                                            </div>
+                                          ) : null}
+                                        </div>
+                                      ) : col.type === 'integer' || col.type === 'decimal' ? (
+                                        <input
+                                          type="number"
+                                          disabled={isLocked}
+                                          value={val}
+                                          onChange={(e) =>
+                                            handleGridCellChange(block.id, rowKey, col.id, e.target.value)
+                                          }
+                                          placeholder="0"
+                                          className="w-full px-2.5 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-sage-500 font-mono"
+                                        />
+                                      ) : (
+                                        <input
+                                          type="text"
+                                          disabled={isLocked}
+                                          value={val}
+                                          onChange={(e) =>
+                                            handleGridCellChange(block.id, rowKey, col.id, e.target.value)
+                                          }
+                                          className="w-full px-2.5 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-sage-500"
+                                        />
+                                      )}
                                     </td>
                                   );
-                                }
-
-                                return (
-                                  <td key={col.id} className="py-2.5 px-4">
-                                    {col.type === 'currencyInr' ? (
-                                      <div>
-                                        <div className="relative">
-                                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">
-                                            ₹
-                                          </span>
-                                          <input
-                                            type="text"
-                                            disabled={isLocked}
-                                            value={val}
-                                            onChange={(e) =>
-                                              handleGridCellChange(block.id, rowKey, col.id, e.target.value)
-                                            }
-                                            placeholder="0"
-                                            className="w-full pl-6 pr-2.5 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-sage-500 font-mono"
-                                          />
-                                        </div>
-                                        {val ? (
-                                          <div className="text-[10px] text-zinc-500 mt-1 truncate max-w-[180px]">
-                                            {amountInWordsInr(val)}
-                                          </div>
-                                        ) : null}
-                                      </div>
-                                    ) : col.type === 'integer' || col.type === 'decimal' ? (
-                                      <input
-                                        type="number"
-                                        disabled={isLocked}
-                                        value={val}
-                                        onChange={(e) =>
-                                          handleGridCellChange(block.id, rowKey, col.id, e.target.value)
-                                        }
-                                        placeholder="0"
-                                        className="w-full px-2.5 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-sage-500 font-mono"
-                                      />
-                                    ) : (
-                                      <input
-                                        type="text"
-                                        disabled={isLocked}
-                                        value={val}
-                                        onChange={(e) =>
-                                          handleGridCellChange(block.id, rowKey, col.id, e.target.value)
-                                        }
-                                        className="w-full px-2.5 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-sage-500"
-                                      />
-                                    )}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* RENDER KIND: QUESTIONNAIRE */}
               {block.kind === 'questionnaire' && (

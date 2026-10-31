@@ -1,6 +1,7 @@
 import json
 import csv
 import io
+import copy
 import openpyxl
 from datetime import datetime
 from django.utils import timezone
@@ -64,6 +65,208 @@ def mask_pii_in_dict(d: dict, pii_fields: set) -> dict:
 # WP3: Schema Registry & Resolver
 # -----------------------------------------------------------------------------
 
+def resolve_section_schema(sec: dict, cycle_year: int, unit=None, category_id=None, enums=None) -> dict:
+    """
+    Fully resolves a section definition for a given cycle year, optional unit, and category.
+    Populates resolvedColumns, resolvedRows on grid blocks, resolves enum options on
+    questionnaire and records blocks, and substitutes template tokens in labels and help texts.
+    """
+    sec_copy = copy.deepcopy(sec)
+    year_ctx = get_year_context(cycle_year)
+
+    def sub_tokens(text: str) -> str:
+        if not text or not isinstance(text, str):
+            return text
+        for k, v in year_ctx.items():
+            text = text.replace(f"{{{{{k}}}}}", str(v))
+        return text
+
+    if sec_copy.get('title'):
+        sec_copy['title'] = sub_tokens(sec_copy['title'])
+    if sec_copy.get('dcsHeading'):
+        sec_copy['dcsHeading'] = sub_tokens(sec_copy['dcsHeading'])
+
+    resolved_blocks = []
+    for blk in sec_copy.get('blocks', []):
+        if blk.get('title'):
+            blk['title'] = sub_tokens(blk['title'])
+        if blk.get('help'):
+            blk['help'] = sub_tokens(blk['help'])
+
+        kind = blk.get('kind')
+
+        if kind == 'grid':
+            col_axis = blk.get('columnAxis', {})
+            col_type = col_axis.get('type')
+            resolved_cols = []
+
+            if col_type == 'fields':
+                for f in col_axis.get('fields', []):
+                    f_copy = copy.deepcopy(f)
+                    if f_copy.get('label'):
+                        f_copy['label'] = sub_tokens(f_copy['label'])
+                    if f_copy.get('help'):
+                        f_copy['help'] = sub_tokens(f_copy['help'])
+                    if enums and f_copy.get('enum') and f_copy['enum'] in enums:
+                        enum_def = enums[f_copy['enum']]
+                        f_copy['options'] = enum_def.get('options', [])
+                    resolved_cols.append(f_copy)
+            elif col_type == 'years':
+                series_cfg = col_axis.get('series', {})
+                kind_series = series_cfg.get('kind', 'academic')
+                count = series_cfg.get('count', 3)
+                resolved_years = resolve_year_series(kind_series, count, cycle_year)
+                col_axis['resolvedYears'] = resolved_years
+                cell_cfg = col_axis.get('cell', {})
+                for yr in resolved_years:
+                    resolved_cols.append({
+                        'id': str(yr),
+                        'label': str(yr),
+                        'type': cell_cfg.get('type', 'integer'),
+                        'min': cell_cfg.get('min'),
+                        'max': cell_cfg.get('max'),
+                        'required': cell_cfg.get('required', False),
+                    })
+            blk['resolvedColumns'] = resolved_cols
+
+            row_axis = blk.get('rowAxis', {})
+            row_type = row_axis.get('type')
+            resolved_rows = []
+
+            if row_type == 'fixed':
+                for r in row_axis.get('rows', []):
+                    if category_id and r.get('usedBy'):
+                        used_by_upper = [u.upper() for u in r.get('usedBy', [])]
+                        if category_id.upper() not in used_by_upper:
+                            continue
+                    r_copy = copy.deepcopy(r)
+                    if category_id and r_copy.get('labelByCategory'):
+                        cat_upper = category_id.upper()
+                        if cat_upper in r_copy['labelByCategory']:
+                            r_copy['label'] = r_copy['labelByCategory'][cat_upper]
+                    if r_copy.get('label'):
+                        r_copy['label'] = sub_tokens(r_copy['label'])
+                    resolved_rows.append(r_copy)
+                row_axis['rows'] = resolved_rows
+
+            elif row_type == 'years':
+                series_cfg = row_axis.get('series', {})
+                kind_series = series_cfg.get('kind', 'academic')
+                count = series_cfg.get('count', 3)
+                resolved_years = resolve_year_series(kind_series, count, cycle_year)
+                row_axis['resolvedYears'] = resolved_years
+                for yr in resolved_years:
+                    resolved_rows.append({
+                        'id': str(yr),
+                        'label': str(yr),
+                    })
+
+            elif row_type == 'programme':
+                programmes = []
+                if unit:
+                    if hasattr(unit, 'programmes'):
+                        programmes = list(unit.programmes.filter(active=True))
+                if programmes:
+                    for p in programmes:
+                        lvl = getattr(p, 'nirf_level', None) or getattr(p, 'level', None)
+                        code = getattr(p, 'code', None)
+                        label = f"{p.name} ({code})" if code else p.name
+                        resolved_rows.append({
+                            'id': str(p.id),
+                            'label': label,
+                            'code': code or '',
+                            'level': lvl or '',
+                        })
+                else:
+                    resolved_rows = [
+                        {'id': 'UG4', 'label': 'UG [4 Years Program(s)]', 'level': 'UG4'},
+                        {'id': 'UG5', 'label': 'UG [5 Years Program(s)]', 'level': 'UG5'},
+                        {'id': 'PG2', 'label': 'PG [2 Years Program(s)]', 'level': 'PG2'},
+                        {'id': 'DOC', 'label': 'Ph.D / Doctoral Program(s)', 'level': 'DOC'},
+                    ]
+
+            elif row_type == 'programmeBatch':
+                series_cfg = row_axis.get('batchSeries', {})
+                kind_series = series_cfg.get('kind', 'academic')
+                count = series_cfg.get('count', 3)
+                level = row_axis.get('level', 'UG4')
+                resolved_years = resolve_year_series(kind_series, count, cycle_year)
+                for yr in resolved_years:
+                    batch_info = resolve_batch_years(str(yr), level)
+                    entry_yr = batch_info.get('entryAcademicYear')
+                    lat_yr = batch_info.get('lateralAcademicYear')
+                    sub_parts = []
+                    if entry_yr:
+                        sub_parts.append(f"First year intake: {entry_yr}")
+                    if lat_yr:
+                        sub_parts.append(f"Lateral: {lat_yr}")
+                    sub_label = f"({', '.join(sub_parts)})" if sub_parts else ""
+                    resolved_rows.append({
+                        'id': str(yr),
+                        'label': str(yr),
+                        'subLabel': sub_label,
+                        'batchInfo': batch_info,
+                        'level': level,
+                    })
+
+            elif row_type == 'levelBatch':
+                levels = row_axis.get('levels', ['UG4', 'PG2'])
+                level_names = {
+                    'UG4': 'UG [4 Years Program(s)]',
+                    'UG5': 'UG [5 Years Program(s)]',
+                    'PG2': 'PG [2 Years Program(s)]',
+                    'PG3': 'PG [3 Years Program(s)]',
+                    'DOC': 'Ph.D / Doctoral Program(s)',
+                }
+                series_cfg = row_axis.get('batchSeries', {})
+                kind_series = series_cfg.get('kind', 'academic')
+                count = series_cfg.get('count', 3)
+                resolved_years = resolve_year_series(kind_series, count, cycle_year)
+                for lvl in levels:
+                    lvl_label = level_names.get(lvl, lvl)
+                    for yr in resolved_years:
+                        batch_info = resolve_batch_years(str(yr), lvl)
+                        resolved_rows.append({
+                            'id': f"{lvl}_{yr}",
+                            'label': f"{lvl_label} - {yr}",
+                            'level': lvl,
+                            'year': str(yr),
+                            'batchInfo': batch_info,
+                        })
+
+            blk['resolvedRows'] = resolved_rows
+
+        elif kind == 'questionnaire':
+            for q in blk.get('questions', []):
+                if q.get('label'):
+                    q['label'] = sub_tokens(q['label'])
+                if q.get('help'):
+                    q['help'] = sub_tokens(q['help'])
+                if enums and q.get('enum') and q['enum'] in enums:
+                    enum_def = enums[q['enum']]
+                    if 'options' not in q or not q['options']:
+                        q['options'] = enum_def.get('options', [])
+                    if 'allowOther' in enum_def and 'allowOther' not in q:
+                        q['allowOther'] = enum_def.get('allowOther', False)
+
+        elif kind == 'records':
+            for f in blk.get('fields', []):
+                if f.get('label'):
+                    f['label'] = sub_tokens(f['label'])
+                if f.get('help'):
+                    f['help'] = sub_tokens(f['help'])
+                if enums and f.get('enum') and f['enum'] in enums:
+                    enum_def = enums[f['enum']]
+                    if 'options' not in f or not f['options']:
+                        f['options'] = enum_def.get('options', [])
+                    if 'allowOther' in enum_def and 'allowOther' not in f:
+                        f['allowOther'] = enum_def.get('allowOther', False)
+
+        resolved_blocks.append(blk)
+
+    sec_copy['blocks'] = resolved_blocks
+    return sec_copy
+
 class ActiveFormSchemaView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -89,62 +292,25 @@ class ResolvedFormSchemaView(APIView):
 
         category_id = request.query_params.get('category')
         unit_id = request.query_params.get('unitId')
+        unit_obj = OrgUnit.objects.filter(id=unit_id).first() if unit_id else None
 
         content = schema_obj.content
         year_ctx = get_year_context(cycle_year)
+        enums = content.get('enums', {})
 
-        # Clone and resolve
+        # Resolve all sections
         resolved_sections = []
         for sec in content.get('sections', []):
             if category_id and category_id.upper() not in sec.get('usedBy', []):
                 continue
-
-            sec_copy = dict(sec)
-            sec_copy['blocks'] = []
-
-            for blk in sec.get('blocks', []):
-                blk_copy = dict(blk)
-                # Resolve help tokens
-                if blk_copy.get('help'):
-                    for k, v in year_ctx.items():
-                        blk_copy['help'] = blk_copy['help'].replace(f"{{{{{k}}}}}", str(v))
-
-                # Resolve columnAxis years
-                col_axis = blk_copy.get('columnAxis')
-                if col_axis and col_axis.get('type') == 'years':
-                    series_cfg = col_axis.get('series', {})
-                    resolved_years = resolve_year_series(
-                        series_cfg.get('kind', 'academic'),
-                        series_cfg.get('count', 3),
-                        cycle_year
-                    )
-                    col_axis['resolvedYears'] = resolved_years
-
-                # Resolve rowAxis years
-                row_axis = blk_copy.get('rowAxis')
-                if row_axis and row_axis.get('type') == 'years':
-                    series_cfg = row_axis.get('series', {})
-                    row_axis['resolvedYears'] = resolve_year_series(
-                        series_cfg.get('kind', 'academic'),
-                        series_cfg.get('count', 3),
-                        cycle_year
-                    )
-
-                # Resolve rows in fixed rowAxis
-                if row_axis and row_axis.get('type') == 'fixed':
-                    filtered_rows = []
-                    for r in row_axis.get('rows', []):
-                        if category_id and r.get('usedBy') and category_id.upper() not in r.get('usedBy', []):
-                            continue
-                        r_copy = dict(r)
-                        if category_id and r_copy.get('labelByCategory') and category_id.upper() in r_copy['labelByCategory']:
-                            r_copy['label'] = r_copy['labelByCategory'][category_id.upper()]
-                        filtered_rows.append(r_copy)
-                    row_axis['rows'] = filtered_rows
-
-                sec_copy['blocks'].append(blk_copy)
-
-            resolved_sections.append(sec_copy)
+            resolved_sec = resolve_section_schema(
+                sec,
+                cycle_year,
+                unit=unit_obj,
+                category_id=category_id,
+                enums=enums
+            )
+            resolved_sections.append(resolved_sec)
 
         # Active programmes if unit_id is provided
         programmes_data = []
@@ -169,7 +335,7 @@ class ResolvedFormSchemaView(APIView):
             'programmes': programmes_data,
             'sections': resolved_sections,
             'categories': content.get('categories', []),
-            'enums': content.get('enums', {}),
+            'enums': enums,
         })
 
 # -----------------------------------------------------------------------------
@@ -221,7 +387,13 @@ class PortalFormsView(APIView):
         authorized_sections = []
         for sec in schema.get('sections', []):
             if is_section_authorized_for_grant(grant, sec):
-                authorized_sections.append(sec)
+                resolved_sec = resolve_section_schema(
+                    sec,
+                    cycle_year,
+                    unit=grant.org_unit,
+                    enums=schema.get('enums', {})
+                )
+                authorized_sections.append(resolved_sec)
 
         # Get or create submissions for authorized sections
         submissions_data = []
@@ -385,12 +557,18 @@ class PortalFormSubmitView(APIView):
         all_warnings = []
 
         if not sub.not_applicable:
-            for blk in sec_def.get('blocks', []):
+            resolved_sec = resolve_section_schema(
+                sec_def,
+                grant.request.cycle_year,
+                unit=grant.org_unit,
+                enums=schema.get('enums', {})
+            )
+            for blk in resolved_sec.get('blocks', []):
                 b_id = blk['id']
                 if blk['kind'] == 'records':
                     b_data = [r.data for r in sub.records.filter(block_id=b_id)]
                 else:
-                    b_data = sub.payload.get(b_id, [] if blk['kind'] == 'grid' else {})
+                    b_data = sub.payload.get(b_id, {} if blk['kind'] == 'grid' else {})
 
                 errs, warns = validate_block_data(blk, b_data, {'submittingUnitId': grant.org_unit.id})
                 all_errors.extend(errs)

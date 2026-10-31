@@ -3,6 +3,11 @@
  * live derive calculation, and validation mirroring backend rules.
  */
 
+import {
+  resolveYearSeries,
+  resolveBatchYears,
+} from './yearEngine';
+
 export function parseNumber(val: any): number {
   if (val === null || val === undefined || val === '') return 0;
   const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/,/g, ''));
@@ -183,6 +188,122 @@ export function validateRule(ruleCfg: any, rowData: Record<string, any>): boolea
   return true;
 }
 
+/**
+ * Resolves columns and rows for a grid block definition.
+ * Uses resolvedColumns/resolvedRows if already populated by backend,
+ * or dynamically computes them from columnAxis and rowAxis.
+ */
+export function getResolvedGridAxes(
+  blockDef: any,
+  cycleYear: number = 2027,
+  programmes: any[] = []
+): { columns: any[]; rows: any[] } {
+  if (!blockDef) return { columns: [], rows: [] };
+
+  // 1. Resolve columns
+  let columns: any[] = [];
+  if (Array.isArray(blockDef.resolvedColumns) && blockDef.resolvedColumns.length > 0) {
+    columns = blockDef.resolvedColumns;
+  } else if (Array.isArray(blockDef.columns) && blockDef.columns.length > 0) {
+    columns = blockDef.columns;
+  } else if (blockDef.columnAxis) {
+    const colAxis = blockDef.columnAxis;
+    if (colAxis.type === 'fields' && Array.isArray(colAxis.fields)) {
+      columns = colAxis.fields;
+    } else if (colAxis.type === 'years') {
+      const series = colAxis.series || { kind: 'academic', count: 3 };
+      const resolvedYears = resolveYearSeries(series.kind || 'academic', series.count || 3, cycleYear);
+      const cell = colAxis.cell || {};
+      columns = resolvedYears.map((yr) => ({
+        id: String(yr),
+        label: String(yr),
+        type: cell.type || 'integer',
+        min: cell.min,
+        max: cell.max,
+        required: cell.required || false,
+      }));
+    }
+  }
+
+  // 2. Resolve rows
+  let rows: any[] = [];
+  if (Array.isArray(blockDef.resolvedRows) && blockDef.resolvedRows.length > 0) {
+    rows = blockDef.resolvedRows;
+  } else if (Array.isArray(blockDef.rows) && blockDef.rows.length > 0) {
+    rows = blockDef.rows;
+  } else if (blockDef.rowAxis) {
+    const rowAxis = blockDef.rowAxis;
+    if (rowAxis.type === 'fixed' && Array.isArray(rowAxis.rows)) {
+      rows = rowAxis.rows;
+    } else if (rowAxis.type === 'years') {
+      const series = rowAxis.series || { kind: 'academic', count: 3 };
+      const resolvedYears = resolveYearSeries(series.kind || 'academic', series.count || 3, cycleYear);
+      rows = resolvedYears.map((yr) => ({
+        id: String(yr),
+        label: String(yr),
+      }));
+    } else if (rowAxis.type === 'programme') {
+      if (Array.isArray(programmes) && programmes.length > 0) {
+        rows = programmes.map((p) => ({
+          id: String(p.id),
+          label: p.code ? `${p.name} (${p.code})` : p.name,
+          level: p.level || p.nirfLevel || '',
+        }));
+      } else {
+        rows = [
+          { id: 'UG4', label: 'UG [4 Years Program(s)]', level: 'UG4' },
+          { id: 'UG5', label: 'UG [5 Years Program(s)]', level: 'UG5' },
+          { id: 'PG2', label: 'PG [2 Years Program(s)]', level: 'PG2' },
+          { id: 'DOC', label: 'Ph.D / Doctoral Program(s)', level: 'DOC' },
+        ];
+      }
+    } else if (rowAxis.type === 'programmeBatch') {
+      const series = rowAxis.batchSeries || { kind: 'academic', count: 3 };
+      const level = rowAxis.level || 'UG4';
+      const resolvedYears = resolveYearSeries(series.kind || 'academic', series.count || 3, cycleYear);
+      rows = resolvedYears.map((yr) => {
+        const batchInfo = resolveBatchYears(String(yr), level);
+        const subParts: string[] = [];
+        if (batchInfo.entryAcademicYear) subParts.push(`First year intake: ${batchInfo.entryAcademicYear}`);
+        if (batchInfo.lateralAcademicYear) subParts.push(`Lateral: ${batchInfo.lateralAcademicYear}`);
+        const subLabel = subParts.length > 0 ? `(${subParts.join(', ')})` : '';
+        return {
+          id: String(yr),
+          label: String(yr),
+          subLabel,
+          batchInfo,
+          level,
+        };
+      });
+    } else if (rowAxis.type === 'levelBatch') {
+      const levels = rowAxis.levels || ['UG4', 'PG2'];
+      const levelNames: Record<string, string> = {
+        UG4: 'UG [4 Years Program(s)]',
+        UG5: 'UG [5 Years Program(s)]',
+        PG2: 'PG [2 Years Program(s)]',
+        PG3: 'PG [3 Years Program(s)]',
+        DOC: 'Ph.D / Doctoral Program(s)',
+      };
+      const series = rowAxis.batchSeries || { kind: 'academic', count: 3 };
+      const resolvedYears = resolveYearSeries(series.kind || 'academic', series.count || 3, cycleYear);
+      for (const lvl of levels) {
+        const lvlLabel = levelNames[lvl] || lvl;
+        for (const yr of resolvedYears) {
+          rows.push({
+            id: `${lvl}_${yr}`,
+            label: `${lvlLabel} - ${yr}`,
+            level: lvl,
+            year: String(yr),
+            batchInfo: resolveBatchYears(String(yr), lvl),
+          });
+        }
+      }
+    }
+  }
+
+  return { columns, rows };
+}
+
 export function validateBlockData(
   blockDef: any,
   blockData: any,
@@ -218,8 +339,7 @@ export function validateBlockData(
     }
   } else if (kind === 'grid') {
     const gridData = typeof blockData === 'object' && blockData !== null ? blockData : {};
-    const rows = blockDef.resolvedRows || blockDef.rows || [];
-    const cols = blockDef.resolvedColumns || blockDef.columns || [];
+    const { columns: cols, rows } = getResolvedGridAxes(blockDef);
 
     for (const r of rows) {
       const rowKey = r.id;

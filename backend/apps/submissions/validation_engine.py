@@ -209,12 +209,30 @@ def validate_block_data(block_def: dict, block_data: any, context: dict = None) 
                     warnings.append(item)
 
     elif kind == 'grid':
-        rows_data = block_data if isinstance(block_data, list) else []
+        if isinstance(block_data, dict):
+            rows_data = list(block_data.values())
+        elif isinstance(block_data, list):
+            rows_data = block_data
+        else:
+            rows_data = []
+
         col_axis = block_def.get('columnAxis', {})
-        fields = col_axis.get('fields', [])
+        fields = block_def.get('resolvedColumns') or col_axis.get('fields', [])
         rules = block_def.get('validations', [])
 
         for idx, row in enumerate(rows_data):
+            if isinstance(row, dict):
+                for f in fields:
+                    if f.get('required') and not f.get('derive'):
+                        val = row.get(f['id'])
+                        if val is None or val == '':
+                            errors.append({
+                                'blockId': block_def['id'],
+                                'row': idx,
+                                'field': f['id'],
+                                'message': f"Field '{f.get('label', f['id'])}' is required."
+                            })
+
             # Check row-level validation rules
             for v in rules:
                 rule_cfg = v['rule']

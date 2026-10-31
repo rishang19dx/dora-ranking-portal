@@ -36,6 +36,7 @@ from apps.submissions.validation_engine import (
 from apps.submissions.cross_checks import run_cross_checks
 from apps.submissions.rollup import compute_category_rollup
 from apps.submissions.dcs_export import generate_category_excel
+from apps.submissions.views import resolve_section_schema
 
 User = get_user_model()
 
@@ -179,6 +180,13 @@ def test_portal_flow_and_rollup(api_client, seeded_db, admin_user):
     assert forms_res.status_code == 200
     sec_ids = [s['section']['id'] for s in forms_res.data['sections']]
     assert 'student-strength' in sec_ids or 'sanctioned-intake' in sec_ids
+
+    # Assert all grid blocks in authorized portal sections have resolved columns and rows
+    for s_item in forms_res.data['sections']:
+        for blk in s_item['section'].get('blocks', []):
+            if blk.get('kind') == 'grid':
+                assert 'resolvedColumns' in blk and len(blk['resolvedColumns']) > 0, f"Section {s_item['section']['id']} block {blk['id']} missing resolvedColumns"
+                assert 'resolvedRows' in blk and len(blk['resolvedRows']) > 0, f"Section {s_item['section']['id']} block {blk['id']} missing resolvedRows"
 
     # 3. Test token scoping: unauthorized section returns 404
     unauth_save = api_client.put(
@@ -819,5 +827,51 @@ def test_end_to_end_nirf_workflow_and_dcs_export(api_client, seeded_db, admin_us
     # Check that IIT Mandi DCS headings are present
     sheet_text = " ".join([str(cell.value or '') for row in ws.iter_rows() for cell in row])
     assert "Sanctioned (Approved) Intake" in sheet_text
+
+
+# -----------------------------------------------------------------------------
+# 12. Grid Axes Schema Resolution Tests (PhD Details & Batches)
+# -----------------------------------------------------------------------------
+
+def test_resolve_section_schema_grid_axes():
+    with open('apps/submissions/fixtures/nirf_form_schema.json') as f:
+        schema = json.load(f)
+
+    # 1. PhD Details (fixed rows, fields and years columns)
+    phd_sec = next(s for s in schema['sections'] if s['id'] == 'phd-details')
+    resolved_phd = resolve_section_schema(phd_sec, 2027)
+
+    enr_blk = next(b for b in resolved_phd['blocks'] if b['id'] == 'enrolment')
+    assert 'resolvedColumns' in enr_blk
+    assert len(enr_blk['resolvedColumns']) == 1
+    assert enr_blk['resolvedColumns'][0]['id'] == 'total'
+    assert 'resolvedRows' in enr_blk
+    assert len(enr_blk['resolvedRows']) == 2
+    assert [r['id'] for r in enr_blk['resolvedRows']] == ['fullTime', 'partTime']
+
+    grad_blk = next(b for b in resolved_phd['blocks'] if b['id'] == 'graduated')
+    assert 'resolvedColumns' in grad_blk
+    assert len(grad_blk['resolvedColumns']) == 3
+    assert [c['id'] for c in grad_blk['resolvedColumns']] == ['2025-26', '2024-25', '2023-24']
+    assert 'resolvedRows' in grad_blk
+    assert len(grad_blk['resolvedRows']) == 2
+    assert [r['id'] for r in grad_blk['resolvedRows']] == ['fullTime', 'partTime']
+
+    # 2. Placement Outcomes (programmeBatch rows, fields columns)
+    plc_sec = next(s for s in schema['sections'] if s['id'] == 'placement-outcomes')
+    resolved_plc = resolve_section_schema(plc_sec, 2027)
+    ug_blk = next(b for b in resolved_plc['blocks'] if b['id'] == 'ug')
+    assert len(ug_blk['resolvedRows']) == 3
+    assert [r['id'] for r in ug_blk['resolvedRows']] == ['2025-26', '2024-25', '2023-24']
+    assert ug_blk['resolvedRows'][0]['subLabel'] != ''
+    assert len(ug_blk['resolvedColumns']) == 6
+
+    # 3. Capital Expenditure (fixed rows, financial years columns)
+    capex_sec = next(s for s in schema['sections'] if s['id'] == 'capital-expenditure')
+    resolved_capex = resolve_section_schema(capex_sec, 2027)
+    capex_blk = next(b for b in resolved_capex['blocks'] if b['id'] == 'capex')
+    assert len(capex_blk['resolvedRows']) == 5
+    assert len(capex_blk['resolvedColumns']) == 3
+
 
 

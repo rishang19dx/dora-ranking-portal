@@ -263,6 +263,7 @@ export default function RestrictedPortalPage() {
                   ...activeSectionItem.submission,
                   records: activeSectionItem.records,
                 }}
+                cycleYear={formsData?.request?.cycleYear ?? 2027}
                 onClose={() => setActiveSectionId(null)}
                 onSave={() => loadData()}
                 onSubmitSuccess={() => {

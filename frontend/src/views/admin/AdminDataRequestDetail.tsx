@@ -44,12 +44,20 @@ export default function DataRequestDetailPage() {
   const load = useCallback(async () => {
     if (!id) return;
     try {
-      const response = await fetch(`/api/data-requests/${id}/`);
+      const [response, officersRes] = await Promise.all([
+        fetch(`/api/data-requests/${id}/`),
+        fetch('/api/nodal-officers/'),
+      ]);
       if (!response.ok) throw new Error('This data request could not be loaded.');
       const reqData = await response.json();
+      let officersList: NodalOfficer[] = [];
+      if (officersRes.ok) {
+        const raw = await officersRes.json();
+        officersList = Array.isArray(raw) ? raw : (raw.officers ?? []);
+      }
       setData({
         request: reqData,
-        officers: [],
+        officers: officersList,
         uploads: reqData.uploads || [],
       });
     } catch (error) {
@@ -71,9 +79,11 @@ export default function DataRequestDetailPage() {
   const uploadsByUnit = useMemo(() => {
     const map = new Map<string, ProofUpload[]>();
     (data?.uploads ?? []).forEach((upload) => {
-      const list = map.get(upload.unitId) ?? [];
+      const uId = upload.unitId || (upload as any).orgUnitId;
+      if (!uId) return;
+      const list = map.get(uId) ?? [];
       list.push(upload);
-      map.set(upload.unitId, list);
+      map.set(uId, list);
     });
     return map;
   }, [data]);
@@ -81,7 +91,7 @@ export default function DataRequestDetailPage() {
   const act = async (body: Record<string, unknown>, key: string) => {
     setBusy(key);
     try {
-      const response = await fetch(`/api/data-requests/${id}/actions`, {
+      const response = await fetch(`/api/data-requests/${id}/actions/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -123,9 +133,11 @@ export default function DataRequestDetailPage() {
   }
 
   const { request } = data;
-  const submitted = request.targets.filter((target) => target.status === 'SUBMITTED').length;
-  const progress = request.targets.length
-    ? Math.round((submitted / request.targets.length) * 100)
+  const targets = request.targets ?? [];
+  const deliveries = request.deliveries ?? [];
+  const submitted = targets.filter((target) => target.status === 'SUBMITTED').length;
+  const progress = targets.length
+    ? Math.round((submitted / targets.length) * 100)
     : 0;
   const overdue = new Date(request.deadline).getTime() < Date.now() && request.status !== 'CLOSED';
 
@@ -205,7 +217,7 @@ export default function DataRequestDetailPage() {
           <div className="flex items-center justify-between text-sm">
             <span className="font-semibold text-zinc-900">Collection progress</span>
             <span className="text-zinc-500">
-              {submitted} of {request.targets.length} sections complete
+              {submitted} of {targets.length} sections complete
             </span>
           </div>
           <div className="h-2.5 w-full bg-slate-200/70 rounded-full overflow-hidden mt-4">
@@ -217,8 +229,8 @@ export default function DataRequestDetailPage() {
             />
           </div>
         </div>
-        <MetricCard label="Emails delivered" value={request.deliveries.length} />
-        <MetricCard label="Proof files received" value={data.uploads.length} />
+        <MetricCard label="Emails delivered" value={deliveries.length} />
+        <MetricCard label="Proof files received" value={(data.uploads ?? []).length} />
       </div>
 
       <div className="bg-white border border-slate-200/50 rounded-[2rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] overflow-hidden">
@@ -229,16 +241,18 @@ export default function DataRequestDetailPage() {
           </p>
         </div>
         <div className="divide-y divide-slate-100">
-          {request.targets.map((target) => {
-            const unit = getUnit(target.unitId);
-            const uploads = uploadsByUnit.get(target.unitId) ?? [];
+          {targets.map((target) => {
+            const unitId = target.unitId || (target as any).orgUnitId || (target as any).orgUnit?.id || '';
+            const officerIds = target.officerIds ?? [];
+            const unit = getUnit(unitId);
+            const uploads = uploadsByUnit.get(unitId) ?? [];
             const coveredItems = new Set(uploads.map((upload) => upload.dataItemId));
             return (
-              <div key={target.unitId} className="p-6 hover:bg-zinc-50/40 transition-colors">
+              <div key={(target as any).id || unitId} className="p-6 hover:bg-zinc-50/40 transition-colors">
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-zinc-900">{unitLabel(target.unitId)}</h3>
+                      <h3 className="font-semibold text-zinc-900">{unitLabel(unitId) || unit?.name || unitId}</h3>
                       {unit && (
                         <span
                           className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ring-1 ${ORG_TYPE_STYLES[unit.type].chip}`}
@@ -258,8 +272,8 @@ export default function DataRequestDetailPage() {
                     </div>
 
                     <p className="text-sm text-zinc-500 mt-2">
-                      {target.officerIds.length > 0 ? (
-                        target.officerIds
+                      {officerIds.length > 0 ? (
+                        officerIds
                           .map((officerId) => officersById.get(officerId)?.name ?? officerId)
                           .join(', ')
                       ) : (
@@ -270,7 +284,7 @@ export default function DataRequestDetailPage() {
                     </p>
 
                     <div className="flex flex-wrap gap-1.5 mt-3">
-                      {target.dataItemIds.map((itemId) => (
+                      {(target.dataItemIds ?? []).map((itemId) => (
                         <span
                           key={itemId}
                           className={`px-2.5 py-1 rounded-lg text-xs font-medium ring-1 ${
@@ -297,9 +311,9 @@ export default function DataRequestDetailPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    {target.officerIds.length === 0 ? (
+                    {officerIds.length === 0 ? (
                       <Link
-                        to={`/admin/nodal-officers?unit=${encodeURIComponent(target.unitId)}`}
+                        to={`/admin/nodal-officers?unit=${encodeURIComponent(unitId)}`}
                         className="px-3 py-2 rounded-xl border border-orange-200 text-xs font-semibold text-orange-700 hover:bg-orange-50 transition-colors"
                       >
                         Assign officer
@@ -311,10 +325,10 @@ export default function DataRequestDetailPage() {
                             act(
                               {
                                 action: 'REISSUE',
-                                unitId: target.unitId,
-                                officerId: target.officerIds[0],
+                                unitId,
+                                officerId: officerIds[0],
                               },
-                              `reissue-${target.unitId}`,
+                              `reissue-${unitId}`,
                             )
                           }
                           disabled={busy !== null || request.status === 'CLOSED'}
@@ -326,8 +340,8 @@ export default function DataRequestDetailPage() {
                         <button
                           onClick={() =>
                             act(
-                              { action: 'REMIND', unitIds: [target.unitId] },
-                              `remind-${target.unitId}`,
+                              { action: 'REMIND', unitIds: [unitId] },
+                              `remind-${unitId}`,
                             )
                           }
                           disabled={
@@ -347,10 +361,10 @@ export default function DataRequestDetailPage() {
                           act(
                             {
                               action: 'SET_TARGET_STATUS',
-                              unitId: target.unitId,
+                              unitId,
                               status: 'SUBMITTED',
                             },
-                            `close-${target.unitId}`,
+                            `close-${unitId}`,
                           )
                         }
                         disabled={busy !== null || request.status === 'CLOSED'}
@@ -403,13 +417,13 @@ export default function DataRequestDetailPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {request.deliveries.map((delivery) => (
+              {deliveries.map((delivery) => (
                 <tr key={delivery.id} className="hover:bg-zinc-50/50 transition-colors">
                   <td className="px-6 py-4">
-                    <p className="font-medium text-zinc-900">{delivery.officerName}</p>
+                    <p className="font-medium text-zinc-900">{delivery.officerName || officersById.get(delivery.officerId)?.name || delivery.email}</p>
                     <p className="text-xs text-zinc-500">{delivery.email}</p>
                   </td>
-                  <td className="px-6 py-4 text-zinc-600">{unitLabel(delivery.unitId)}</td>
+                  <td className="px-6 py-4 text-zinc-600">{unitLabel(delivery.unitId || (delivery as any).orgUnitId)}</td>
                   <td className="px-6 py-4 text-zinc-500 text-xs uppercase tracking-wide">
                     {delivery.kind === 'REMINDER' ? 'Reminder' : 'Dispatch'}
                   </td>
@@ -430,7 +444,7 @@ export default function DataRequestDetailPage() {
                   <td className="px-6 py-4 text-zinc-500 text-xs">{formatDate(delivery.sentAt)}</td>
                 </tr>
               ))}
-              {request.deliveries.length === 0 && (
+              {deliveries.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-10 text-center text-sm text-zinc-500">
                     No email was delivered for this request.

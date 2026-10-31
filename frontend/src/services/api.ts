@@ -107,7 +107,7 @@ export const organogramService = {
 export const nodalOfficerService = {
   async getAll(): Promise<NodalOfficer[]> {
     const res = await api.get('/api/nodal-officers/');
-    return res.data;
+    return Array.isArray(res.data) ? res.data : (res.data.officers || []);
   },
 
   async getById(id: string): Promise<NodalOfficer> {

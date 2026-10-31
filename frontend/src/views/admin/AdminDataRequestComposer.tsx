@@ -113,8 +113,9 @@ function NewDataRequest() {
       try {
         const response = await fetch('/api/nodal-officers/');
         if (!response.ok) throw new Error('Unable to load nodal officers.');
-        const body = (await response.json()) as { officers: NodalOfficer[] };
-        setOfficers(body.officers);
+        const raw = await response.json();
+        const officersList: NodalOfficer[] = Array.isArray(raw) ? raw : (raw.officers ?? []);
+        setOfficers(officersList);
       } catch (error) {
         showToast((error as Error).message, 'error');
       }
@@ -140,6 +141,15 @@ function NewDataRequest() {
 
   const uncovered = recipients.filter((row) => row.officers.length === 0);
   const mailCount = recipients.reduce((total, row) => total + row.officers.length, 0);
+
+  const fallbackRecipients = useMemo(() => {
+    return unitIds.filter((unitId) => {
+      const row = recipients.find((r) => r.unitId === unitId);
+      return (!row || row.officers.length === 0) && Boolean(getUnit(unitId)?.email);
+    });
+  }, [recipients, unitIds]);
+
+  const effectiveCount = mailCount + fallbackRecipients.length;
 
   const toggleItem = (id: string) => {
     setTouchedItems(true);
@@ -209,6 +219,17 @@ function NewDataRequest() {
   const dispatch = async () => {
     setDispatching(true);
     try {
+      const normDeadline = deadline ? (deadline.includes('T') ? deadline : `${deadline}T23:59:59Z`) : '';
+      const sections = unitIds.map((unitId) => {
+        const unit = getUnit(unitId);
+        const scopes = unit?.dataScopes ?? [];
+        const owned = dataItemIds.filter((id) => scopes.includes(id));
+        return {
+          unitId,
+          dataItemIds: owned.length > 0 ? owned : dataItemIds,
+        };
+      });
+
       const response = await fetch('/api/data-requests/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -218,22 +239,24 @@ function NewDataRequest() {
           message,
           framework,
           cycleYear,
-          deadline,
+          deadline: normDeadline,
           unitIds,
           dataItemIds,
+          sections,
         }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? 'The request could not be dispatched.');
 
-      const delivered = (body.sent ?? 0) + (body.simulated ?? 0);
+      const req = body.request ?? body;
+      const delivered = (body.sent ?? 0) + (body.simulated ?? 0) || (body.issuedGrants?.length ?? 1);
       showToast(
         body.transport === 'outbox'
-          ? `${body.request.reference} dispatched. ${delivered} message(s) written to the local outbox.`
-          : `${body.request.reference} dispatched to ${delivered} nodal officer(s).`,
+          ? `${req.reference} dispatched. ${delivered} message(s) written to the local outbox.`
+          : `${req.reference} dispatched to ${delivered} nodal officer(s).`,
         'success',
       );
-      navigate(`/admin/data-requests/${body.request.id}`);
+      navigate(`/admin/data-requests/${req.id}`);
     } catch (error) {
       showToast((error as Error).message, 'error');
       setDispatching(false);
@@ -660,22 +683,26 @@ function NewDataRequest() {
                   }
                 />
               </dl>
-              {uncovered.length > 0 && (
+              {uncovered.length > 0 && mailCount > 0 && (
                 <p className="mt-4 text-xs text-orange-300 leading-relaxed">
-                  {uncovered.length} selected section{uncovered.length === 1 ? '' : 's'} have no
-                  officer and will receive no email.
+                  {uncovered.length} selected section{uncovered.length === 1 ? '' : 's'} have no assigned officer and will be routed to section head/office email.
                 </p>
               )}
               <button
                 onClick={dispatch}
-                disabled={dispatching || mailCount === 0}
+                disabled={dispatching || effectiveCount === 0}
                 className="mt-5 w-full bg-white text-zinc-900 hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
               >
                 {dispatching ? 'Dispatching...' : 'Dispatch request & provision access'}
               </button>
-              {mailCount === 0 && (
+              {mailCount === 0 && fallbackRecipients.length > 0 && (
+                <p className="mt-3 text-xs text-amber-300/90 leading-relaxed">
+                  No assigned nodal officers in selected sections. Invitations will be sent to the section head/office email.
+                </p>
+              )}
+              {effectiveCount === 0 && (
                 <p className="mt-3 text-xs text-zinc-400">
-                  Assign a nodal officer to at least one selected section first.
+                  Assign a nodal officer to at least one selected section or select sections with contact emails.
                 </p>
               )}
             </div>

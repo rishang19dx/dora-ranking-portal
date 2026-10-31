@@ -16,6 +16,7 @@ import OrgTree, { ORG_TYPE_STYLES } from '../../components/organogram/OrgTree';
 import { useToast } from '../../components/ToastProvider';
 import { dataItemLabel } from '../../lib/data-catalogue';
 import {
+  ORG_UNITS,
   ORG_UNIT_TYPES,
   ORG_UNIT_TYPE_LABELS,
   getUnit,
@@ -53,8 +54,56 @@ export default function AdminOrganogram() {
       try {
         const response = await fetch('/api/organogram/');
         if (!response.ok) throw new Error('Unable to load the organogram.');
-        const payload = (await response.json()) as OrganogramPayload;
-        if (!cancelled) setData(payload);
+        const payload = (await response.json()) as Partial<OrganogramPayload>;
+
+        let officers = payload.officers;
+        if (!officers) {
+          try {
+            const officersRes = await fetch('/api/nodal-officers/');
+            if (officersRes.ok) {
+              const rawOfficers = await officersRes.json();
+              officers = Array.isArray(rawOfficers) ? rawOfficers : (rawOfficers.officers ?? []);
+            }
+          } catch {
+            officers = [];
+          }
+        }
+        officers = officers ?? [];
+
+        const coverage: Record<string, UnitCoverage> = payload.coverage ? { ...payload.coverage } : {};
+        ORG_UNITS.forEach((unit) => {
+          if (!coverage[unit.id]) {
+            coverage[unit.id] = { unitId: unit.id, officerIds: [], openRequests: 0, pendingRequests: 0 };
+          }
+        });
+
+        officers.forEach((officer) => {
+          if (officer.status === 'REVOKED') return;
+          (officer.unitIds || []).forEach((unitId) => {
+            if (coverage[unitId] && !coverage[unitId].officerIds.includes(officer.id)) {
+              coverage[unitId].officerIds.push(officer.id);
+            }
+          });
+        });
+
+        const assignable = ORG_UNITS.filter((u) => u.id !== 'iit-mandi');
+        const covered = assignable.filter((u) => coverage[u.id].officerIds.length > 0);
+
+        const stats = payload.stats ?? {
+          units: assignable.length,
+          covered: covered.length,
+          uncovered: assignable.length - covered.length,
+          officers: officers.filter((o) => o.status !== 'REVOKED').length,
+          openRequests: 0,
+        };
+
+        if (!cancelled) {
+          setData({
+            officers,
+            coverage,
+            stats,
+          });
+        }
       } catch (error) {
         if (!cancelled) showToast((error as Error).message, 'error');
       } finally {

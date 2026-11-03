@@ -40,7 +40,7 @@ jobs:
           pytest tests/ -v
 
   frontend-build:
-    name: Frontend Build & Typecheck (Vite + React 19)
+    name: Frontend Lint, Typecheck, Test & Build (Vite + React 19)
     runs-on: ubuntu-latest
 
     steps:
@@ -56,7 +56,19 @@ jobs:
         working-directory: frontend
         run: bun install --frozen-lockfile || bun install
 
-      - name: Typecheck and Build Production Assets
+      - name: Lint
+        working-directory: frontend
+        run: bun run lint
+
+      - name: Typecheck
+        working-directory: frontend
+        run: bun run typecheck
+
+      - name: Run Unit Tests (Vitest)
+        working-directory: frontend
+        run: bun run test
+
+      - name: Build Production Assets
         working-directory: frontend
         run: bun run build
 

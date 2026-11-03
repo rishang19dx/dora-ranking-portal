@@ -51,3 +51,33 @@
 *   **Access Provisioning:** Dispatch now issues one hashed, expiring, single-section upload grant per recipient; reminders rotate links, closing a request or removing an officer revokes them, and uploads are scoped and checksummed server-side.
 *   **Persistence Strategy:** Kept all workflow state behind a single file-backed repository module (`src/lib/server/store.ts`) with mirrored Prisma models added to the schema, so connecting Postgres later touches one file.
 *   **Validation:** `npm run build` passes; the full flow (create officer -> dispatch -> outbox email -> portal upload -> status roll-up -> reminder rotation -> close/revoke) was exercised end to end against a dev server, including rejection of wrong-format, out-of-scope, revoked and invalid-token uploads.
+
+
+---
+
+Done. Here's what's in place for the frontend (frontend/ — the active React 19 + Vite SPA; the stray src/ + tsconfig.json at repo root is dead Next.js code from before the migration and was left untouched).
+
+### Static Analysis & Type Checking
+
+Added ESLint 9 flat config (frontend/eslint.config.js): @typescript-eslint recommended rules, react-hooks (classic rules-of-hooks + exhaustive-deps, not v7's new React-Compiler-readiness bundle — that bundle flags idiomatic fetch-in-useEffect patterns across nearly every view as errors, which is a separate opt-in decision, not a side effect of wiring up linting), and react-refresh.
+tsconfig.json already had strict: true; added vitest/globals and @testing-library/jest-dom types so test files type-check too.
+Baseline result: 0 type errors, lint is 0 errors / 80 pre-existing warnings (unused imports, a few any usages, one missing-dep warning) — nothing blocking, all flagged as warnings for later cleanup.
+
+### Unit Testing
+
+Installed Vitest 3 + @vitest/coverage-v8 + React Testing Library 16 (React 19-compatible) + jest-dom + user-event, with vitest.config.ts (jsdom env, globals, coverage via v8) and a setup file auto-cleaning the DOM between tests.
+Wrote 67 tests across 5 files, all passing:
+* utils/helpers.test.ts — rank-change math, status badges, date formatting
+* lib/organogram.test.ts — org-tree lookups, breadcrumbs, ancestors/descendants, search, scope aggregation (99.7% line coverage on this file)
+* lib/data-catalogue.test.ts — data-item/custodian/suggestion/proof-format logic (100%)
+* components/RankingCard.test.tsx and components/Footer.test.tsx — rendering + click behavior (both 100%)
+Caught and fixed real bugs in my own test assumptions along the way (e.g. unitLabel prefers shortName), confirming the tests actually exercise the real logic.
+
+### Scripts & CI
+
+* frontend/package.json: added typecheck, lint, lint:fix, test, test:watch, test:coverage, validate (runs all three).
+* Root package.json: test:frontend now runs the full validate pipeline; added lint:frontend/typecheck:frontend.
+* .github/workflows/ci-cd.yml: the frontend-build job now runs lint → typecheck → vitest → build, so these gates run on every push/PR.
+* Verified npm run build still succeeds after all changes.
+
+One thing to flag: dependencies were installed with npm, updating frontend/package-lock.json, but CI uses Bun with bun.lock. I didn't have Bun available locally to regenerate that lockfile. The workflow already falls back to a non-frozen bun install if the frozen-lockfile install fails, so CI won't break, but bun.lock is now stale — worth running bun install once from a machine with Bun to refresh it.

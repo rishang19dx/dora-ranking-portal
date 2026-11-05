@@ -49,6 +49,7 @@ class DataRequest(models.Model):
     title = models.CharField(max_length=255)
     framework = models.CharField(max_length=32, choices=RankingFramework.choices)
     cycle_year = models.IntegerField()
+    categories = models.JSONField(default=list, blank=True, null=True)
     subject = models.CharField(max_length=255)
     message = models.TextField()
     deadline = models.DateTimeField()

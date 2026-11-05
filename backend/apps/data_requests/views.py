@@ -11,8 +11,11 @@ from .models import (
     DataRequestTarget,
     PortalAccessGrant,
     ProofUpload,
+    RequestDelivery,
     DataRequestStatus,
     TargetStatus,
+    DeliveryStatus,
+    DeliveryKind,
 )
 from .serializers import (
     DataRequestSerializer,
@@ -38,18 +41,45 @@ class DataRequestListCreateView(APIView):
     def post(self, request):
         data = request.data
         title = data.get('title')
-        framework = data.get('framework')
-        cycle_year = int(data.get('cycleYear', timezone.now().year))
+        framework = data.get('framework', 'NIRF')
+        try:
+            cycle_year = int(data.get('cycleYear', timezone.now().year))
+        except (ValueError, TypeError):
+            cycle_year = timezone.now().year
         subject = data.get('subject')
         message = data.get('message')
         deadline = data.get('deadline')
         sections = data.get('sections', [])
 
-        if not all([title, framework, cycle_year, subject, message, deadline, sections]):
-            return Response(
-                {'error': 'Missing required fields in request payload.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # If sections is not provided, build from unitIds and dataItemIds
+        if not sections and 'unitIds' in data:
+            from apps.organogram.models import OrgUnit
+            unit_ids = data.get('unitIds', [])
+            data_item_ids = data.get('dataItemIds', [])
+            sections = []
+            for uid in unit_ids:
+                unit = OrgUnit.objects.filter(id=uid).first()
+                if unit and unit.data_scopes:
+                    owned = [item for item in data_item_ids if item in unit.data_scopes]
+                    items = owned if owned else data_item_ids
+                else:
+                    items = data_item_ids
+                sections.append({'unitId': uid, 'dataItemIds': items})
+
+        if not title:
+            return Response({'error': 'Request title is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not subject:
+            return Response({'error': 'Email subject is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not message:
+            return Response({'error': 'Email message is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not deadline:
+            return Response({'error': 'Submission deadline is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not sections:
+            return Response({'error': 'Please select at least one organogram section.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Normalize deadline date string to ISO format if without time
+        if isinstance(deadline, str) and 'T' not in deadline:
+            deadline = f"{deadline}T23:59:59Z"
 
         data_req, issued_grants = dispatch_data_request(
             title=title,
@@ -59,11 +89,19 @@ class DataRequestListCreateView(APIView):
             message=message,
             deadline=deadline,
             sections=sections,
-            created_by=request.user.username if request.user.is_authenticated else 'DORA Admin'
+            created_by=request.user.username if request.user.is_authenticated else 'DORA Admin',
+            categories=data.get('categories', []),
         )
 
-        res_data = DataRequestSerializer(data_req).data
+        from .mailer import transport_name
+        req_serialized = DataRequestSerializer(data_req).data
+        res_data = dict(req_serialized)
         res_data['issuedGrants'] = issued_grants
+        res_data['request'] = req_serialized
+        res_data['transport'] = transport_name()
+        res_data['sent'] = data_req.deliveries.filter(status=DeliveryStatus.SENT).count()
+        res_data['simulated'] = data_req.deliveries.filter(status=DeliveryStatus.SIMULATED).count()
+        res_data['failed'] = data_req.deliveries.filter(status=DeliveryStatus.FAILED).count()
         return Response(res_data, status=status.HTTP_201_CREATED)
 
 class DataRequestDetailView(APIView):
@@ -76,23 +114,148 @@ class DataRequestDetailView(APIView):
 
 class DataRequestActionsView(APIView):
     def post(self, request, pk):
-        data_req = get_object_or_404(DataRequest, pk=pk)
-        action = request.data.get('action')
+        from django.conf import settings
+        from datetime import timedelta
+        from .services import generate_portal_token, hash_token
+        from apps.organogram.models import NodalOfficer, OrgUnit
 
-        if action == 'close':
+        data_req = get_object_or_404(DataRequest, pk=pk)
+        action = str(request.data.get('action', '')).upper()
+
+        if action == 'CLOSE':
             data_req.status = DataRequestStatus.CLOSED
             data_req.save()
-            # Revoke all outstanding grants for this request
             data_req.grants.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
             return Response({'status': 'closed', 'message': 'Request closed and grants revoked.'})
 
-        elif action == 'remind':
-            # Send reminder, update target reminders_sent count
-            for target in data_req.targets.filter(status__in=[TargetStatus.PENDING, TargetStatus.PARTIAL]):
+        elif action == 'REOPEN':
+            data_req.status = DataRequestStatus.DISPATCHED
+            data_req.save()
+            return Response({'status': 'dispatched', 'message': 'Request reopened.'})
+
+        elif action == 'REMIND':
+            unit_ids = request.data.get('unitIds', [])
+            targets = data_req.targets.all()
+            if unit_ids:
+                targets = targets.filter(org_unit_id__in=unit_ids)
+            else:
+                targets = targets.filter(status__in=[TargetStatus.PENDING, TargetStatus.PARTIAL])
+
+            from .mailer import send_mail, render_template, DEFAULT_REMINDER_TEMPLATE
+            app_base_url = getattr(settings, 'APP_BASE_URL', 'http://localhost:5173')
+            reminded_count = 0
+
+            for target in targets:
                 target.reminders_sent += 1
                 target.last_reminder_at = timezone.now()
                 target.save()
-            return Response({'status': 'reminded', 'message': 'Reminders logged successfully.'})
+
+                unit = target.org_unit
+                unit_label = unit.short_name or unit.name
+                officers = list(unit.nodal_officers.filter(status__in=['INVITED', 'ACTIVE']))
+                if not officers and unit.email:
+                    fallback_officer = NodalOfficer.objects.filter(email=unit.email).first()
+                    if fallback_officer:
+                        officers = [fallback_officer]
+
+                for officer in officers:
+                    token = generate_portal_token()
+                    token_digest = hash_token(token)
+                    ttl_days = getattr(settings, 'PORTAL_ACCESS_TTL_DAYS', 45)
+                    expires_at = timezone.now() + timedelta(days=ttl_days)
+                    grant = PortalAccessGrant.objects.create(
+                        token_hash=token_digest,
+                        officer=officer,
+                        request=data_req,
+                        org_unit=unit,
+                        data_item_ids=target.data_item_ids,
+                        expires_at=expires_at
+                    )
+                    portal_url = f"{app_base_url}/portal/{token}"
+                    vars_dict = {
+                        'officer': officer.name,
+                        'email': officer.email,
+                        'section': unit_label,
+                        'sectionFullName': unit.name,
+                        'framework': data_req.framework,
+                        'cycle': str(data_req.cycle_year),
+                        'title': data_req.title,
+                        'reference': data_req.reference,
+                        'deadline': str(data_req.deadline).split('T')[0],
+                        'dataItems': "\n".join([f"  - {item_id}" for item_id in target.data_item_ids]),
+                        'portalLink': portal_url,
+                    }
+                    subject = f"Reminder: {data_req.reference} - {data_req.title}"
+                    body = render_template(DEFAULT_REMINDER_TEMPLATE, vars_dict)
+                    mail_res = send_mail(to=officer.email, subject=subject, body=body)
+                    delivery_status = (
+                        DeliveryStatus.SENT if mail_res.get('status') == 'SENT'
+                        else (DeliveryStatus.FAILED if mail_res.get('status') == 'FAILED' else DeliveryStatus.SIMULATED)
+                    )
+                    RequestDelivery.objects.create(
+                        request=data_req,
+                        officer=officer,
+                        org_unit=unit,
+                        email=officer.email,
+                        subject=subject,
+                        status=delivery_status,
+                        kind=DeliveryKind.REMINDER,
+                        error=mail_res.get('error', '')
+                    )
+                    reminded_count += 1
+
+            return Response({'status': 'reminded', 'message': f'{reminded_count} reminder message(s) dispatched.'})
+
+        elif action == 'REISSUE':
+            unit_id = request.data.get('unitId')
+            officer_id = request.data.get('officerId')
+            unit = OrgUnit.objects.filter(id=unit_id).first()
+            officer = NodalOfficer.objects.filter(id=officer_id).first()
+            if not unit or not officer:
+                return Response({'error': 'Unit and officer are required to reissue an upload link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            PortalAccessGrant.objects.filter(
+                request=data_req,
+                org_unit=unit,
+                officer=officer,
+                revoked_at__isnull=True
+            ).update(revoked_at=timezone.now())
+
+            token = generate_portal_token()
+            token_digest = hash_token(token)
+            ttl_days = getattr(settings, 'PORTAL_ACCESS_TTL_DAYS', 45)
+            expires_at = timezone.now() + timedelta(days=ttl_days)
+            target = data_req.targets.filter(org_unit=unit).first()
+            data_item_ids = target.data_item_ids if target else data_req.data_item_ids
+
+            grant = PortalAccessGrant.objects.create(
+                token_hash=token_digest,
+                officer=officer,
+                request=data_req,
+                org_unit=unit,
+                data_item_ids=data_item_ids,
+                expires_at=expires_at
+            )
+
+            app_base_url = getattr(settings, 'APP_BASE_URL', 'http://localhost:5173')
+            portal_url = f"{app_base_url}/portal/{token}"
+            return Response({
+                'status': 'reissued',
+                'url': portal_url,
+                'message': 'Fresh upload link provisioned.'
+            })
+
+        elif action == 'SET_TARGET_STATUS':
+            unit_id = request.data.get('unitId')
+            target_status = request.data.get('status', 'SUBMITTED').upper()
+            target = data_req.targets.filter(org_unit_id=unit_id).first()
+            if not target:
+                return Response({'error': 'Target section not found.'}, status=status.HTTP_404_NOT_FOUND)
+            target.status = target_status
+            if target_status == 'SUBMITTED':
+                target.submitted_at = timezone.now()
+            target.save()
+            return Response({'status': 'updated', 'message': f'Section status updated to {target_status}.'})
 
         return Response({'error': f'Unsupported action: {action}'}, status=status.HTTP_400_BAD_REQUEST)
 

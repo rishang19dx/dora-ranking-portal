@@ -1,0 +1,802 @@
+[
+    {
+        "institute_id": "IR-O-U-0456",
+        "name": "Indian Institute of Technology Madras",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": 86.69,
+        "rank": 1
+    },
+    {
+        "institute_id": "IR-O-U-0220",
+        "name": "Indian Institute of Science",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "score": 83.09,
+        "rank": 2
+    },
+    {
+        "institute_id": "IR-O-I-1074",
+        "name": "Indian Institute of Technology Delhi",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "score": 82.16,
+        "rank": 3
+    },
+    {
+        "institute_id": "IR-O-U-0306",
+        "name": "Indian Institute of Technology Bombay",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "score": 81.28,
+        "rank": 4
+    },
+    {
+        "institute_id": "IR-O-I-1075",
+        "name": "Indian Institute of Technology Kanpur",
+        "city": "Kanpur",
+        "state": "Uttar Pradesh",
+        "score": 77.23,
+        "rank": 5
+    },
+    {
+        "institute_id": "IR-O-N-15",
+        "name": "All India Institute of Medical Sciences, Delhi",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "score": 72.14,
+        "rank": 6
+    },
+    {
+        "institute_id": "IR-O-U-0573",
+        "name": "Indian Institute of Technology Kharagpur",
+        "city": "Kharagpur",
+        "state": "West Bengal",
+        "score": 71.82,
+        "rank": 7
+    },
+    {
+        "institute_id": "IR-O-U-0560",
+        "name": "Indian Institute of Technology Roorkee",
+        "city": "Roorkee",
+        "state": "Uttarakhand",
+        "score": 71.66,
+        "rank": 8
+    },
+    {
+        "institute_id": "IR-O-U-0053",
+        "name": "Indian Institute of Technology Guwahati",
+        "city": "Guwahati",
+        "state": "Assam",
+        "score": 68.78,
+        "rank": 9
+    },
+    {
+        "institute_id": "IR-O-U-0109",
+        "name": "Jawaharlal Nehru University",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "score": 67.44,
+        "rank": 10
+    },
+    {
+        "institute_id": "IR-O-U-0500",
+        "name": "Banaras Hindu University",
+        "city": "Varanasi",
+        "state": "Uttar Pradesh",
+        "score": 67.21,
+        "rank": 11
+    },
+    {
+        "institute_id": "IR-O-U-0108",
+        "name": "Jamia Millia Islamia,New Delhi",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "score": 65.52,
+        "rank": 12
+    },
+    {
+        "institute_id": "IR-O-U-0575",
+        "name": "Jadavpur University",
+        "city": "Kolkata",
+        "state": "West Bengal",
+        "score": 64.3,
+        "rank": 13
+    },
+    {
+        "institute_id": "IR-O-U-0013",
+        "name": "Indian Institute of Technology Hyderabad",
+        "city": "Hyderabad",
+        "state": "Telangana",
+        "score": 64.24,
+        "rank": 14
+    },
+    {
+        "institute_id": "IR-O-U-0436",
+        "name": "Amrita Vishwa Vidyapeetham",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "score": 62.74,
+        "rank": 15
+    },
+    {
+        "institute_id": "IR-O-U-0234",
+        "name": "Manipal Academy of Higher Education-Manipal",
+        "city": "Manipal",
+        "state": "Karnataka",
+        "score": 62.71,
+        "rank": 16
+    },
+    {
+        "institute_id": "IR-O-U-0490",
+        "name": "Vellore Institute of Technology",
+        "city": "Vellore",
+        "state": "Tamil Nadu",
+        "score": 62.7,
+        "rank": 17
+    },
+    {
+        "institute_id": "IR-O-U-0439",
+        "name": "Anna University",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": 62.36,
+        "rank": 18
+    },
+    {
+        "institute_id": "IR-O-U-0496",
+        "name": "Aligarh Muslim University",
+        "city": "Aligarh",
+        "state": "Uttar Pradesh",
+        "score": 62.27,
+        "rank": 19
+    },
+    {
+        "institute_id": "IR-O-U-0042",
+        "name": "University of Hyderabad",
+        "city": "Hyderabad",
+        "state": "Telangana",
+        "score": 60.49,
+        "rank": 20
+    },
+    {
+        "institute_id": "IR-O-U-0467",
+        "name": "National Institute of Technology Tiruchirappalli",
+        "city": "Tiruchirappalli",
+        "state": "Tamil Nadu",
+        "score": 60.43,
+        "rank": 21
+    },
+    {
+        "institute_id": "IR-O-U-0120",
+        "name": "University of Delhi",
+        "city": "Delhi",
+        "state": "Delhi",
+        "score": 60.24,
+        "rank": 22
+    },
+    {
+        "institute_id": "IR-O-U-0570",
+        "name": "Calcutta University",
+        "city": "Kolkata",
+        "state": "West Bengal",
+        "score": 60.22,
+        "rank": 23
+    },
+    {
+        "institute_id": "IR-O-U-0139",
+        "name": "Indian Institute of Technology Gandhinagar",
+        "city": "Gandhinagar",
+        "state": "Gujarat",
+        "score": 58.89,
+        "rank": 24
+    },
+    {
+        "institute_id": "IR-O-U-0391",
+        "name": "Birla Institute of Technology  & Science -Pilani",
+        "city": "Pilani",
+        "state": "Rajasthan",
+        "score": 58.76,
+        "rank": 25
+    },
+    {
+        "institute_id": "IR-O-U-0363",
+        "name": "Siksha `O` Anusandhan",
+        "city": "Bhubaneswar",
+        "state": "Odisha",
+        "score": 58.35,
+        "rank": 26
+    },
+    {
+        "institute_id": "IR-O-I-1441",
+        "name": "Saveetha Institute of Medical and Technical Sciences",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": 58.14,
+        "rank": 27
+    },
+    {
+        "institute_id": "IR-O-U-0273",
+        "name": "Indian Institute of Technology Indore",
+        "city": "Indore",
+        "state": "Madhya Pradesh",
+        "score": 58.0,
+        "rank": 28
+    },
+    {
+        "institute_id": "IR-O-U-0356",
+        "name": "Kalinga Institute of Industrial Technology",
+        "city": "Bhubaneswar",
+        "state": "Odisha",
+        "score": 57.52,
+        "rank": 29
+    },
+    {
+        "institute_id": "IR-O-U-0304",
+        "name": "Homi Bhabha National Institute",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "score": 57.09,
+        "rank": 30
+    },
+    {
+        "institute_id": "IR-O-U-0701",
+        "name": "Indian Institute of Technology (Banaras Hindu University) Varanasi",
+        "city": "Varanasi",
+        "state": "Uttar Pradesh",
+        "score": 57.08,
+        "rank": 31
+    },
+    {
+        "institute_id": "IR-O-U-0473",
+        "name": "S.R.M. Institute of Science and Technology",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": 56.44,
+        "rank": 32
+    },
+    {
+        "institute_id": "IR-O-U-0378",
+        "name": "Indian Institute of Technology Ropar",
+        "city": "Rupnagar",
+        "state": "Punjab",
+        "score": 56.16,
+        "rank": 33
+    },
+    {
+        "institute_id": "IR-O-U-0305",
+        "name": "Indian Institute of Science Education & Research Pune",
+        "city": "Pune",
+        "state": "Maharashtra",
+        "score": 56.05,
+        "rank": 34
+    },
+    {
+        "institute_id": "IR-O-U-0323",
+        "name": "Savitribai Phule Pune University",
+        "city": "Pune",
+        "state": "Maharashtra",
+        "score": 55.78,
+        "rank": 35
+    },
+    {
+        "institute_id": "IR-O-U-0447",
+        "name": "Bharathiar University",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "score": 55.58,
+        "rank": 36
+    },
+    {
+        "institute_id": "IR-O-U-0357",
+        "name": "National Institute of Technology Rourkela",
+        "city": "Rourkela",
+        "state": "Odisha",
+        "score": 55.52,
+        "rank": 37
+    },
+    {
+        "institute_id": "IR-O-U-0237",
+        "name": "National Institute of Technology Karnataka, Surathkal",
+        "city": "Surathkal",
+        "state": "Karnataka",
+        "score": 55.47,
+        "rank": 38
+    },
+    {
+        "institute_id": "IR-O-U-0368",
+        "name": "Jawaharlal Institute of Post Graduate Medical Education & Research",
+        "city": "Puducherry",
+        "state": "Pondicherry",
+        "score": 55.41,
+        "rank": 39
+    },
+    {
+        "institute_id": "IR-O-I-1480",
+        "name": "Thapar Institute of Engineering and Technology (Deemed-to-be-university)",
+        "city": "Patiala",
+        "state": "Punjab",
+        "score": 55.17,
+        "rank": 40
+    },
+    {
+        "institute_id": "IR-O-U-0308",
+        "name": "Institute of Chemical Technology",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "score": 54.53,
+        "rank": 41
+    },
+    {
+        "institute_id": "IR-O-U-0205",
+        "name": "Indian Institute of Technology (Indian School of Mines)",
+        "city": "Dhanbad",
+        "state": "Jharkhand",
+        "score": 53.86,
+        "rank": 42
+    },
+    {
+        "institute_id": "IR-O-U-0572",
+        "name": "Indian Institute of Science Education & Research Kolkata",
+        "city": "Mohanpur",
+        "state": "West Bengal",
+        "score": 53.72,
+        "rank": 43
+    },
+    {
+        "institute_id": "IR-O-U-0078",
+        "name": "Panjab University",
+        "city": "Chandigarh",
+        "state": "Chandigarh",
+        "score": 53.31,
+        "rank": 44
+    },
+    {
+        "institute_id": "IR-O-U-0747",
+        "name": "Chandigarh University",
+        "city": "Mohali",
+        "state": "Punjab",
+        "score": 53.29,
+        "rank": 45
+    },
+    {
+        "institute_id": "IR-O-U-0379",
+        "name": "Lovely Professional University",
+        "city": "Phagwara",
+        "state": "Punjab",
+        "score": 53.22,
+        "rank": 46
+    },
+    {
+        "institute_id": "IR-O-U-0260",
+        "name": "Kerala University",
+        "city": "Thiruvananthapuram",
+        "state": "Kerala",
+        "score": 52.75,
+        "rank": 47
+    },
+    {
+        "institute_id": "IR-O-U-0458",
+        "name": "Kalasalingam Academy of Research and Education",
+        "city": "Srivilliputtur",
+        "state": "Tamil Nadu",
+        "score": 52.52,
+        "rank": 48
+    },
+    {
+        "institute_id": "IR-O-U-0476",
+        "name": "Shanmugha Arts Science Technology & Research Academy",
+        "city": "Thanjavur",
+        "state": "Tamil Nadu",
+        "score": 52.0,
+        "rank": 49
+    },
+    {
+        "institute_id": "IR-O-U-0020",
+        "name": "Koneru Lakshmaiah Education Foundation University (K L College of Engineering)",
+        "city": "Vaddeswaram",
+        "state": "Andhra Pradesh",
+        "score": 51.96,
+        "rank": 50
+    },
+    {
+        "institute_id": "IR-O-U-0377",
+        "name": "Indian Institute of Science Education & Research, Mohali",
+        "city": "Mohali",
+        "state": "Punjab",
+        "score": 51.86,
+        "rank": 51
+    },
+    {
+        "institute_id": "IR-O-U-0262",
+        "name": "Mahatma Gandhi University, Kottayam",
+        "city": "Kottayam",
+        "state": "Kerala",
+        "score": 51.84,
+        "rank": 52
+    },
+    {
+        "institute_id": "IR-O-U-0025",
+        "name": "National Institute of Technology Warangal",
+        "city": "Warangal",
+        "state": "Telangana",
+        "score": 51.83,
+        "rank": 53
+    },
+    {
+        "institute_id": "IR-O-U-0263",
+        "name": "National Institute of Technology Calicut",
+        "city": "Kozhikode",
+        "state": "Kerala",
+        "score": 51.62,
+        "rank": 54
+    },
+    {
+        "institute_id": "IR-O-U-0222",
+        "name": "JSS Academy of Higher Education and Research",
+        "city": "Mysuru",
+        "state": "Karnataka",
+        "score": 51.15,
+        "rank": 55
+    },
+    {
+        "institute_id": "IR-O-U-0435",
+        "name": "Alagappa University",
+        "city": "Karaikudi",
+        "state": "Tamil Nadu",
+        "score": 50.99,
+        "rank": 56
+    },
+    {
+        "institute_id": "IR-O-U-0497",
+        "name": "Amity University",
+        "city": "Gautam Budh Nagar",
+        "state": "Uttar Pradesh",
+        "score": 50.88,
+        "rank": 57
+    },
+    {
+        "institute_id": "IR-O-U-0196",
+        "name": "University of Kashmir",
+        "city": "Srinagar",
+        "state": "Jammu and Kashmir",
+        "score": 50.77,
+        "rank": 58
+    },
+    {
+        "institute_id": "IR-O-U-0329",
+        "name": "Symbiosis International",
+        "city": "Pune",
+        "state": "Maharashtra",
+        "score": 50.59,
+        "rank": 59
+    },
+    {
+        "institute_id": "IR-O-U-0272",
+        "name": "Indian Institute of Science Education & Research Bhopal",
+        "city": "Bhopal",
+        "state": "Madhya Pradesh",
+        "score": 50.58,
+        "rank": 60
+    },
+    {
+        "institute_id": "IR-O-U-0098",
+        "name": "Delhi Technological University",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "score": 50.54,
+        "rank": 61
+    },
+    {
+        "institute_id": "IR-O-U-0410",
+        "name": "Malaviya National Institute of Technology",
+        "city": "Jaipur",
+        "state": "Rajasthan",
+        "score": 50.36,
+        "rank": 62
+    },
+    {
+        "institute_id": "IR-O-U-0253",
+        "name": "Cochin University of Science and Technology",
+        "city": "Cochin",
+        "state": "Kerala",
+        "score": 50.34,
+        "rank": 63
+    },
+    {
+        "institute_id": "IR-O-U-0027",
+        "name": "Osmania University",
+        "city": "Hyderabad",
+        "state": "Telangana",
+        "score": 49.94,
+        "rank": 64
+    },
+    {
+        "institute_id": "IR-O-I-1357",
+        "name": "University of Madras",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": 49.93,
+        "rank": 65
+    },
+    {
+        "institute_id": "IR-O-U-0584",
+        "name": "Indian Institute of Engineering Science and Technology, Shibpur",
+        "city": "Howrah",
+        "state": "West Bengal",
+        "score": 49.79,
+        "rank": 66
+    },
+    {
+        "institute_id": "IR-O-U-0395",
+        "name": "Indian Institute of Technology Jodhpur",
+        "city": "Jodhpur",
+        "state": "Rajasthan",
+        "score": 49.79,
+        "rank": 66
+    },
+    {
+        "institute_id": "IR-O-U-0064",
+        "name": "Indian Institute of Technology Patna",
+        "city": "Patna",
+        "state": "Bihar",
+        "score": 49.79,
+        "rank": 66
+    },
+    {
+        "institute_id": "IR-O-U-0498",
+        "name": "Babasheb Bhimrao Ambedkar University",
+        "city": "Lucknow",
+        "state": "Uttar Pradesh",
+        "score": 49.53,
+        "rank": 69
+    },
+    {
+        "institute_id": "IR-O-U-0448",
+        "name": "Bharathidasan University",
+        "city": "Tiruchirappalli",
+        "state": "Tamil Nadu",
+        "score": 49.45,
+        "rank": 70
+    },
+    {
+        "institute_id": "IR-O-U-0235",
+        "name": "Mysore University",
+        "city": "Mysuru",
+        "state": "Karnataka",
+        "score": 49.17,
+        "rank": 71
+    },
+    {
+        "institute_id": "IR-O-U-0374",
+        "name": "Dr. B R Ambedkar National Institute of Technology, Jalandhar",
+        "city": "Jalandhar",
+        "state": "Punjab",
+        "score": 49.04,
+        "rank": 72
+    },
+    {
+        "institute_id": "IR-O-U-0184",
+        "name": "Indian Institute of Technology Mandi",
+        "city": "Mandi",
+        "state": "Himachal Pradesh",
+        "score": 49.03,
+        "rank": 73
+    },
+    {
+        "institute_id": "IR-O-U-0381",
+        "name": "Punjab Agricultural University, Ludhiana",
+        "city": "Ludhiana",
+        "state": "Punjab",
+        "score": 48.97,
+        "rank": 74
+    },
+    {
+        "institute_id": "IR-O-U-0295",
+        "name": "Datta Meghe Institute of Higher Education and Research",
+        "city": "Wardha",
+        "state": "Maharashtra",
+        "score": 48.92,
+        "rank": 75
+    },
+    {
+        "institute_id": "IR-O-U-0006",
+        "name": "Andhra University, Visakhapatnam",
+        "city": "Visakhapatnam",
+        "state": "Andhra Pradesh",
+        "score": 48.54,
+        "rank": 76
+    },
+    {
+        "institute_id": "IR-O-U-0523",
+        "name": "King George`s Medical University",
+        "city": "Lucknow",
+        "state": "Uttar Pradesh",
+        "score": 48.52,
+        "rank": 77
+    },
+    {
+        "institute_id": "IR-O-U-0107",
+        "name": "Jamia Hamdard",
+        "city": "New Delhi",
+        "state": "Delhi",
+        "score": 48.4,
+        "rank": 78
+    },
+    {
+        "institute_id": "IR-O-U-0564",
+        "name": "UPES",
+        "city": "Dehradun",
+        "state": "Uttarakhand",
+        "score": 48.34,
+        "rank": 79
+    },
+    {
+        "institute_id": "IR-O-C-16604",
+        "name": "Sri Sivasubramaniya Nadar College of Engineering",
+        "city": "Kalavakkam",
+        "state": "Tamil Nadu",
+        "score": 48.18,
+        "rank": 80
+    },
+    {
+        "institute_id": "IR-O-I-1110",
+        "name": "Dr. D. Y. Patil Vidyapeeth",
+        "city": "Pune",
+        "state": "Maharashtra",
+        "score": 48.17,
+        "rank": 81
+    },
+    {
+        "institute_id": "IR-O-U-0334",
+        "name": "Visvesvaraya National Institute of Technology, Nagpur",
+        "city": "Nagpur",
+        "state": "Maharashtra",
+        "score": 48.15,
+        "rank": 82
+    },
+    {
+        "institute_id": "IR-O-U-0055",
+        "name": "National Institute of Technology Silchar",
+        "city": "Silchar",
+        "state": "Assam",
+        "score": 48.12,
+        "rank": 83
+    },
+    {
+        "institute_id": "IR-O-U-0474",
+        "name": "Sathyabama Institute of Science and Technology",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": 47.95,
+        "rank": 84
+    },
+    {
+        "institute_id": "IR-O-U-0136",
+        "name": "Gujarat University",
+        "city": "Ahmedabad",
+        "state": "Gujarat",
+        "score": 47.91,
+        "rank": 85
+    },
+    {
+        "institute_id": "IR-O-U-0691",
+        "name": "All India Institute of Medical Sciences, Rishikesh",
+        "city": "Rishikesh",
+        "state": "Uttarakhand",
+        "score": 47.89,
+        "rank": 86
+    },
+    {
+        "institute_id": "IR-O-U-0376",
+        "name": "Guru Nanak Dev University",
+        "city": "Amritsar",
+        "state": "Punjab",
+        "score": 47.55,
+        "rank": 87
+    },
+    {
+        "institute_id": "IR-O-N-10",
+        "name": "SVKM`s Narsee Monjee Institute of Management Studies",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "score": 47.46,
+        "rank": 88
+    },
+    {
+        "institute_id": "IR-O-U-0555",
+        "name": "Graphic Era University",
+        "city": "Dehradun",
+        "state": "Uttarakhand",
+        "score": 47.29,
+        "rank": 89
+    },
+    {
+        "institute_id": "IR-O-U-0577",
+        "name": "National Institute of Technology Durgapur",
+        "city": "Durgapur",
+        "state": "West Bengal",
+        "score": 46.81,
+        "rank": 90
+    },
+    {
+        "institute_id": "IR-O-U-0355",
+        "name": "Indian Institute of Technology Bhubaneswar",
+        "city": "Bhubaneswar",
+        "state": "Odisha",
+        "score": 46.73,
+        "rank": 91
+    },
+    {
+        "institute_id": "IR-O-U-0249",
+        "name": "Visvesvaraya Technological University",
+        "city": "Belgaum",
+        "state": "Karnataka",
+        "score": 46.48,
+        "rank": 92
+    },
+    {
+        "institute_id": "IR-O-U-0485",
+        "name": "Tamil Nadu Agricultural University",
+        "city": "Coimbatore",
+        "state": "Tamil Nadu",
+        "score": 46.33,
+        "rank": 93
+    },
+    {
+        "institute_id": "IR-O-U-0463",
+        "name": "Madurai Kamaraj University",
+        "city": "Madurai",
+        "state": "Tamil Nadu",
+        "score": 46.26,
+        "rank": 94
+    },
+    {
+        "institute_id": "IR-O-U-0642",
+        "name": "Shiv Nadar University",
+        "city": "Gautam Buddha Nagar",
+        "state": "Uttar Pradesh",
+        "score": 46.18,
+        "rank": 95
+    },
+    {
+        "institute_id": "IR-O-U-0318",
+        "name": "Mumbai University",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "score": 45.86,
+        "rank": 96
+    },
+    {
+        "institute_id": "IR-O-U-0389",
+        "name": "Banasthali Vidyapith",
+        "city": "Banasthali",
+        "state": "Rajasthan",
+        "score": 45.85,
+        "rank": 97
+    },
+    {
+        "institute_id": "IR-O-I-1486",
+        "name": "Sri Ramachandra Institute of Higher Education and Research",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "score": 45.84,
+        "rank": 98
+    },
+    {
+        "institute_id": "IR-O-S-8972",
+        "name": "Indian Institute of Management Calcutta",
+        "city": "Kolkata",
+        "state": "West Bengal",
+        "score": 45.74,
+        "rank": 99
+    },
+    {
+        "institute_id": "IR-O-U-0217",
+        "name": "Christ University",
+        "city": "Bengaluru",
+        "state": "Karnataka",
+        "score": 45.65,
+        "rank": 100
+    }
+]

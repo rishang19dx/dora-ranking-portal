@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'apps.accounts',
     'apps.organogram',
     'apps.data_requests',
+    'apps.submissions',
     'apps.rankings',
 ]
 
@@ -72,8 +73,8 @@ if DATABASE_URL:
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': parsed.path.lstrip('/'),
-            'USER': parsed.username,
-            'PASSWORD': parsed.password,
+            'USER': urllib.parse.unquote(parsed.username) if parsed.username else '',
+            'PASSWORD': urllib.parse.unquote(parsed.password) if parsed.password else '',
             'HOST': parsed.hostname,
             'PORT': parsed.port or 5432,
         }
@@ -138,4 +139,5 @@ PORTAL_ACCESS_TTL_DAYS = int(os.getenv('PORTAL_ACCESS_TTL_DAYS', '45'))
 APP_BASE_URL = os.getenv('APP_BASE_URL', 'http://localhost:5173')
 RESEND_API_KEY = os.getenv('RESEND_API_KEY')
 MAIL_FROM = os.getenv('MAIL_FROM', 'DORA IIT Mandi <dora@iitmandi.ac.in>')
-OUTBOX_DIR = BASE_DIR / 'outbox'
+PORTAL_DATA_DIR = Path(os.getenv('PORTAL_DATA_DIR', str(BASE_DIR.parent / '.data')))
+OUTBOX_DIR = PORTAL_DATA_DIR / 'outbox'

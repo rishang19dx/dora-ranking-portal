@@ -54,12 +54,33 @@ def test_organogram_and_officers(api_client, seeded_db):
     assert res.status_code == 200
     assert 'tree' in res.data
     assert len(res.data['units']) >= 50
-    assert len(res.data['catalogue']) == 28
+    assert len(res.data['catalogue']) == 33
 
-    # Get nodal officers
+    # Assert WP0: all schools, centres, and offices from orgModel exist and have kinds set
+    unit_dict = {u['id']: u for u in res.data['units']}
+    for school_id in ['sbs', 'scee', 'scene', 'shss', 'smss', 'som', 'smme', 'scs', 'sps']:
+        assert school_id in unit_dict, f"Missing school {school_id}"
+        assert unit_dict[school_id]['kind'] == 'SCHOOL'
+
+    for centre_id in ['cqst', 'amrc', 'iksmha', 'c3dar', 'c4dfed', 'cair', 'chci', 'biox']:
+        assert centre_id in unit_dict, f"Missing centre {centre_id}"
+        assert unit_dict[centre_id]['kind'] == 'CENTRE'
+
+    for office_id in ['catalyst', 'ihub', 'cnp-cell', 'ranking-cell', 'reservation-cell', 'grievance-redressal-committee', 'womens-cell']:
+        assert office_id in unit_dict, f"Missing office {office_id}"
+        assert unit_dict[office_id]['kind'] == 'OFFICE'
+
+    # Retired units must not exist
+    assert 'se' not in unit_dict
+    assert 'se-faculty-body' not in unit_dict
+
+    # Get nodal officers (both with and without trailing slash should return 200)
     officers_res = api_client.get('/api/nodal-officers/')
     assert officers_res.status_code == 200
     assert len(officers_res.data) > 0
+
+    officers_noslash = api_client.get('/api/nodal-officers')
+    assert officers_noslash.status_code == 200
 
     # Create new officer
     create_res = api_client.post('/api/nodal-officers/', {
@@ -71,6 +92,23 @@ def test_organogram_and_officers(api_client, seeded_db):
     assert create_res.status_code == 201
     assert create_res.data['name'] == 'Dr. Test Officer'
     assert 'scee' in create_res.data['unitIds']
+
+    officer_id = create_res.data['id']
+
+    # Access actions: REVOKE
+    revoke_res = api_client.post(f'/api/nodal-officers/{officer_id}/access/', {'action': 'REVOKE'})
+    assert revoke_res.status_code == 200
+    assert revoke_res.data['officer']['status'] == 'REVOKED'
+
+    # Access actions: RESTORE
+    restore_res = api_client.post(f'/api/nodal-officers/{officer_id}/access/', {'action': 'RESTORE'})
+    assert restore_res.status_code == 200
+    assert restore_res.data['officer']['status'] == 'ACTIVE'
+
+    # Access actions: INVITE
+    invite_res = api_client.post(f'/api/nodal-officers/{officer_id}/access/', {'action': 'INVITE'})
+    assert invite_res.status_code == 200
+    assert invite_res.data['officer']['lastInvitedAt'] is not None
 
 @pytest.mark.django_db
 def test_data_request_dispatch_and_portal_upload(api_client, seeded_db):
@@ -90,6 +128,24 @@ def test_data_request_dispatch_and_portal_upload(api_client, seeded_db):
     assert dispatch_res.status_code == 201
     assert 'issuedGrants' in dispatch_res.data
     assert len(dispatch_res.data['issuedGrants']) > 0
+    assert 'request' in dispatch_res.data
+    assert dispatch_res.data['request']['id'] == dispatch_res.data['id']
+
+    # Dispatch also works with unitIds and dataItemIds payload format
+    unitids_payload = {
+        'title': 'NIRF 2026 UnitIds Call',
+        'framework': 'NIRF',
+        'cycleYear': 2026,
+        'subject': 'Data Request',
+        'message': 'Please upload proofs.',
+        'deadline': '2026-12-15',
+        'unitIds': ['sbs'],
+        'dataItemIds': ['student-intake']
+    }
+    unitids_res = api_client.post('/api/data-requests/', unitids_payload, format='json')
+    assert unitids_res.status_code == 201
+    assert 'issuedGrants' in unitids_res.data
+    assert len(unitids_res.data['issuedGrants']) > 0
 
     grant_info = dispatch_res.data['issuedGrants'][0]
     portal_url = grant_info['portalUrl']

@@ -5,6 +5,7 @@ django-cors-headers>=4.4.0
 python-dotenv>=1.0.1
 requests>=2.32.3
 beautifulsoup4>=4.12.3
+openpyxl>=3.1.5
 pytest>=8.3.0
 pytest-django>=4.9.0
 gunicorn>=22.0.0

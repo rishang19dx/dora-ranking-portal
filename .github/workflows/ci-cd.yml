@@ -33,6 +33,7 @@ jobs:
           python manage.py check
           python manage.py migrate --noinput
           python manage.py seed_organogram
+          python manage.py load_form_schema
 
       - name: Run Pytest Suite
         working-directory: backend

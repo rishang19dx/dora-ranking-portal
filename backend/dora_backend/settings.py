@@ -73,8 +73,8 @@ if DATABASE_URL:
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': parsed.path.lstrip('/'),
-            'USER': parsed.username,
-            'PASSWORD': parsed.password,
+            'USER': urllib.parse.unquote(parsed.username) if parsed.username else '',
+            'PASSWORD': urllib.parse.unquote(parsed.password) if parsed.password else '',
             'HOST': parsed.hostname,
             'PORT': parsed.port or 5432,
         }

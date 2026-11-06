@@ -46,6 +46,69 @@ def canonical_iit_name(name: str) -> str:
             return canonical
     return name
 
+PARAM_KEY_MAP = {
+    "TLR": "tlr",
+    "RPC": "rpc",
+    "RP": "rpc",
+    "GO": "go",
+    "OI": "oi",
+    "PERCEPTION": "pr",
+    "PR": "pr",
+}
+
+def _to_float(raw: str):
+    """Parse a NIRF sub-score cell, tolerating blanks, dashes and stray marks."""
+    if raw is None:
+        return None
+    txt = raw.strip().replace(',', '')
+    if not txt or txt in {'-', '--', 'NA', 'N/A'}:
+        return None
+    match = re.search(r'\d+(?:\.\d+)?', txt)
+    if not match:
+        return None
+    try:
+        return float(match.group(0))
+    except ValueError:
+        return None
+
+def extract_parameters(row):
+    """
+    Pull the TLR/RPC/GO/OI/PERCEPTION sub-scores for one institute.
+
+    NIRF renders them in a nested table inside the institute-name cell (the
+    "More Details" drawer), not as extra columns on the outer row, so the
+    headers are read by name instead of by position.
+    """
+    for table in row.find_all('table'):
+        header_cells = None
+        value_cells = None
+        for tr in table.find_all('tr'):
+            cells = tr.find_all(['th', 'td'])
+            if not cells:
+                continue
+            labels = [c.get_text(strip=True).upper() for c in cells]
+            keys = [PARAM_KEY_MAP.get(re.sub(r'\s*\(.*?\)', '', lbl).strip()) for lbl in labels]
+            if sum(1 for k in keys if k) >= 3:
+                header_cells = keys
+                continue
+            if header_cells and len(cells) == len(header_cells):
+                value_cells = [c.get_text(strip=True) for c in cells]
+                break
+
+        if not header_cells or not value_cells:
+            continue
+
+        params = {}
+        for key, raw in zip(header_cells, value_cells):
+            if not key:
+                continue
+            val = _to_float(raw)
+            if val is not None:
+                params[key] = val
+        if params:
+            return params
+    return None
+
 def get_fallback_innovation_data(year: int):
     """
     ARIIA / Innovation standings for 2nd Gen IITs and leading institutes
@@ -160,18 +223,18 @@ def scrape_nirf_data(target_years=None):
                                     "rank": rk_val
                                 }
 
-                                # If sub-scores exist in columns 2..6 (e.g., 2025 Overall 11-column table)
-                                if len(cols) == 11:
-                                    try:
-                                        item_record["parameters"] = {
-                                            "tlr": float(cols[2].text.strip()),
-                                            "rpc": float(cols[3].text.strip()),
-                                            "go": float(cols[4].text.strip()),
-                                            "oi": float(cols[5].text.strip()),
-                                            "pr": float(cols[6].text.strip()),
-                                        }
-                                    except Exception:
-                                        pass
+                                # Sub-scores live in the nested "More Details" table on the
+                                # name cell; fall back to inline columns for older layouts.
+                                params = extract_parameters(row)
+                                if not params and len(cols) == 11:
+                                    params = {}
+                                    for key, col in zip(('tlr', 'rpc', 'go', 'oi', 'pr'), cols[2:7]):
+                                        val = _to_float(col.text)
+                                        if val is not None:
+                                            params[key] = val
+                                    params = params or None
+                                if params:
+                                    item_record["parameters"] = params
 
                                 data.append(item_record)
 

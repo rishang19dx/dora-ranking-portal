@@ -5,7 +5,14 @@
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 86.76,
-        "rank": 1
+        "rank": 1,
+        "parameters": {
+            "tlr": 85.61,
+            "rpc": 92.51,
+            "go": 86.32,
+            "oi": 63.57,
+            "pr": 97.13
+        }
     },
     {
         "institute_id": "IR-O-U-0220",
@@ -13,7 +20,14 @@
         "city": "Bengaluru",
         "state": "Karnataka",
         "score": 82.67,
-        "rank": 2
+        "rank": 2,
+        "parameters": {
+            "tlr": 79.13,
+            "rpc": 91.48,
+            "go": 78.23,
+            "oi": 58.39,
+            "pr": 100.0
+        }
     },
     {
         "institute_id": "IR-O-U-0306",
@@ -21,7 +35,14 @@
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 82.52,
-        "rank": 3
+        "rank": 3,
+        "parameters": {
+            "tlr": 83.52,
+            "rpc": 87.81,
+            "go": 80.86,
+            "oi": 57.48,
+            "pr": 91.96
+        }
     },
     {
         "institute_id": "IR-O-I-1074",
@@ -29,7 +50,14 @@
         "city": "New Delhi",
         "state": "Delhi",
         "score": 81.75,
-        "rank": 4
+        "rank": 4,
+        "parameters": {
+            "tlr": 84.02,
+            "rpc": 84.46,
+            "go": 75.07,
+            "oi": 67.97,
+            "pr": 93.89
+        }
     },
     {
         "institute_id": "IR-O-I-1075",
@@ -37,7 +65,14 @@
         "city": "Kanpur",
         "state": "Uttar Pradesh",
         "score": 76.5,
-        "rank": 5
+        "rank": 5,
+        "parameters": {
+            "tlr": 80.5,
+            "rpc": 75.23,
+            "go": 80.74,
+            "oi": 56.97,
+            "pr": 79.3
+        }
     },
     {
         "institute_id": "IR-O-U-0573",
@@ -45,7 +80,14 @@
         "city": "Kharagpur",
         "state": "West Bengal",
         "score": 75.62,
-        "rank": 6
+        "rank": 6,
+        "parameters": {
+            "tlr": 74.25,
+            "rpc": 76.23,
+            "go": 83.23,
+            "oi": 55.35,
+            "pr": 82.92
+        }
     },
     {
         "institute_id": "IR-O-U-0560",
@@ -53,7 +95,14 @@
         "city": "Roorkee",
         "state": "Uttarakhand",
         "score": 71.4,
-        "rank": 7
+        "rank": 7,
+        "parameters": {
+            "tlr": 76.68,
+            "rpc": 68.37,
+            "go": 83.16,
+            "oi": 65.31,
+            "pr": 47.28
+        }
     },
     {
         "institute_id": "IR-O-U-0053",
@@ -61,7 +110,14 @@
         "city": "Guwahati",
         "state": "Assam",
         "score": 69.26,
-        "rank": 8
+        "rank": 8,
+        "parameters": {
+            "tlr": 73.75,
+            "rpc": 66.25,
+            "go": 81.26,
+            "oi": 62.95,
+            "pr": 47.04
+        }
     },
     {
         "institute_id": "IR-O-U-0109",
@@ -69,7 +125,14 @@
         "city": "New Delhi",
         "state": "Delhi",
         "score": 66.61,
-        "rank": 9
+        "rank": 9,
+        "parameters": {
+            "tlr": 71.19,
+            "rpc": 44.96,
+            "go": 95.07,
+            "oi": 73.36,
+            "pr": 54.12
+        }
     },
     {
         "institute_id": "IR-O-U-0500",
@@ -77,7 +140,14 @@
         "city": "Varanasi",
         "state": "Uttar Pradesh",
         "score": 63.1,
-        "rank": 10
+        "rank": 10,
+        "parameters": {
+            "tlr": 64.5,
+            "rpc": 45.0,
+            "go": 100.0,
+            "oi": 53.13,
+            "pr": 49.38
+        }
     },
     {
         "institute_id": "IR-O-U-0570",
@@ -85,7 +155,14 @@
         "city": "Kolkata",
         "state": "West Bengal",
         "score": 61.45,
-        "rank": 11
+        "rank": 11,
+        "parameters": {
+            "tlr": 66.2,
+            "rpc": 43.92,
+            "go": 91.72,
+            "oi": 60.98,
+            "pr": 39.68
+        }
     },
     {
         "institute_id": "IR-O-U-0436",
@@ -93,7 +170,14 @@
         "city": "Coimbatore",
         "state": "Tamil Nadu",
         "score": 59.87,
-        "rank": 12
+        "rank": 12,
+        "parameters": {
+            "tlr": 64.23,
+            "rpc": 54.33,
+            "go": 71.35,
+            "oi": 65.54,
+            "pr": 34.8
+        }
     },
     {
         "institute_id": "IR-O-U-0108",
@@ -101,7 +185,14 @@
         "city": "New Delhi",
         "state": "Delhi",
         "score": 59.54,
-        "rank": 13
+        "rank": 13,
+        "parameters": {
+            "tlr": 66.44,
+            "rpc": 43.43,
+            "go": 86.67,
+            "oi": 72.35,
+            "pr": 20.25
+        }
     },
     {
         "institute_id": "IR-O-U-0575",
@@ -109,7 +200,14 @@
         "city": "Kolkata",
         "state": "West Bengal",
         "score": 58.93,
-        "rank": 14
+        "rank": 14,
+        "parameters": {
+            "tlr": 51.7,
+            "rpc": 51.72,
+            "go": 87.77,
+            "oi": 50.16,
+            "pr": 53.3
+        }
     },
     {
         "institute_id": "IR-O-U-0234",
@@ -117,7 +215,14 @@
         "city": "Manipal",
         "state": "Karnataka",
         "score": 58.91,
-        "rank": 15
+        "rank": 15,
+        "parameters": {
+            "tlr": 67.68,
+            "rpc": 48.17,
+            "go": 76.05,
+            "oi": 65.25,
+            "pr": 24.18
+        }
     },
     {
         "institute_id": "IR-O-U-0013",
@@ -125,7 +230,14 @@
         "city": "Hyderabad",
         "state": "Telangana",
         "score": 58.53,
-        "rank": 16
+        "rank": 16,
+        "parameters": {
+            "tlr": 61.4,
+            "rpc": 52.64,
+            "go": 67.51,
+            "oi": 58.59,
+            "pr": 49.61
+        }
     },
     {
         "institute_id": "IR-O-U-0042",
@@ -133,7 +245,14 @@
         "city": "Hyderabad",
         "state": "Telangana",
         "score": 57.67,
-        "rank": 17
+        "rank": 17,
+        "parameters": {
+            "tlr": 69.59,
+            "rpc": 40.74,
+            "go": 77.44,
+            "oi": 58.72,
+            "pr": 32.13
+        }
     },
     {
         "institute_id": "IR-O-U-0496",
@@ -141,7 +260,14 @@
         "city": "Aligarh",
         "state": "Uttar Pradesh",
         "score": 57.38,
-        "rank": 18
+        "rank": 18,
+        "parameters": {
+            "tlr": 69.06,
+            "rpc": 40.86,
+            "go": 80.06,
+            "oi": 56.93,
+            "pr": 27.0
+        }
     },
     {
         "institute_id": "IR-O-U-0120",
@@ -149,7 +275,14 @@
         "city": "Delhi",
         "state": "Delhi",
         "score": 56.03,
-        "rank": 19
+        "rank": 19,
+        "parameters": {
+            "tlr": 42.65,
+            "rpc": 54.23,
+            "go": 82.66,
+            "oi": 59.6,
+            "pr": 44.81
+        }
     },
     {
         "institute_id": "IR-O-U-0323",
@@ -157,7 +290,14 @@
         "city": "Pune",
         "state": "Maharashtra",
         "score": 55.83,
-        "rank": 20
+        "rank": 20,
+        "parameters": {
+            "tlr": 62.95,
+            "rpc": 42.77,
+            "go": 86.96,
+            "oi": 50.92,
+            "pr": 16.41
+        }
     },
     {
         "institute_id": "IR-O-U-0490",
@@ -165,7 +305,14 @@
         "city": "Vellore",
         "state": "Tamil Nadu",
         "score": 55.39,
-        "rank": 21
+        "rank": 21,
+        "parameters": {
+            "tlr": 48.43,
+            "rpc": 56.83,
+            "go": 69.94,
+            "oi": 59.38,
+            "pr": 38.8
+        }
     },
     {
         "institute_id": "IR-O-U-0447",
@@ -173,7 +320,14 @@
         "city": "Coimbatore",
         "state": "Tamil Nadu",
         "score": 55.38,
-        "rank": 22
+        "rank": 22,
+        "parameters": {
+            "tlr": 61.79,
+            "rpc": 47.45,
+            "go": 74.17,
+            "oi": 53.21,
+            "pr": 24.6
+        }
     },
     {
         "institute_id": "IR-O-U-0467",
@@ -181,7 +335,14 @@
         "city": "Tiruchirappalli",
         "state": "Tamil Nadu",
         "score": 54.97,
-        "rank": 23
+        "rank": 23,
+        "parameters": {
+            "tlr": 52.39,
+            "rpc": 44.58,
+            "go": 71.79,
+            "oi": 63.34,
+            "pr": 51.82
+        }
     },
     {
         "institute_id": "IR-O-U-0305",
@@ -189,7 +350,14 @@
         "city": "Pune",
         "state": "Maharashtra",
         "score": 54.47,
-        "rank": 24
+        "rank": 24,
+        "parameters": {
+            "tlr": 67.24,
+            "rpc": 45.58,
+            "go": 59.31,
+            "oi": 58.75,
+            "pr": 28.91
+        }
     },
     {
         "institute_id": "IR-O-U-0439",
@@ -197,7 +365,14 @@
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 54.42,
-        "rank": 25
+        "rank": 25,
+        "parameters": {
+            "tlr": 51.91,
+            "rpc": 43.09,
+            "go": 73.11,
+            "oi": 51.35,
+            "pr": 61.72
+        }
     },
     {
         "institute_id": "IR-O-U-0205",
@@ -205,7 +380,14 @@
         "city": "Dhanbad",
         "state": "Jharkhand",
         "score": 53.88,
-        "rank": 26
+        "rank": 26,
+        "parameters": {
+            "tlr": 48.18,
+            "rpc": 56.64,
+            "go": 71.16,
+            "oi": 55.15,
+            "pr": 27.0
+        }
     },
     {
         "institute_id": "IR-O-U-0308",
@@ -213,7 +395,14 @@
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 53.76,
-        "rank": 27
+        "rank": 27,
+        "parameters": {
+            "tlr": 50.05,
+            "rpc": 55.82,
+            "go": 75.96,
+            "oi": 46.07,
+            "pr": 22.04
+        }
     },
     {
         "institute_id": "IR-O-U-0701",
@@ -221,7 +410,14 @@
         "city": "Varanasi",
         "state": "Uttar Pradesh",
         "score": 53.74,
-        "rank": 28
+        "rank": 28,
+        "parameters": {
+            "tlr": 55.87,
+            "rpc": 47.41,
+            "go": 69.88,
+            "oi": 56.69,
+            "pr": 31.08
+        }
     },
     {
         "institute_id": "IR-O-U-0391",
@@ -229,7 +425,14 @@
         "city": "Pilani",
         "state": "Rajasthan",
         "score": 53.32,
-        "rank": 29
+        "rank": 29,
+        "parameters": {
+            "tlr": 55.81,
+            "rpc": 43.13,
+            "go": 72.05,
+            "oi": 59.5,
+            "pr": 32.81
+        }
     },
     {
         "institute_id": "IR-O-U-0273",
@@ -237,7 +440,14 @@
         "city": "Indore",
         "state": "Madhya Pradesh",
         "score": 53.22,
-        "rank": 30
+        "rank": 30,
+        "parameters": {
+            "tlr": 57.51,
+            "rpc": 49.25,
+            "go": 69.71,
+            "oi": 56.59,
+            "pr": 15.91
+        }
     },
     {
         "institute_id": "IR-O-U-0378",
@@ -245,7 +455,14 @@
         "city": "Rupnagar",
         "state": "Punjab",
         "score": 52.89,
-        "rank": 31
+        "rank": 31,
+        "parameters": {
+            "tlr": 72.76,
+            "rpc": 32.92,
+            "go": 62.05,
+            "oi": 63.88,
+            "pr": 23.76
+        }
     },
     {
         "institute_id": "IR-O-U-0237",
@@ -253,7 +470,14 @@
         "city": "Surathkal",
         "state": "Karnataka",
         "score": 52.88,
-        "rank": 32
+        "rank": 32,
+        "parameters": {
+            "tlr": 53.81,
+            "rpc": 41.74,
+            "go": 73.32,
+            "oi": 65.58,
+            "pr": 30.01
+        }
     },
     {
         "institute_id": "IR-O-U-0139",
@@ -261,7 +485,14 @@
         "city": "Gandhinagar",
         "state": "Gujarat",
         "score": 52.77,
-        "rank": 33
+        "rank": 33,
+        "parameters": {
+            "tlr": 71.26,
+            "rpc": 37.15,
+            "go": 57.21,
+            "oi": 64.21,
+            "pr": 23.76
+        }
     },
     {
         "institute_id": "IR-O-U-0235",
@@ -269,7 +500,14 @@
         "city": "Mysuru",
         "state": "Karnataka",
         "score": 50.49,
-        "rank": 34
+        "rank": 34,
+        "parameters": {
+            "tlr": 68.77,
+            "rpc": 18.79,
+            "go": 90.54,
+            "oi": 54.24,
+            "pr": 6.85
+        }
     },
     {
         "institute_id": "IR-O-U-0572",
@@ -277,7 +515,14 @@
         "city": "Mohanpur",
         "state": "West Bengal",
         "score": 50.48,
-        "rank": 35
+        "rank": 35,
+        "parameters": {
+            "tlr": 59.67,
+            "rpc": 38.82,
+            "go": 66.26,
+            "oi": 53.53,
+            "pr": 23.34
+        }
     },
     {
         "institute_id": "IR-O-U-0304",
@@ -285,7 +530,14 @@
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 50.42,
-        "rank": 36
+        "rank": 36,
+        "parameters": {
+            "tlr": 68.64,
+            "rpc": 36.45,
+            "go": 65.98,
+            "oi": 50.79,
+            "pr": 6.22
+        }
     },
     {
         "institute_id": "IR-O-U-0363",
@@ -293,7 +545,14 @@
         "city": "Bhubaneswar",
         "state": "Odisha",
         "score": 50.34,
-        "rank": 37
+        "rank": 37,
+        "parameters": {
+            "tlr": 63.89,
+            "rpc": 29.92,
+            "go": 71.34,
+            "oi": 65.89,
+            "pr": 13.28
+        }
     },
     {
         "institute_id": "IR-O-U-0078",
@@ -301,7 +560,14 @@
         "city": "Chandigarh",
         "state": "Chandigarh",
         "score": 50.31,
-        "rank": 38
+        "rank": 38,
+        "parameters": {
+            "tlr": 48.88,
+            "rpc": 40.86,
+            "go": 71.57,
+            "oi": 53.49,
+            "pr": 37.31
+        }
     },
     {
         "institute_id": "IR-O-U-0356",
@@ -309,7 +575,14 @@
         "city": "Bhubaneswar",
         "state": "Odisha",
         "score": 50.0,
-        "rank": 39
+        "rank": 39,
+        "parameters": {
+            "tlr": 62.4,
+            "rpc": 27.78,
+            "go": 70.0,
+            "oi": 78.43,
+            "pr": 11.06
+        }
     },
     {
         "institute_id": "IR-O-U-0377",
@@ -317,7 +590,14 @@
         "city": "Mohali",
         "state": "Punjab",
         "score": 49.58,
-        "rank": 40
+        "rank": 40,
+        "parameters": {
+            "tlr": 62.43,
+            "rpc": 31.86,
+            "go": 59.58,
+            "oi": 71.65,
+            "pr": 22.04
+        }
     },
     {
         "institute_id": "IR-O-U-0357",
@@ -325,7 +605,14 @@
         "city": "Rourkela",
         "state": "Odisha",
         "score": 49.27,
-        "rank": 41
+        "rank": 41,
+        "parameters": {
+            "tlr": 49.19,
+            "rpc": 48.29,
+            "go": 65.32,
+            "oi": 51.66,
+            "pr": 17.89
+        }
     },
     {
         "institute_id": "IR-O-U-0476",
@@ -333,7 +620,14 @@
         "city": "Thanjavur",
         "state": "Tamil Nadu",
         "score": 49.15,
-        "rank": 42
+        "rank": 42,
+        "parameters": {
+            "tlr": 58.58,
+            "rpc": 38.28,
+            "go": 66.3,
+            "oi": 57.78,
+            "pr": 10.48
+        }
     },
     {
         "institute_id": "IR-O-U-0497",
@@ -341,7 +635,14 @@
         "city": "Gautam Budh Nagar",
         "state": "Uttar Pradesh",
         "score": 48.87,
-        "rank": 43
+        "rank": 43,
+        "parameters": {
+            "tlr": 48.98,
+            "rpc": 43.27,
+            "go": 67.55,
+            "oi": 64.66,
+            "pr": 12.18
+        }
     },
     {
         "institute_id": "IR-O-U-0260",
@@ -349,7 +650,14 @@
         "city": "Thiruvananthapuram",
         "state": "Kerala",
         "score": 48.87,
-        "rank": 43
+        "rank": 43,
+        "parameters": {
+            "tlr": 64.77,
+            "rpc": 19.93,
+            "go": 89.11,
+            "oi": 51.53,
+            "pr": 4.91
+        }
     },
     {
         "institute_id": "IR-O-I-1480",
@@ -357,7 +665,14 @@
         "city": "Patiala",
         "state": "Punjab",
         "score": 48.83,
-        "rank": 45
+        "rank": 45,
+        "parameters": {
+            "tlr": 50.44,
+            "rpc": 42.26,
+            "go": 67.3,
+            "oi": 56.35,
+            "pr": 19.32
+        }
     },
     {
         "institute_id": "IR-O-U-0584",
@@ -365,7 +680,14 @@
         "city": "Shibpur",
         "state": "West Bengal",
         "score": 48.7,
-        "rank": 46
+        "rank": 46,
+        "parameters": {
+            "tlr": 51.58,
+            "rpc": 38.99,
+            "go": 68.65,
+            "oi": 50.22,
+            "pr": 27.77
+        }
     },
     {
         "institute_id": "IR-O-I-1357",
@@ -373,7 +695,14 @@
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 48.66,
-        "rank": 47
+        "rank": 47,
+        "parameters": {
+            "tlr": 61.35,
+            "rpc": 31.82,
+            "go": 66.43,
+            "oi": 53.88,
+            "pr": 20.25
+        }
     },
     {
         "institute_id": "IR-O-U-0006",
@@ -381,7 +710,14 @@
         "city": "Visakhapatnam",
         "state": "Andhra Pradesh",
         "score": 48.65,
-        "rank": 48
+        "rank": 48,
+        "parameters": {
+            "tlr": 55.04,
+            "rpc": 25.59,
+            "go": 85.84,
+            "oi": 54.46,
+            "pr": 18.37
+        }
     },
     {
         "institute_id": "IR-O-I-1441",
@@ -389,7 +725,14 @@
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 48.63,
-        "rank": 49
+        "rank": 49,
+        "parameters": {
+            "tlr": 61.78,
+            "rpc": 34.28,
+            "go": 64.91,
+            "oi": 65.99,
+            "pr": 2.18
+        }
     },
     {
         "institute_id": "IR-O-U-0272",
@@ -397,7 +740,14 @@
         "city": "Bhopal",
         "state": "Madhya Pradesh",
         "score": 48.57,
-        "rank": 50
+        "rank": 50,
+        "parameters": {
+            "tlr": 63.78,
+            "rpc": 30.9,
+            "go": 63.49,
+            "oi": 66.63,
+            "pr": 8.1
+        }
     },
     {
         "institute_id": "IR-O-U-0064",
@@ -405,7 +755,14 @@
         "city": "Patna",
         "state": "Bihar",
         "score": 47.67,
-        "rank": 51
+        "rank": 51,
+        "parameters": {
+            "tlr": 60.04,
+            "rpc": 37.02,
+            "go": 57.6,
+            "oi": 53.94,
+            "pr": 16.41
+        }
     },
     {
         "institute_id": "IR-O-U-0262",
@@ -413,7 +770,14 @@
         "city": "Kottayam",
         "state": "Kerala",
         "score": 47.62,
-        "rank": 52
+        "rank": 52,
+        "parameters": {
+            "tlr": 59.27,
+            "rpc": 34.73,
+            "go": 68.77,
+            "oi": 52.55,
+            "pr": 4.24
+        }
     },
     {
         "institute_id": "IR-O-U-0473",
@@ -421,7 +785,14 @@
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 47.3,
-        "rank": 53
+        "rank": 53,
+        "parameters": {
+            "tlr": 49.93,
+            "rpc": 39.07,
+            "go": 68.47,
+            "oi": 58.6,
+            "pr": 10.48
+        }
     },
     {
         "institute_id": "IR-O-U-0334",
@@ -429,7 +800,14 @@
         "city": "Nagpur",
         "state": "Maharashtra",
         "score": 46.98,
-        "rank": 54
+        "rank": 54,
+        "parameters": {
+            "tlr": 49.85,
+            "rpc": 37.31,
+            "go": 68.93,
+            "oi": 55.11,
+            "pr": 15.39
+        }
     },
     {
         "institute_id": "IR-O-U-0098",
@@ -437,7 +815,14 @@
         "city": "New Delhi",
         "state": "Delhi",
         "score": 46.98,
-        "rank": 54
+        "rank": 54,
+        "parameters": {
+            "tlr": 54.52,
+            "rpc": 29.82,
+            "go": 65.95,
+            "oi": 59.25,
+            "pr": 25.82
+        }
     },
     {
         "institute_id": "IR-O-U-0222",
@@ -445,7 +830,14 @@
         "city": "Mysuru",
         "state": "Karnataka",
         "score": 46.95,
-        "rank": 56
+        "rank": 56,
+        "parameters": {
+            "tlr": 63.04,
+            "rpc": 19.39,
+            "go": 66.7,
+            "oi": 70.04,
+            "pr": 18.85
+        }
     },
     {
         "institute_id": "IR-O-U-0435",
@@ -453,7 +845,14 @@
         "city": "Karaikudi",
         "state": "Tamil Nadu",
         "score": 46.79,
-        "rank": 57
+        "rank": 57,
+        "parameters": {
+            "tlr": 58.71,
+            "rpc": 27.32,
+            "go": 67.45,
+            "oi": 51.68,
+            "pr": 23.34
+        }
     },
     {
         "institute_id": "IR-O-U-0355",
@@ -461,7 +860,14 @@
         "city": "Bhubaneswar",
         "state": "Odisha",
         "score": 46.78,
-        "rank": 58
+        "rank": 58,
+        "parameters": {
+            "tlr": 51.73,
+            "rpc": 37.83,
+            "go": 62.64,
+            "oi": 55.02,
+            "pr": 18.85
+        }
     },
     {
         "institute_id": "IR-O-U-0025",
@@ -469,7 +875,14 @@
         "city": "Warangal",
         "state": "Telangana",
         "score": 46.69,
-        "rank": 59
+        "rank": 59,
+        "parameters": {
+            "tlr": 50.61,
+            "rpc": 31.04,
+            "go": 70.32,
+            "oi": 56.38,
+            "pr": 25.01
+        }
     },
     {
         "institute_id": "IR-O-U-0523",
@@ -477,7 +890,14 @@
         "city": "Lucknow",
         "state": "Uttar Pradesh",
         "score": 46.65,
-        "rank": 60
+        "rank": 60,
+        "parameters": {
+            "tlr": 64.39,
+            "rpc": 27.23,
+            "go": 62.97,
+            "oi": 57.57,
+            "pr": 8.1
+        }
     },
     {
         "institute_id": "IR-O-U-0474",
@@ -485,7 +905,14 @@
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 46.6,
-        "rank": 61
+        "rank": 61,
+        "parameters": {
+            "tlr": 54.06,
+            "rpc": 34.0,
+            "go": 64.82,
+            "oi": 64.68,
+            "pr": 7.48
+        }
     },
     {
         "institute_id": "IR-O-U-0027",
@@ -493,7 +920,14 @@
         "city": "Hyderabad",
         "state": "Telangana",
         "score": 46.57,
-        "rank": 62
+        "rank": 62,
+        "parameters": {
+            "tlr": 52.04,
+            "rpc": 28.16,
+            "go": 79.86,
+            "oi": 51.62,
+            "pr": 13.82
+        }
     },
     {
         "institute_id": "IR-O-U-0136",
@@ -501,7 +935,14 @@
         "city": "Ahmedabad",
         "state": "Gujarat",
         "score": 46.57,
-        "rank": 62
+        "rank": 62,
+        "parameters": {
+            "tlr": 64.76,
+            "rpc": 15.7,
+            "go": 81.28,
+            "oi": 56.13,
+            "pr": 5.57
+        }
     },
     {
         "institute_id": "IR-O-U-0107",
@@ -509,7 +950,14 @@
         "city": "New Delhi",
         "state": "Delhi",
         "score": 46.46,
-        "rank": 64
+        "rank": 64,
+        "parameters": {
+            "tlr": 57.82,
+            "rpc": 27.62,
+            "go": 69.75,
+            "oi": 60.64,
+            "pr": 8.1
+        }
     },
     {
         "institute_id": "IR-O-U-0253",
@@ -517,7 +965,14 @@
         "city": "Cochin",
         "state": "Kerala",
         "score": 46.02,
-        "rank": 65
+        "rank": 65,
+        "parameters": {
+            "tlr": 54.37,
+            "rpc": 29.63,
+            "go": 70.28,
+            "oi": 52.7,
+            "pr": 14.88
+        }
     },
     {
         "institute_id": "IR-O-U-0389",
@@ -525,7 +980,14 @@
         "city": "Banasthali",
         "state": "Rajasthan",
         "score": 45.89,
-        "rank": 66
+        "rank": 66,
+        "parameters": {
+            "tlr": 54.19,
+            "rpc": 14.23,
+            "go": 83.55,
+            "oi": 75.99,
+            "pr": 10.48
+        }
     },
     {
         "institute_id": "IR-O-U-0052",
@@ -533,7 +995,14 @@
         "city": "Guwahati",
         "state": "Assam",
         "score": 45.87,
-        "rank": 67
+        "rank": 67,
+        "parameters": {
+            "tlr": 55.17,
+            "rpc": 19.05,
+            "go": 83.56,
+            "oi": 58.4,
+            "pr": 10.48
+        }
     },
     {
         "institute_id": "IR-O-U-0329",
@@ -541,7 +1010,14 @@
         "city": "Pune",
         "state": "Maharashtra",
         "score": 45.65,
-        "rank": 68
+        "rank": 68,
+        "parameters": {
+            "tlr": 61.83,
+            "rpc": 18.5,
+            "go": 64.52,
+            "oi": 72.16,
+            "pr": 14.35
+        }
     },
     {
         "institute_id": "IR-O-U-0020",
@@ -549,7 +1025,14 @@
         "city": "Vaddeswaram",
         "state": "Andhra Pradesh",
         "score": 45.64,
-        "rank": 69
+        "rank": 69,
+        "parameters": {
+            "tlr": 58.89,
+            "rpc": 30.78,
+            "go": 64.62,
+            "oi": 55.99,
+            "pr": 2.18
+        }
     },
     {
         "institute_id": "IR-O-U-0331",
@@ -557,7 +1040,14 @@
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 45.63,
-        "rank": 70
+        "rank": 70,
+        "parameters": {
+            "tlr": 61.2,
+            "rpc": 12.32,
+            "go": 77.33,
+            "oi": 72.28,
+            "pr": 8.71
+        }
     },
     {
         "institute_id": "IR-O-U-0577",
@@ -565,7 +1055,14 @@
         "city": "Durgapur",
         "state": "West Bengal",
         "score": 45.36,
-        "rank": 71
+        "rank": 71,
+        "parameters": {
+            "tlr": 50.51,
+            "rpc": 34.26,
+            "go": 66.66,
+            "oi": 56.15,
+            "pr": 9.9
+        }
     },
     {
         "institute_id": "IR-O-U-0410",
@@ -573,7 +1070,14 @@
         "city": "Jaipur",
         "state": "Rajasthan",
         "score": 45.29,
-        "rank": 72
+        "rank": 72,
+        "parameters": {
+            "tlr": 56.13,
+            "rpc": 35.12,
+            "go": 57.57,
+            "oi": 58.38,
+            "pr": 5.57
+        }
     },
     {
         "institute_id": "IR-O-U-0056",
@@ -581,7 +1085,14 @@
         "city": "Tezpur",
         "state": "Assam",
         "score": 45.22,
-        "rank": 73
+        "rank": 73,
+        "parameters": {
+            "tlr": 58.32,
+            "rpc": 30.02,
+            "go": 61.65,
+            "oi": 52.17,
+            "pr": 11.62
+        }
     },
     {
         "institute_id": "IR-O-U-0458",
@@ -589,7 +1100,14 @@
         "city": "Srivilliputtur",
         "state": "Tamil Nadu",
         "score": 45.07,
-        "rank": 74
+        "rank": 74,
+        "parameters": {
+            "tlr": 56.74,
+            "rpc": 21.81,
+            "go": 65.2,
+            "oi": 73.06,
+            "pr": 11.62
+        }
     },
     {
         "institute_id": "IR-O-U-0446",
@@ -597,7 +1115,14 @@
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 44.81,
-        "rank": 75
+        "rank": 75,
+        "parameters": {
+            "tlr": 55.4,
+            "rpc": 24.41,
+            "go": 67.59,
+            "oi": 67.94,
+            "pr": 5.57
+        }
     },
     {
         "institute_id": "IR-O-U-0196",
@@ -605,7 +1130,14 @@
         "city": "Srinagar",
         "state": "Jammu and Kashmir",
         "score": 44.64,
-        "rank": 76
+        "rank": 76,
+        "parameters": {
+            "tlr": 60.49,
+            "rpc": 19.51,
+            "go": 77.03,
+            "oi": 50.12,
+            "pr": 2.18
+        }
     },
     {
         "institute_id": "IR-O-U-0747",
@@ -613,7 +1145,14 @@
         "city": "Mohali",
         "state": "Punjab",
         "score": 44.62,
-        "rank": 77
+        "rank": 77,
+        "parameters": {
+            "tlr": 57.48,
+            "rpc": 14.24,
+            "go": 63.4,
+            "oi": 75.44,
+            "pr": 28.91
+        }
     },
     {
         "institute_id": "IR-O-U-0374",
@@ -621,7 +1160,14 @@
         "city": "Jalandhar",
         "state": "Punjab",
         "score": 44.53,
-        "rank": 78
+        "rank": 78,
+        "parameters": {
+            "tlr": 54.39,
+            "rpc": 25.23,
+            "go": 64.17,
+            "oi": 63.76,
+            "pr": 14.35
+        }
     },
     {
         "institute_id": "IR-O-I-1486",
@@ -629,7 +1175,14 @@
         "city": "Chennai",
         "state": "Tamil Nadu",
         "score": 44.4,
-        "rank": 79
+        "rank": 79,
+        "parameters": {
+            "tlr": 64.83,
+            "rpc": 18.35,
+            "go": 61.13,
+            "oi": 64.73,
+            "pr": 7.48
+        }
     },
     {
         "institute_id": "IR-O-I-1110",
@@ -637,7 +1190,14 @@
         "city": "Pune",
         "state": "Maharashtra",
         "score": 44.19,
-        "rank": 80
+        "rank": 80,
+        "parameters": {
+            "tlr": 65.15,
+            "rpc": 14.45,
+            "go": 63.29,
+            "oi": 61.56,
+            "pr": 14.88
+        }
     },
     {
         "institute_id": "IR-O-U-0379",
@@ -645,7 +1205,14 @@
         "city": "Phagwara",
         "state": "Punjab",
         "score": 43.95,
-        "rank": 81
+        "rank": 81,
+        "parameters": {
+            "tlr": 47.55,
+            "rpc": 27.51,
+            "go": 63.87,
+            "oi": 65.97,
+            "pr": 20.7
+        }
     },
     {
         "institute_id": "IR-O-U-0184",
@@ -653,7 +1220,14 @@
         "city": "Mandi",
         "state": "Himachal Pradesh",
         "score": 43.93,
-        "rank": 82
+        "rank": 82,
+        "parameters": {
+            "tlr": 50.05,
+            "rpc": 30.59,
+            "go": 61.27,
+            "oi": 62.07,
+            "pr": 12.73
+        }
     },
     {
         "institute_id": "IR-O-U-0463",
@@ -661,7 +1235,14 @@
         "city": "Madurai",
         "state": "Tamil Nadu",
         "score": 43.75,
-        "rank": 83
+        "rank": 83,
+        "parameters": {
+            "tlr": 61.71,
+            "rpc": 24.77,
+            "go": 57.68,
+            "oi": 48.43,
+            "pr": 14.35
+        }
     },
     {
         "institute_id": "IR-O-U-0642",
@@ -669,7 +1250,14 @@
         "city": "Dadri",
         "state": "Uttar Pradesh",
         "score": 43.6,
-        "rank": 84
+        "rank": 84,
+        "parameters": {
+            "tlr": 59.5,
+            "rpc": 19.37,
+            "go": 63.5,
+            "oi": 59.14,
+            "pr": 13.28
+        }
     },
     {
         "institute_id": "IR-O-U-0376",
@@ -677,7 +1265,14 @@
         "city": "Amritsar",
         "state": "Punjab",
         "score": 43.21,
-        "rank": 85
+        "rank": 85,
+        "parameters": {
+            "tlr": 40.78,
+            "rpc": 28.63,
+            "go": 76.11,
+            "oi": 53.77,
+            "pr": 17.89
+        }
     },
     {
         "institute_id": "IR-O-C-37013",
@@ -685,7 +1280,14 @@
         "city": "Coimbatore",
         "state": "Tamil Nadu",
         "score": 43.14,
-        "rank": 86
+        "rank": 86,
+        "parameters": {
+            "tlr": 55.37,
+            "rpc": 18.13,
+            "go": 58.69,
+            "oi": 50.17,
+            "pr": 43.26
+        }
     },
     {
         "institute_id": "IR-O-U-0369",
@@ -693,7 +1295,14 @@
         "city": "Puducherry",
         "state": "Pondicherry",
         "score": 43.1,
-        "rank": 87
+        "rank": 87,
+        "parameters": {
+            "tlr": 39.94,
+            "rpc": 30.1,
+            "go": 72.4,
+            "oi": 58.18,
+            "pr": 17.89
+        }
     },
     {
         "institute_id": "IR-O-U-0530",
@@ -701,7 +1310,14 @@
         "city": "Prayagraj",
         "state": "Uttar Pradesh",
         "score": 43.04,
-        "rank": 88
+        "rank": 88,
+        "parameters": {
+            "tlr": 47.86,
+            "rpc": 28.49,
+            "go": 67.68,
+            "oi": 54.77,
+            "pr": 11.06
+        }
     },
     {
         "institute_id": "IR-O-C-16604",
@@ -709,7 +1325,14 @@
         "city": "Kancheepuram",
         "state": "Tamil Nadu",
         "score": 42.94,
-        "rank": 89
+        "rank": 89,
+        "parameters": {
+            "tlr": 53.36,
+            "rpc": 29.01,
+            "go": 59.42,
+            "oi": 53.63,
+            "pr": 9.9
+        }
     },
     {
         "institute_id": "IR-O-U-0341",
@@ -717,7 +1340,14 @@
         "city": "Shillong",
         "state": "Meghalaya",
         "score": 42.79,
-        "rank": 90
+        "rank": 90,
+        "parameters": {
+            "tlr": 55.53,
+            "rpc": 16.31,
+            "go": 74.61,
+            "oi": 51.63,
+            "pr": 11.62
+        }
     },
     {
         "institute_id": "IR-O-U-0448",
@@ -725,7 +1355,14 @@
         "city": "Tiruchirappalli",
         "state": "Tamil Nadu",
         "score": 42.79,
-        "rank": 90
+        "rank": 90,
+        "parameters": {
+            "tlr": 54.74,
+            "rpc": 29.92,
+            "go": 53.67,
+            "oi": 47.8,
+            "pr": 18.85
+        }
     },
     {
         "institute_id": "IR-O-U-0037",
@@ -733,7 +1370,14 @@
         "city": "Tirupati",
         "state": "Andhra Pradesh",
         "score": 42.78,
-        "rank": 92
+        "rank": 92,
+        "parameters": {
+            "tlr": 51.21,
+            "rpc": 19.87,
+            "go": 79.19,
+            "oi": 50.61,
+            "pr": 5.57
+        }
     },
     {
         "institute_id": "IR-O-U-0055",
@@ -741,7 +1385,14 @@
         "city": "Silchar",
         "state": "Assam",
         "score": 42.68,
-        "rank": 93
+        "rank": 93,
+        "parameters": {
+            "tlr": 47.28,
+            "rpc": 32.31,
+            "go": 64.18,
+            "oi": 52.84,
+            "pr": 6.85
+        }
     },
     {
         "institute_id": "IR-O-N-10",
@@ -749,7 +1400,14 @@
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 42.56,
-        "rank": 94
+        "rank": 94,
+        "parameters": {
+            "tlr": 63.31,
+            "rpc": 14.77,
+            "go": 63.13,
+            "oi": 60.92,
+            "pr": 4.24
+        }
     },
     {
         "institute_id": "IR-O-U-0251",
@@ -757,7 +1415,14 @@
         "city": "Malappuram",
         "state": "Kerala",
         "score": 42.42,
-        "rank": 95
+        "rank": 95,
+        "parameters": {
+            "tlr": 63.32,
+            "rpc": 16.64,
+            "go": 63.32,
+            "oi": 54.77,
+            "pr": 2.88
+        }
     },
     {
         "institute_id": "IR-O-U-0318",
@@ -765,7 +1430,14 @@
         "city": "Mumbai",
         "state": "Maharashtra",
         "score": 41.79,
-        "rank": 96
+        "rank": 96,
+        "parameters": {
+            "tlr": 49.58,
+            "rpc": 19.08,
+            "go": 78.35,
+            "oi": 47.78,
+            "pr": 7.48
+        }
     },
     {
         "institute_id": "IR-O-U-0589",
@@ -773,7 +1445,14 @@
         "city": "Santiniketan",
         "state": "West Bengal",
         "score": 41.74,
-        "rank": 97
+        "rank": 97,
+        "parameters": {
+            "tlr": 49.51,
+            "rpc": 26.16,
+            "go": 73.81,
+            "oi": 36.58,
+            "pr": 6.22
+        }
     },
     {
         "institute_id": "IR-O-U-0149",
@@ -781,7 +1460,14 @@
         "city": "Surat",
         "state": "Gujarat",
         "score": 41.72,
-        "rank": 98
+        "rank": 98,
+        "parameters": {
+            "tlr": 45.31,
+            "rpc": 29.28,
+            "go": 64.48,
+            "oi": 57.03,
+            "pr": 7.48
+        }
     },
     {
         "institute_id": "IR-O-U-0099",
@@ -789,7 +1475,14 @@
         "city": "New Delhi",
         "state": "Delhi",
         "score": 41.43,
-        "rank": 99
+        "rank": 99,
+        "parameters": {
+            "tlr": 48.12,
+            "rpc": 22.64,
+            "go": 64.22,
+            "oi": 52.45,
+            "pr": 21.15
+        }
     },
     {
         "institute_id": "IR-O-U-0295",
@@ -797,6 +1490,13 @@
         "city": "Wardha",
         "state": "Maharashtra",
         "score": 41.1,
-        "rank": 100
+        "rank": 100,
+        "parameters": {
+            "tlr": 64.06,
+            "rpc": 10.35,
+            "go": 60.07,
+            "oi": 66.19,
+            "pr": 1.46
+        }
     }
 ]

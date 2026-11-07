@@ -41,6 +41,7 @@ from .year_engine import (
 from .validation_engine import (
     validate_block_data,
     evaluate_derive,
+    apply_block_derives,
 )
 from .cross_checks import run_cross_checks
 from .rollup import compute_category_rollup
@@ -464,6 +465,81 @@ class PortalFormsView(APIView):
             'sections': submissions_data,
         })
 
+def build_derive_context(submission, unit_id):
+    """
+    Context the derive engine needs: the submitting unit, plus the values a
+    cross-section lookup can reach.
+
+    Only `sanctioned-intake` is referenced by a lookup today (placement rows
+    pull the intake recorded for the programme's entry year), so that is what
+    gets indexed. The key shape matches evaluate_derive's lookup contract:
+    "<section>:<block>:<row>:<col>".
+    """
+    lookups = {}
+    intake_sub = SectionSubmission.objects.filter(
+        request=submission.request,
+        org_unit_id=unit_id,
+        section_id='sanctioned-intake',
+    ).first()
+
+    if intake_sub and isinstance(intake_sub.payload, dict):
+        intake_block = intake_sub.payload.get('intake')
+        rows = {}
+        if isinstance(intake_block, dict):
+            rows = intake_block
+        elif isinstance(intake_block, list):
+            for idx, row in enumerate(intake_block):
+                if isinstance(row, dict):
+                    key = (
+                        row.get('id') or row.get('programmeId')
+                        or row.get('programme') or f'row{idx}'
+                    )
+                    rows[key] = row
+        for row_key, row_val in rows.items():
+            if not isinstance(row_val, dict):
+                continue
+            for col_key, cell in row_val.items():
+                if col_key in ('id', 'programmeId', 'programme', 'label', 'name'):
+                    continue
+                lookups[f'sanctioned-intake:intake:{row_key}:{col_key}'] = cell
+
+    return {'submittingUnitId': unit_id, 'lookups': lookups}
+
+def apply_section_derives(resolved_sec, submission, unit_id):
+    """
+    Recompute every derived value for a submission and persist it.
+
+    Derived cells are schema-owned, not officer-owned, so they are refreshed
+    on every save and again at submit time rather than trusted from the
+    client. Returns True when anything changed.
+    """
+    context = build_derive_context(submission, unit_id)
+    changed = False
+
+    payload = submission.payload if isinstance(submission.payload, dict) else {}
+    for blk in resolved_sec.get('blocks', []):
+        b_id = blk['id']
+
+        if blk.get('kind') == 'records':
+            for rec in submission.records.filter(block_id=b_id):
+                updated = apply_block_derives(blk, [rec.data], context)
+                if updated and updated[0] != rec.data:
+                    rec.data = updated[0]
+                    rec.save(update_fields=['data'])
+                    changed = True
+            continue
+
+        if b_id not in payload:
+            continue
+        updated = apply_block_derives(blk, payload[b_id], context)
+        if updated != payload[b_id]:
+            payload[b_id] = updated
+            changed = True
+
+    if changed:
+        submission.payload = payload
+    return changed
+
 class PortalFormSaveView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -498,6 +574,24 @@ class PortalFormSaveView(APIView):
 
         sub.payload = payload
         sub.not_applicable = not_applicable
+
+        # Refresh schema-derived cells (totals, amounts in words, serial
+        # numbers) so the officer sees them on reload instead of blanks.
+        schema_obj = FormSchema.objects.filter(framework='NIRF', is_active=True).first()
+        if schema_obj and not not_applicable:
+            sec_def = next(
+                (s for s in schema_obj.content.get('sections', []) if s['id'] == section_id),
+                None
+            )
+            if sec_def:
+                resolved_sec = resolve_section_schema(
+                    sec_def,
+                    grant.request.cycle_year,
+                    unit=grant.org_unit,
+                    enums=schema_obj.content.get('enums', {})
+                )
+                apply_section_derives(resolved_sec, sub, grant.org_unit_id)
+
         sub.revision += 1
         sub.save()
 
@@ -563,6 +657,11 @@ class PortalFormSubmitView(APIView):
                 unit=grant.org_unit,
                 enums=schema.get('enums', {})
             )
+            # Derived cells are recomputed before validation so that rules
+            # referencing them (and the DCS export) see current values.
+            if apply_section_derives(resolved_sec, sub, grant.org_unit_id):
+                sub.save(update_fields=['payload'])
+
             for blk in resolved_sec.get('blocks', []):
                 b_id = blk['id']
                 if blk['kind'] == 'records':

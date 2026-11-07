@@ -289,3 +289,131 @@ def validate_block_data(block_def: dict, block_data: any, context: dict = None) 
 
     return errors, warnings
 
+
+def _row_id(row, fallback=None):
+    for key in ('id', 'rowId', 'programmeId', 'programme', 'nirfLevel'):
+        if isinstance(row, dict) and row.get(key):
+            return row[key]
+    return fallback
+
+def _grid_rows_as_map(block_data):
+    """
+    Normalise a grid payload to (ordered_keys, {key: row_dict}).
+
+    Payloads arrive either keyed by row id or as a list of row objects,
+    depending on which client wrote them, so both shapes are accepted.
+    """
+    if isinstance(block_data, dict):
+        keys = list(block_data.keys())
+        return keys, {k: (dict(v) if isinstance(v, dict) else {}) for k, v in block_data.items()}
+    if isinstance(block_data, list):
+        keys = []
+        out = {}
+        for idx, row in enumerate(block_data):
+            if not isinstance(row, dict):
+                continue
+            key = _row_id(row, f'row{idx}')
+            keys.append(key)
+            out[key] = dict(row)
+        return keys, out
+    return [], {}
+
+def apply_block_derives(block_def: dict, block_data, context: dict = None):
+    """
+    Compute every derived value a block declares and write it into the data.
+
+    The schema expresses derives in three shapes and each needs its own
+    traversal, which is why this cannot simply call evaluate_derive once:
+
+      * grid with field columns  - the derive sits on a column and reads
+        sibling columns of the same row (e.g. Total = Male + Female).
+      * grid with year columns   - the derive sits on a fixed row and reads
+        the same year of a sibling row (e.g. Amount Received in Words).
+      * records                  - the derive sits on a field of each record
+        (e.g. the serial number, the submitting unit).
+
+    Returns the data in the same shape it was given.
+    """
+    context = context or {}
+    kind = block_def.get('kind')
+
+    if kind == 'records':
+        if not isinstance(block_data, list):
+            return block_data
+        derived_fields = [f for f in block_def.get('fields', []) if f.get('derive')]
+        if not derived_fields:
+            return block_data
+        out = []
+        for idx, rec in enumerate(block_data):
+            if not isinstance(rec, dict):
+                out.append(rec)
+                continue
+            row = dict(rec)
+            for f in derived_fields:
+                row[f['id']] = evaluate_derive(f, row, idx + 1, context)
+            out.append(row)
+        return out
+
+    if kind != 'grid':
+        return block_data
+
+    col_axis = block_def.get('columnAxis', {})
+    col_type = col_axis.get('type')
+    was_list = isinstance(block_data, list)
+    keys, rows = _grid_rows_as_map(block_data)
+
+    if col_type == 'fields':
+        derived_cols = [f for f in col_axis.get('fields', []) if f.get('derive')]
+        if not derived_cols:
+            return block_data
+        for key in keys:
+            row = rows[key]
+            for f in derived_cols:
+                row[f['id']] = evaluate_derive(f, row, keys.index(key) + 1, context)
+
+    elif col_type == 'years':
+        row_axis = block_def.get('rowAxis', {})
+        if row_axis.get('type') != 'fixed':
+            return block_data
+        derived_rows = [r for r in row_axis.get('rows', []) if r.get('derive')]
+        if not derived_rows:
+            return block_data
+
+        # Year columns the resolver produced, else the raw year keys present.
+        year_cols = [c['id'] for c in (block_def.get('resolvedColumns') or [])]
+        if not year_cols:
+            seen = []
+            for row in rows.values():
+                for k in row:
+                    if k not in seen and str(k).strip().lstrip('-').replace('-', '').isdigit():
+                        seen.append(k)
+            year_cols = seen
+
+        for r_def in derived_rows:
+            target_key = r_def['id']
+            source_key = r_def['derive'].get('of')
+            source_row = rows.get(source_key, {})
+            target_row = rows.get(target_key, {})
+            for year in year_cols:
+                # Reuse the single-field engine by presenting the sibling
+                # row's value for this year as the field it names.
+                target_row[year] = evaluate_derive(
+                    {'id': target_key, 'derive': r_def['derive']},
+                    {source_key: source_row.get(year)},
+                    1,
+                    context,
+                )
+            rows[target_key] = target_row
+            if target_key not in keys:
+                keys.append(target_key)
+    else:
+        return block_data
+
+    if was_list:
+        out = []
+        for key in keys:
+            row = dict(rows[key])
+            row.setdefault('id', key)
+            out.append(row)
+        return out
+    return {k: rows[k] for k in keys}

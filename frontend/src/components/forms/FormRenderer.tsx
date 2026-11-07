@@ -78,6 +78,40 @@ export default function FormRenderer({
   notApplicableRef.current = notApplicable;
   revisionRef.current = revision;
 
+  // Fixed rows of a year grid can derive from a sibling row (e.g. "Amount
+  // Received in Words" from "Total Amount Received"), column by column.
+  // Column derives read across a row; these read down one.
+  // Mutates `blockData` and reports whether anything actually changed.
+  const applyRowDerives = (
+    blockData: Record<string, any>,
+    cols: any[],
+    rows: any[]
+  ): boolean => {
+    let anyChanged = false;
+    rows.forEach((r: any) => {
+      if (!r?.derive?.of) return;
+      const sourceKey = r.derive.of;
+      const sourceRow = blockData[sourceKey] || {};
+      const targetRow = { ...(blockData[r.id] || {}) };
+      let rowChanged = false;
+      cols.forEach((c: any) => {
+        const derivedVal = evaluateDerive(
+          { id: r.id, derive: r.derive },
+          { [sourceKey]: sourceRow[c.id] }
+        );
+        if (targetRow[c.id] !== derivedVal) {
+          targetRow[c.id] = derivedVal;
+          rowChanged = true;
+        }
+      });
+      if (rowChanged) {
+        blockData[r.id] = targetRow;
+        anyChanged = true;
+      }
+    });
+    return anyChanged;
+  };
+
   // Initialize blocks with defaults if missing
   useEffect(() => {
     if (!section?.blocks) return;
@@ -107,6 +141,9 @@ export default function FormRenderer({
               }
             });
           });
+          if (applyRowDerives(next[block.id], cols, rows)) {
+            changed = true;
+          }
         } else if (block.kind === 'questionnaire') {
           if (!next[block.id]) {
             next[block.id] = {};
@@ -206,6 +243,11 @@ export default function FormRenderer({
       });
 
       nextBlock[rowKey] = nextRow;
+
+      // A sibling row may derive from the row just edited.
+      const { rows: gridRows } = getResolvedGridAxes(blockDef, cycleYear, programmes);
+      applyRowDerives(nextBlock, cols, gridRows);
+
       return { ...prev, [blockId]: nextBlock };
     });
   };
@@ -556,7 +598,12 @@ export default function FormRenderer({
                                   )}
                                 </td>
                                 {columns.map((col: any) => {
-                                  const isDerived = Boolean(col.derive);
+                                  // A fixed row may override the column's shared cell
+                                  // type (a year grid types every column the same, but
+                                  // e.g. "Amount Received in Words" is text, not an
+                                  // integer) and may carry its own derive.
+                                  const cellType = row.type ?? col.type;
+                                  const isDerived = Boolean(col.derive || row.derive);
                                   const val = rowData[col.id] ?? '';
 
                                   if (isDerived) {
@@ -564,9 +611,11 @@ export default function FormRenderer({
                                       <td key={col.id} className="py-2.5 px-4 bg-zinc-50/60">
                                         <div className="flex items-center justify-between text-zinc-700 font-medium px-2.5 py-1.5 rounded-lg bg-zinc-100/70 border border-zinc-200/60 text-xs">
                                           <span>
-                                            {col.type === 'currencyInr'
+                                            {cellType === 'currencyInr'
                                               ? `₹ ${formatIndianCurrency(val)}`
-                                              : val || 0}
+                                              : (val === '' || val === null || val === undefined
+                                                  ? (cellType === 'text' ? '—' : 0)
+                                                  : val)}
                                           </span>
                                           <span title="Calculated automatically">
                                             <Lock className="w-3 h-3 text-zinc-400 ml-1 shrink-0" />
@@ -578,7 +627,7 @@ export default function FormRenderer({
 
                                   return (
                                     <td key={col.id} className="py-2.5 px-4">
-                                      {col.type === 'currencyInr' ? (
+                                      {cellType === 'currencyInr' ? (
                                         <div>
                                           <div className="relative">
                                             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs">
@@ -601,7 +650,7 @@ export default function FormRenderer({
                                             </div>
                                           ) : null}
                                         </div>
-                                      ) : col.type === 'integer' || col.type === 'decimal' ? (
+                                      ) : cellType === 'integer' || cellType === 'decimal' ? (
                                         <input
                                           type="number"
                                           disabled={isLocked}

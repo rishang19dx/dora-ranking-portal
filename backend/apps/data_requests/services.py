@@ -75,7 +75,7 @@ def dispatch_data_request(
         if not unit:
             continue
 
-        target = DataRequestTarget.objects.create(
+        DataRequestTarget.objects.create(
             request=data_request,
             org_unit=unit,
             data_item_ids=data_item_ids,

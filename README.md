@@ -84,22 +84,34 @@ docker compose up --build -d
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing & Continuous Integration
 
-Run the unified monorepo test suite (Django backend tests + React production build):
+The project includes an enterprise-grade automated test suite with **116 automated tests** (100% passing) and **88% overall test coverage** across all Django apps, plus a 5-stage GitHub Actions CI pipeline.
 
-```bash
-bun run test # or: npm run test
-```
+For in-depth details, architecture diagrams, and scenario matrices, see [**TESTING.md**](./TESTING.md).
 
-Or test each service individually:
-```bash
-# Backend pytest suite (4/4 passing)
-cd backend && ./venv/bin/pytest tests/ -v
+### Quick Test Commands
+`ash
+# 1. Run all 116 tests with verbose output
+cd backend && pytest -v
 
-# Frontend TypeScript check and production build
-cd frontend && bun run build
-```
+# 2. Run with statement coverage report
+cd backend && pytest --cov=apps --cov-report=term-missing
+
+# 3. Run Ruff code quality & lint checks
+cd backend && ruff check apps/ dora_backend/ tests/
+
+# 4. Frontend TypeScript check & production build
+cd frontend && npm run build
+`
+
+### GitHub Actions CI Workflow
+Automated CI is configured under [.github/workflows/ci.yml](./.github/workflows/ci.yml) and executes on every push and pull request:
+- **Backend Tests Matrix**: Python 3.11 & 3.12 with SQLite + coverage upload
+- **Code Quality**: Ruff linter, Django deployment check, and migration drift check
+- **Frontend Build**: TypeScript typecheck (	sc) + Vite production bundling
+- **PostgreSQL Integration**: Multi-service integration testing against PostgreSQL 16
+- **Docker Verification**: Automated container build verification for backend and frontend
 
 ---
 

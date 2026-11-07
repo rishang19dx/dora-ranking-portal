@@ -24,3 +24,8 @@ backend/staticfiles/
 frontend/dist/
 
 
+# Testing coverage artifacts
+.coverage
+.coverage*
+coverage.xml
+htmlcov/

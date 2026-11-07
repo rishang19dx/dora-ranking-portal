@@ -1,0 +1,23 @@
+# Ruff configuration for Django project
+target-version = "py311"
+line-length = 120
+
+extend-exclude = [
+    "*/migrations/*",
+    "media/*",
+    "staticfiles/*",
+]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "RUF012", # mutable class attributes in Django models/serializers
+    "F401",   # unused imports (common in Django __init__, views, etc.)
+    "F841",   # local variable assigned but never used
+    "W293",   # blank line contains whitespace
+]

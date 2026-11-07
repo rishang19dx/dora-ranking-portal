@@ -1,10 +1,8 @@
-import pytest
 from io import BytesIO
-from django.urls import reverse
-from rest_framework.test import APIClient
+
+import pytest
 from django.contrib.auth import get_user_model
-from apps.organogram.models import OrgUnit, NodalOfficer
-from apps.data_requests.models import DataRequest, DataRequestTarget, PortalAccessGrant, ProofUpload
+from rest_framework.test import APIClient
 
 User = get_user_model()
 

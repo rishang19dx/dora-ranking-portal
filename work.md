@@ -81,3 +81,28 @@ Caught and fixed real bugs in my own test assumptions along the way (e.g. unitLa
 * Verified npm run build still succeeds after all changes.
 
 One thing to flag: dependencies were installed with npm, updating frontend/package-lock.json, but CI uses Bun with bun.lock. I didn't have Bun available locally to regenerate that lockfile. The workflow already falls back to a non-frozen bun install if the frozen-lockfile install fails, so CI won't break, but bun.lock is now stale — worth running bun install once from a machine with Bun to refresh it.
+
+---
+
+Component and integration testing is in place: all 163 tests pass, tsc is clean, and ESLint shows 0 errors (82 existing warnings). Statement coverage went from 13.6% to 52.5%. Nothing is committed.
+
+Starting point. The working tree already had untracked tests I hadn't written: Header, LoginModal, Navigation, RankingDetailModal and ToastProvider, plus test/test-utils.tsx (a renderWithProviders helper) and test/domain-fixtures.ts. I built on them. 8 of those tests were failing and 2 had type errors. All were test-side problems (fake timers stalling the toast exit animation, duplicate-text queries, a too-narrow props type), not app bugs.
+
+### New tests
+
+* **OrgTree.test.tsx (12 tests):** collapse and expand, activation, query and type filtering, empty state, selection (including locked and subtree selection), and coverage badges.
+* **DashboardLayout.test.tsx (9 tests):** admin vs. officer sidebar, sidebar navigation, user identity from localStorage, dropdowns, and sign-out clearing the session.
+* **routes.integration.test.tsx (27 tests):** the real route table, layouts and providers, with only fetch and the rankings service mocked.
+  * **Routing:** `/`, unknown-path redirect, `/admin`, `/nodal-officer`, settings.
+  * **Landing:** tab switching, a failing rankings API, and navigation to the admin and officer portals.
+  * **Admin pages:** data collection (empty, populated, bare-array payload, closed and overdue requests, API error, list to detail, detail error), organogram, and nodal officers.
+  * **Upload portal:** success, expired token, network failure.
+
+### Gaps
+
+* AdminView.tsx is at 0%, but routes.tsx doesn't import it, so it looks like dead code.
+* The composer, nodal-officer submission, trends and comparative views, services/api.ts (axios interceptors and refresh) and exportToCSV have little or no coverage. I'd go after these next.
+* The nodal-officers and trends pages only have render-level checks so far.
+* RankingDetailModal tests print many "not wrapped in act(...)" warnings. They pass but are noisy.
+* bun.lock is still stale from the earlier dependency install (see my previous message).
+

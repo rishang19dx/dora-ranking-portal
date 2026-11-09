@@ -8,9 +8,18 @@ the DCS export's handling of the payload shape the form renderer actually
 writes (a grid keyed by row id, not a list).
 """
 
+import openpyxl
 import pytest
+from django.utils import timezone
+
+from apps.data_requests.models import DataRequest
 from apps.organogram.models import NodalOfficer, OrgUnit
-from apps.submissions.models import FormSchema, SectionSubmission
+from apps.submissions.dcs_export import generate_category_excel
+from apps.submissions.models import (
+    FormSchema,
+    SectionSubmission,
+    SubmissionStatus,
+)
 from apps.submissions.validation_engine import apply_block_derives
 from apps.submissions.views import resolve_section_schema
 
@@ -28,6 +37,23 @@ def _schema():
 
 def _section(sid):
     return next(s for s in _schema().content['sections'] if s['id'] == sid)
+
+
+def _make_request(categories, reference='FID-1'):
+    return DataRequest.objects.create(
+        reference=reference, title='fidelity', framework='NIRF', cycle_year=2027,
+        subject='s', message='m', deadline=timezone.now(), categories=categories,
+        data_item_ids=[],
+    )
+
+
+def _central_submission(req, section_id, payload, status=SubmissionStatus.APPROVED):
+    sec = _section(section_id)
+    unit = OrgUnit.objects.get(id=sec['ownership']['primaryOwnerUnitId'])
+    return SectionSubmission.objects.create(
+        request=req, org_unit=unit, section_id=section_id,
+        schema_version=_schema().version, status=status, payload=payload,
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -151,3 +177,54 @@ def test_derives_are_persisted_on_save(seeded_db, client):
     sub.refresh_from_db()
     words = sub.payload['sponsored']['amountInWords']['2025-26']
     assert words == 'Fifty Lakh', words
+
+
+# -----------------------------------------------------------------------------
+# DCS export: payload shape and per-category rows
+# -----------------------------------------------------------------------------
+
+def _export_labels(category, req):
+    buf = generate_category_excel(category, 2027, request_id=req.id, allow_partial=True)
+    ws = openpyxl.load_workbook(buf).active
+    return [str(c.value) for (c,) in ws.iter_rows(min_col=1, max_col=1) if c.value]
+
+
+IPR_PAYLOAD = {
+    'ipr': {
+        'published': {'2025': 23, '2024': 12, '2023': 17},
+        'granted': {'2025': 35, '2024': 13, '2023': 11},
+        'commercialised': {'2025': 0, '2024': 1, '2023': 0},
+        'techTransferIncome': {'2025': 0, '2024': 4700000, '2023': 0},
+    }
+}
+
+
+def test_export_handles_row_keyed_grid_payload(seeded_db):
+    """
+    The form renderer stores grids keyed by row id. The exporter used to
+    enumerate that dict and crash on its string keys.
+    """
+    req = _make_request(['OVERALL'], 'FID-EXPORT')
+    _central_submission(req, 'ipr-patents', IPR_PAYLOAD)
+
+    labels = _export_labels('OVERALL', req)
+    assert 'No. of Patents Published' in labels
+    assert 'No. of Patents Granted' in labels
+
+
+def test_export_filters_rows_by_category(seeded_db):
+    """
+    `ipr-patents` is filled once but exported into four categories. The two
+    technology-transfer rows are Innovation-only per the schema and must not
+    leak into the Overall workbook.
+    """
+    req = _make_request(['OVERALL', 'INNOVATION'], 'FID-CAT')
+    _central_submission(req, 'ipr-patents', IPR_PAYLOAD)
+
+    overall = _export_labels('OVERALL', req)
+    assert 'Patents Commercialized & Technology Transferred' not in overall
+    assert 'Income from Technology Transferred (in Rupees)' not in overall
+
+    innovation = _export_labels('INNOVATION', req)
+    assert 'Patents Commercialized & Technology Transferred' in innovation
+    assert 'Income from Technology Transferred (in Rupees)' in innovation

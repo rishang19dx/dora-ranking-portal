@@ -10,6 +10,72 @@ from openpyxl.utils import get_column_letter
 from .rollup import compute_category_rollup
 from .year_engine import get_year_context, resolve_year_series
 
+def _resolve_grid_rows(blk, rows_data, category_id):
+    """
+    Produce the ordered (label, values) pairs to write for a grid block.
+
+    Two things have to be reconciled here:
+
+    * Shape. The form renderer stores a grid keyed by row id
+      ({"published": {"2025": 23}}), while the unit roll-up produces a list of
+      row dicts. Both reach this function, so both are accepted.
+    * Category. A fixed row may be limited to certain categories via `usedBy`
+      (Studios is Overall-only; the technology-transfer rows are Innovation-only)
+      and may carry a per-category label via `labelByCategory`. A central
+      section is filled once and exported into several categories, so the
+      filtering has to happen here rather than being inherited from whichever
+      category the officer happened to fill the form in.
+    """
+    row_axis = blk.get('rowAxis', {}) or {}
+    cat_upper = (category_id or '').upper()
+
+    # Index whatever shape arrived by row id.
+    by_id = {}
+    ordered_unknown = []
+    if isinstance(rows_data, dict):
+        for key, val in rows_data.items():
+            if isinstance(val, dict):
+                by_id[str(key)] = val
+    elif isinstance(rows_data, list):
+        for idx, val in enumerate(rows_data):
+            if not isinstance(val, dict):
+                continue
+            key = val.get('id') or val.get('programmeId') or val.get('programme') \
+                or val.get('nirfLevel') or val.get('name')
+            if key is not None:
+                by_id[str(key)] = val
+            else:
+                ordered_unknown.append((f"Row {idx + 1}", val))
+
+    if row_axis.get('type') == 'fixed':
+        out = []
+        for r in row_axis.get('rows', []) or []:
+            used_by = r.get('usedBy')
+            if cat_upper and used_by:
+                if cat_upper not in [u.upper() for u in used_by]:
+                    continue
+            label = r.get('label') or r.get('id')
+            label_by_cat = r.get('labelByCategory') or {}
+            if cat_upper and cat_upper in label_by_cat:
+                label = label_by_cat[cat_upper]
+            out.append((label, by_id.get(str(r.get('id')), {})))
+        return out
+
+    # Programme / year / dynamic rows keep the order they arrived in.
+    out = []
+    if isinstance(rows_data, dict):
+        for key, val in rows_data.items():
+            if isinstance(val, dict):
+                out.append((val.get('label') or val.get('name') or str(key), val))
+    elif isinstance(rows_data, list):
+        for idx, val in enumerate(rows_data):
+            if isinstance(val, dict):
+                out.append((
+                    val.get('label') or val.get('name') or val.get('id') or f"Row {idx + 1}",
+                    val,
+                ))
+    return out
+
 def generate_category_excel(
     category_id: str,
     cycle_year: int,
@@ -128,9 +194,9 @@ def generate_category_excel(
                 current_row += 1
 
                 rows_data = blocks_data.get(b_id, [])
-                for r_idx, r in enumerate(rows_data):
+                resolved_rows = _resolve_grid_rows(blk, rows_data, category_id)
+                for r_idx, (label_val, r) in enumerate(resolved_rows):
                     fill = zebra_fill if r_idx % 2 == 1 else None
-                    label_val = r.get('label') or r.get('name') or r.get('id') or f"Row {r_idx + 1}"
                     c1 = ws.cell(row=current_row, column=1, value=str(label_val))
                     c1.font = regular_font
                     c1.border = thin_border

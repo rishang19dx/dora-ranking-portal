@@ -44,6 +44,111 @@ class OrganogramOverviewView(APIView):
             'groups': groups,
         })
 
+class OrgUnitContactView(APIView):
+    """
+    Maintains a unit's contact details.
+
+    The mailboxes shipped in the organogram fixture are placeholders standing
+    in until the institute's real addresses are known, so they have to be
+    changeable from the admin UI rather than only by re-seeding. Updating the
+    mailbox also moves the unit's seeded nodal officer to the new address, so
+    the next data request reaches the right inbox.
+    """
+    permission_classes = [IsAdminOrDirector]
+
+    def patch(self, request, pk):
+        unit = get_object_or_404(OrgUnit, pk=pk)
+
+        if 'email' not in request.data and 'head' not in request.data:
+            return Response(
+                {'error': "Provide 'email' and/or 'head'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        updated_fields = []
+
+        if 'head' in request.data:
+            unit.head = (request.data.get('head') or '').strip() or None
+            updated_fields.append('head')
+
+        moved_officer = None
+        if 'email' in request.data:
+            serializer = OrgUnitSerializer(unit, data={'email': request.data.get('email')}, partial=True)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            new_email = (serializer.validated_data.get('email') or '').strip() or None
+            previous_email = (unit.email or '').strip() or None
+            unit.email = new_email
+            updated_fields.append('email')
+
+            if new_email and new_email != previous_email:
+                # Keep the unit's seeded representative pointed at the mailbox,
+                # unless some other officer already owns that address.
+                clash = NodalOfficer.objects.filter(email=new_email).first()
+                if clash is None:
+                    officer = NodalOfficer.objects.filter(id=f'seed-{unit.id}').first()
+                    if officer is None and previous_email:
+                        officer = NodalOfficer.objects.filter(email=previous_email).first()
+                    if officer is not None:
+                        officer.email = new_email
+                        officer.save(update_fields=['email'])
+                        officer.assigned_units.add(unit)
+                        moved_officer = officer.id
+                else:
+                    clash.assigned_units.add(unit)
+                    moved_officer = clash.id
+
+        if updated_fields:
+            unit.save(update_fields=updated_fields)
+
+        return Response({
+            'unit': OrgUnitSerializer(unit).data,
+            'officerUpdated': moved_officer,
+        })
+
+class OrgUnitCoverageView(APIView):
+    """
+    Lists the units that cannot currently be sent a data request.
+
+    A unit is only reachable if it has a mailbox and at least one nodal officer
+    assigned to it, so this is what the admin needs to clear before a cycle is
+    dispatched.
+    """
+    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+
+    def get(self, request):
+        units = OrgUnit.objects.prefetch_related('nodal_officers').all()
+
+        def describe(unit):
+            officers = list(unit.nodal_officers.all())
+            return {
+                'id': unit.id,
+                'name': unit.name,
+                'shortName': unit.short_name,
+                'kind': unit.kind,
+                'type': unit.type,
+                'email': unit.email or None,
+                'hasMailbox': bool((unit.email or '').strip()),
+                'officerCount': len(officers),
+                'reachable': bool((unit.email or '').strip()) and bool(officers),
+            }
+
+        rows = [describe(u) for u in units]
+        academic = [r for r in rows if r['kind'] in ('SCHOOL', 'CENTRE')]
+
+        return Response({
+            'units': rows,
+            'summary': {
+                'totalUnits': len(rows),
+                'reachableUnits': sum(1 for r in rows if r['reachable']),
+                'academicUnits': len(academic),
+                'reachableAcademicUnits': sum(1 for r in academic if r['reachable']),
+                'unreachableAcademicUnits': [r['id'] for r in academic if not r['reachable']],
+                'unitsWithoutMailbox': [r['id'] for r in rows if not r['hasMailbox']],
+            },
+        })
+
 class NodalOfficerListCreateView(APIView):
     def get(self, request):
         officers = NodalOfficer.objects.prefetch_related('assigned_units').all()

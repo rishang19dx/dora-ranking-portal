@@ -102,11 +102,33 @@ class PortalAccessGrant(models.Model):
     use_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def is_valid(self):
+    def invalid_reason(self):
+        """
+        Why this grant cannot be used right now, or None if it can.
+
+        A link is only as trustworthy as the standing of everything behind it,
+        so expiry and explicit revocation are not the whole test: the request
+        may have been closed, the officer's access withdrawn, or the officer
+        may no longer represent the unit the link is scoped to.
+        """
         from django.utils import timezone
+
         if self.revoked_at:
-            return False
-        return self.expires_at > timezone.now()
+            return 'Access grant was revoked.'
+        if self.expires_at <= timezone.now():
+            return 'Access grant has expired.'
+        if self.request.status == DataRequestStatus.CLOSED:
+            return 'The data request has been closed.'
+
+        from apps.organogram.models import OfficerStatus
+        if self.officer.status == OfficerStatus.REVOKED:
+            return 'The nodal officer\'s access has been revoked.'
+        if not self.officer.assigned_units.filter(pk=self.org_unit_id).exists():
+            return 'The nodal officer no longer represents this section.'
+        return None
+
+    def is_valid(self):
+        return self.invalid_reason() is None
 
 class ProofUpload(models.Model):
     id = models.CharField(max_length=64, primary_key=True, default=generate_upl_id)

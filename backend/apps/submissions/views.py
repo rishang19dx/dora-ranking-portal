@@ -349,8 +349,9 @@ def get_portal_grant(token: str) -> PortalAccessGrant:
         PortalAccessGrant.objects.select_related('request', 'org_unit', 'officer'),
         token_hash=digest
     )
-    if not grant.is_valid():
-        raise PermissionError("Access grant has expired or was revoked.")
+    reason = grant.invalid_reason()
+    if reason:
+        raise PermissionError(reason)
     return grant
 
 def is_section_authorized_for_grant(grant: PortalAccessGrant, section_def: dict) -> bool:

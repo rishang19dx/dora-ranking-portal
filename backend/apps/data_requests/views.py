@@ -115,9 +115,12 @@ class DataRequestDetailView(APIView):
 class DataRequestActionsView(APIView):
     def post(self, request, pk):
         from django.conf import settings
-        from datetime import timedelta
-        from .services import generate_portal_token, hash_token
-        from apps.organogram.models import NodalOfficer, OrgUnit
+        from .services import (
+            eligible_officers_for_unit,
+            issue_grant,
+            revoke_grants,
+        )
+        from apps.organogram.models import NodalOfficer, OfficerStatus, OrgUnit
 
         data_req = get_object_or_404(DataRequest, pk=pk)
         action = str(request.data.get('action', '')).upper()
@@ -125,15 +128,52 @@ class DataRequestActionsView(APIView):
         if action == 'CLOSE':
             data_req.status = DataRequestStatus.CLOSED
             data_req.save()
-            data_req.grants.filter(revoked_at__isnull=True).update(revoked_at=timezone.now())
-            return Response({'status': 'closed', 'message': 'Request closed and grants revoked.'})
+            revoked = revoke_grants(data_req)
+            return Response({
+                'status': 'closed',
+                'revokedGrants': revoked,
+                'message': f'Request closed and {revoked} upload link(s) revoked.',
+            })
 
         elif action == 'REOPEN':
             data_req.status = DataRequestStatus.DISPATCHED
             data_req.save()
-            return Response({'status': 'dispatched', 'message': 'Request reopened.'})
+
+            # Closing revoked every link, so reopening has to hand out fresh
+            # ones or the request is left uncollectable. Previously issued
+            # tokens are not revived - they were already emailed out.
+            issued = []
+            reopen_targets = data_req.targets.filter(
+                status__in=[TargetStatus.PENDING, TargetStatus.PARTIAL]
+            )
+            for target in reopen_targets:
+                for officer in eligible_officers_for_unit(target.org_unit):
+                    grant, _token, portal_url = issue_grant(
+                        data_req, target.org_unit, officer, target.data_item_ids
+                    )
+                    issued.append({
+                        'grantId': grant.id,
+                        'officerId': officer.id,
+                        'unitId': target.org_unit_id,
+                        'email': officer.email,
+                        'portalUrl': portal_url,
+                    })
+
+            return Response({
+                'status': 'dispatched',
+                'issuedGrants': issued,
+                'message': (
+                    f'Request reopened and {len(issued)} fresh upload link(s) issued.'
+                ),
+            })
 
         elif action == 'REMIND':
+            if data_req.status == DataRequestStatus.CLOSED:
+                return Response(
+                    {'error': 'Reopen the request before sending reminders; a closed '
+                              'request must not hand out working upload links.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             unit_ids = request.data.get('unitIds', [])
             targets = data_req.targets.all()
             if unit_ids:
@@ -152,26 +192,14 @@ class DataRequestActionsView(APIView):
 
                 unit = target.org_unit
                 unit_label = unit.short_name or unit.name
-                officers = list(unit.nodal_officers.filter(status__in=['INVITED', 'ACTIVE']))
-                if not officers and unit.email:
-                    fallback_officer = NodalOfficer.objects.filter(email=unit.email).first()
-                    if fallback_officer:
-                        officers = [fallback_officer]
+                officers = eligible_officers_for_unit(unit)
 
                 for officer in officers:
-                    token = generate_portal_token()
-                    token_digest = hash_token(token)
-                    ttl_days = getattr(settings, 'PORTAL_ACCESS_TTL_DAYS', 45)
-                    expires_at = timezone.now() + timedelta(days=ttl_days)
-                    grant = PortalAccessGrant.objects.create(
-                        token_hash=token_digest,
-                        officer=officer,
-                        request=data_req,
-                        org_unit=unit,
-                        data_item_ids=target.data_item_ids,
-                        expires_at=expires_at
+                    # Rotating here is what makes a reminder safe: the link in
+                    # the earlier mail stops working once the new one is sent.
+                    grant, _token, portal_url = issue_grant(
+                        data_req, unit, officer, target.data_item_ids
                     )
-                    portal_url = f"{app_base_url}/portal/{token}"
                     vars_dict = {
                         'officer': officer.name,
                         'email': officer.email,
@@ -207,42 +235,45 @@ class DataRequestActionsView(APIView):
             return Response({'status': 'reminded', 'message': f'{reminded_count} reminder message(s) dispatched.'})
 
         elif action == 'REISSUE':
+            if data_req.status == DataRequestStatus.CLOSED:
+                return Response(
+                    {'error': 'Reopen the request before reissuing an upload link.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             unit_id = request.data.get('unitId')
             officer_id = request.data.get('officerId')
             unit = OrgUnit.objects.filter(id=unit_id).first()
             officer = NodalOfficer.objects.filter(id=officer_id).first()
             if not unit or not officer:
-                return Response({'error': 'Unit and officer are required to reissue an upload link.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'error': 'Unit and officer are required to reissue an upload link.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            PortalAccessGrant.objects.filter(
-                request=data_req,
-                org_unit=unit,
-                officer=officer,
-                revoked_at__isnull=True
-            ).update(revoked_at=timezone.now())
+            # Refuse to mint a link that would be rejected the moment it is
+            # opened, rather than emailing out a dead URL.
+            if officer.status == OfficerStatus.REVOKED:
+                return Response(
+                    {'error': "This officer's access has been revoked."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if not officer.assigned_units.filter(pk=unit.id).exists():
+                return Response(
+                    {'error': 'Assign this officer to the section before issuing a link.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-            token = generate_portal_token()
-            token_digest = hash_token(token)
-            ttl_days = getattr(settings, 'PORTAL_ACCESS_TTL_DAYS', 45)
-            expires_at = timezone.now() + timedelta(days=ttl_days)
             target = data_req.targets.filter(org_unit=unit).first()
             data_item_ids = target.data_item_ids if target else data_req.data_item_ids
 
-            grant = PortalAccessGrant.objects.create(
-                token_hash=token_digest,
-                officer=officer,
-                request=data_req,
-                org_unit=unit,
-                data_item_ids=data_item_ids,
-                expires_at=expires_at
+            _grant, _token, portal_url = issue_grant(
+                data_req, unit, officer, data_item_ids
             )
-
-            app_base_url = getattr(settings, 'APP_BASE_URL', 'http://localhost:5173')
-            portal_url = f"{app_base_url}/portal/{token}"
             return Response({
                 'status': 'reissued',
                 'url': portal_url,
-                'message': 'Fresh upload link provisioned.'
+                'message': 'Fresh upload link provisioned; the previous one was revoked.'
             })
 
         elif action == 'SET_TARGET_STATUS':
@@ -267,11 +298,9 @@ class PortalGrantContextView(APIView):
         if not grant:
             return Response({'error': 'Invalid access link.'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not grant.is_valid():
-            return Response(
-                {'error': 'This access link has expired or been revoked.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        reason = grant.invalid_reason()
+        if reason:
+            return Response({'error': reason}, status=status.HTTP_403_FORBIDDEN)
 
         uploads = ProofUpload.objects.filter(grant=grant)
 
@@ -300,8 +329,11 @@ class PortalUploadView(APIView):
         digest = hash_token(token)
         grant = PortalAccessGrant.objects.select_related('officer', 'request', 'org_unit').filter(token_hash=digest).first()
 
-        if not grant or not grant.is_valid():
-            return Response({'error': 'Invalid or expired upload grant.'}, status=status.HTTP_403_FORBIDDEN)
+        if not grant:
+            return Response({'error': 'Invalid upload link.'}, status=status.HTTP_403_FORBIDDEN)
+        reason = grant.invalid_reason()
+        if reason:
+            return Response({'error': reason}, status=status.HTTP_403_FORBIDDEN)
 
         file_obj = request.FILES.get('file')
         data_item_id = request.data.get('dataItemId')

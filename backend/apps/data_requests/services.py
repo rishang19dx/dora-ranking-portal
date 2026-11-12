@@ -2,6 +2,7 @@ import hashlib
 import os
 import secrets
 from datetime import timedelta
+from django.db import transaction
 from django.utils import timezone
 from django.conf import settings
 from .models import (
@@ -31,6 +32,81 @@ def calculate_checksum(file_obj) -> str:
     file_obj.seek(0)
     return sha.hexdigest()
 
+def eligible_officers_for_unit(unit):
+    """
+    The officers a link may be issued to for a unit.
+
+    Officers whose access has been revoked are excluded, including on the
+    unit-mailbox fallback path - otherwise closing someone's access could be
+    undone by the next dispatch or reminder.
+    """
+    from apps.organogram.models import OfficerStatus
+
+    officers = list(
+        unit.nodal_officers.filter(
+            status__in=[OfficerStatus.INVITED, OfficerStatus.ACTIVE]
+        )
+    )
+    if officers:
+        return officers
+
+    mailbox = (unit.email or '').strip()
+    if not mailbox:
+        return []
+
+    existing = NodalOfficer.objects.filter(email=mailbox).first()
+    if existing is not None:
+        if existing.status == OfficerStatus.REVOKED:
+            return []
+        existing.assigned_units.add(unit)
+        return [existing]
+
+    fallback = NodalOfficer.objects.create(
+        email=mailbox,
+        name=unit.head or unit.name,
+        designation=unit.head,
+        status=OfficerStatus.INVITED,
+    )
+    fallback.assigned_units.add(unit)
+    return [fallback]
+
+def revoke_grants(data_request, org_unit=None, officer=None):
+    """Revokes the live grants matching the given scope. Returns the count."""
+    qs = PortalAccessGrant.objects.filter(request=data_request, revoked_at__isnull=True)
+    if org_unit is not None:
+        qs = qs.filter(org_unit=org_unit)
+    if officer is not None:
+        qs = qs.filter(officer=officer)
+    return qs.update(revoked_at=timezone.now())
+
+def issue_grant(data_request, unit, officer, data_item_ids, rotate=True):
+    """
+    Mints one single-purpose upload link.
+
+    Only the SHA-256 digest of the token is stored, so the raw token exists
+    only in the return value and the message built from it. When `rotate` is
+    set (the default) any link this officer already holds for this unit is
+    revoked first, so a superseded URL cannot be replayed.
+    """
+    from django.conf import settings
+
+    if rotate:
+        revoke_grants(data_request, org_unit=unit, officer=officer)
+
+    ttl_days = getattr(settings, 'PORTAL_ACCESS_TTL_DAYS', 45)
+    token = generate_portal_token()
+    grant = PortalAccessGrant.objects.create(
+        token_hash=hash_token(token),
+        officer=officer,
+        request=data_request,
+        org_unit=unit,
+        data_item_ids=list(data_item_ids or []),
+        expires_at=timezone.now() + timedelta(days=ttl_days),
+    )
+    app_base_url = getattr(settings, 'APP_BASE_URL', 'http://localhost:5173')
+    return grant, token, f"{app_base_url}/portal/{token}"
+
+@transaction.atomic
 def dispatch_data_request(
     title: str,
     framework: str,
@@ -42,6 +118,23 @@ def dispatch_data_request(
     created_by: str = 'DORA Admin',
     categories: list = None,
 ):
+    # The composer can list the same unit more than once (a section selected
+    # under two NIRF categories). A target is unique per request+unit, so the
+    # requested items are merged per unit before anything is written.
+    merged_sections = {}
+    for s in sections or []:
+        unit_id = s.get('unitId')
+        if not unit_id:
+            continue
+        bucket = merged_sections.setdefault(unit_id, [])
+        for item in s.get('dataItemIds', []) or []:
+            if item not in bucket:
+                bucket.append(item)
+    sections = [
+        {'unitId': unit_id, 'dataItemIds': items}
+        for unit_id, items in merged_sections.items()
+    ]
+
     all_data_item_ids = set()
     for s in sections:
         all_data_item_ids.update(s.get('dataItemIds', []))
@@ -64,10 +157,6 @@ def dispatch_data_request(
         status=DataRequestStatus.DISPATCHED
     )
 
-    ttl_days = getattr(settings, 'PORTAL_ACCESS_TTL_DAYS', 45)
-    expires_at = timezone.now() + timedelta(days=ttl_days)
-    app_base_url = getattr(settings, 'APP_BASE_URL', 'http://localhost:5173')
-
     deliveries = []
     issued_grants = []
 
@@ -85,36 +174,14 @@ def dispatch_data_request(
             status=TargetStatus.PENDING
         )
 
-        # Resolve assigned nodal officers
-        officers = list(unit.nodal_officers.filter(status__in=['INVITED', 'ACTIVE']))
-        
-        # Fallback to unit email if no officer is assigned
-        if not officers and unit.email:
-            fallback_officer, _ = NodalOfficer.objects.get_or_create(
-                email=unit.email,
-                defaults={
-                    'name': unit.head or unit.name,
-                    'designation': unit.head,
-                    'status': 'INVITED',
-                }
-            )
-            fallback_officer.assigned_units.add(unit)
-            officers = [fallback_officer]
+        # Resolve the officers a link may be issued to, falling back to the
+        # unit mailbox when nobody is assigned yet.
+        officers = eligible_officers_for_unit(unit)
 
         for officer in officers:
-            token = generate_portal_token()
-            token_digest = hash_token(token)
-
-            grant = PortalAccessGrant.objects.create(
-                token_hash=token_digest,
-                officer=officer,
-                request=data_request,
-                org_unit=unit,
-                data_item_ids=data_item_ids,
-                expires_at=expires_at
+            grant, token, portal_url = issue_grant(
+                data_request, unit, officer, data_item_ids
             )
-
-            portal_url = f"{app_base_url}/portal/{token}"
             issued_grants.append({
                 'grantId': grant.id,
                 'officerId': officer.id,

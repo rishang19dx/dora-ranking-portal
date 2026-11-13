@@ -88,8 +88,6 @@ def issue_grant(data_request, unit, officer, data_item_ids, rotate=True):
     set (the default) any link this officer already holds for this unit is
     revoked first, so a superseded URL cannot be replayed.
     """
-    from django.conf import settings
-
     if rotate:
         revoke_grants(data_request, org_unit=unit, officer=officer)
 

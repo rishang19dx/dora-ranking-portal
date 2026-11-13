@@ -123,7 +123,7 @@ jobs:
 
   # ─── Job 3: Frontend Build ────────────────────────────────────────────────
   frontend-build:
-    name: Frontend · Build & Lint
+    name: Frontend · Lint, Typecheck, Test & Build
     runs-on: ubuntu-latest
 
     defaults:
@@ -144,7 +144,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type check & Build (Vite)
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit & integration tests (Vitest)
+        run: npm run test
+
+      - name: Build (Vite)
         run: npm run build
 
       - name: Upload build artifact

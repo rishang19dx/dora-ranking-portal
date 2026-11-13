@@ -298,3 +298,63 @@ All Phase 2 migration testing and Continuous Integration objectives have been co
 2. **Automated Testing:** Established a robust pytest suite containing **116 deterministic tests** achieving **88% coverage** across all applications, validating models, API endpoints, authentication, relational constraints, zero-knowledge portal tokens, file upload safety, and ranking analytics.
 3. **Continuous Integration:** Implemented and verified a 5-stage GitHub Actions CI pipeline executing linting, multi-version Python testing, PostgreSQL integration, frontend bundling, and Docker container verification.
 4. **Documentation:** Authored `TESTING.md` and updated `README.md`, `work.md`, and `decision_history.md`.
+
+## Team Member: Lokesh
+## Current Phase: Phase 2 -- Frontend Static Analysis & Unit Testing
+## Date: 2026-11-09
+
+### Update: 06 (Phase 2)
+**Date:** 2026-11-09
+**Task:** Phase 2 - Frontend ESLint, TypeScript strictness and Vitest suite
+
+Done. Here's what's in place for the frontend (frontend/ — the active React 19 + Vite SPA; the stray src/ + tsconfig.json at repo root is dead Next.js code from before the migration and was left untouched).
+
+### Static Analysis & Type Checking
+
+Added ESLint 9 flat config (frontend/eslint.config.js): @typescript-eslint recommended rules, react-hooks (classic rules-of-hooks + exhaustive-deps, not v7's new React-Compiler-readiness bundle — that bundle flags idiomatic fetch-in-useEffect patterns across nearly every view as errors, which is a separate opt-in decision, not a side effect of wiring up linting), and react-refresh.
+tsconfig.json already had strict: true; added vitest/globals and @testing-library/jest-dom types so test files type-check too.
+Baseline result: 0 type errors, lint is 0 errors / 80 pre-existing warnings (unused imports, a few any usages, one missing-dep warning) — nothing blocking, all flagged as warnings for later cleanup.
+
+### Unit Testing
+
+Installed Vitest 3 + @vitest/coverage-v8 + React Testing Library 16 (React 19-compatible) + jest-dom + user-event, with vitest.config.ts (jsdom env, globals, coverage via v8) and a setup file auto-cleaning the DOM between tests.
+Wrote 67 tests across 5 files, all passing:
+* utils/helpers.test.ts — rank-change math, status badges, date formatting
+* lib/organogram.test.ts — org-tree lookups, breadcrumbs, ancestors/descendants, search, scope aggregation (99.7% line coverage on this file)
+* lib/data-catalogue.test.ts — data-item/custodian/suggestion/proof-format logic (100%)
+* components/RankingCard.test.tsx and components/Footer.test.tsx — rendering + click behavior (both 100%)
+Caught and fixed real bugs in my own test assumptions along the way (e.g. unitLabel prefers shortName), confirming the tests actually exercise the real logic.
+
+### Scripts & CI
+
+* frontend/package.json: added typecheck, lint, lint:fix, test, test:watch, test:coverage, validate (runs all three).
+* Root package.json: test:frontend now runs the full validate pipeline; added lint:frontend/typecheck:frontend.
+* .github/workflows/ci-cd.yml: the frontend-build job now runs lint → typecheck → vitest → build, so these gates run on every push/PR.
+* Verified npm run build still succeeds after all changes.
+
+One thing to flag: dependencies were installed with npm, updating frontend/package-lock.json, but CI uses Bun with bun.lock. I didn't have Bun available locally to regenerate that lockfile. The workflow already falls back to a non-frozen bun install if the frozen-lockfile install fails, so CI won't break, but bun.lock is now stale — worth running bun install once from a machine with Bun to refresh it.
+
+---
+
+Component and integration testing is in place: all 163 tests pass, tsc is clean, and ESLint shows 0 errors (82 existing warnings). Statement coverage went from 13.6% to 52.5%. Nothing is committed.
+
+Starting point. The working tree already had untracked tests I hadn't written: Header, LoginModal, Navigation, RankingDetailModal and ToastProvider, plus test/test-utils.tsx (a renderWithProviders helper) and test/domain-fixtures.ts. I built on them. 8 of those tests were failing and 2 had type errors. All were test-side problems (fake timers stalling the toast exit animation, duplicate-text queries, a too-narrow props type), not app bugs.
+
+### New tests
+
+* **OrgTree.test.tsx (12 tests):** collapse and expand, activation, query and type filtering, empty state, selection (including locked and subtree selection), and coverage badges.
+* **DashboardLayout.test.tsx (9 tests):** admin vs. officer sidebar, sidebar navigation, user identity from localStorage, dropdowns, and sign-out clearing the session.
+* **routes.integration.test.tsx (27 tests):** the real route table, layouts and providers, with only fetch and the rankings service mocked.
+  * **Routing:** `/`, unknown-path redirect, `/admin`, `/nodal-officer`, settings.
+  * **Landing:** tab switching, a failing rankings API, and navigation to the admin and officer portals.
+  * **Admin pages:** data collection (empty, populated, bare-array payload, closed and overdue requests, API error, list to detail, detail error), organogram, and nodal officers.
+  * **Upload portal:** success, expired token, network failure.
+
+### Gaps
+
+* AdminView.tsx is at 0%, but routes.tsx doesn't import it, so it looks like dead code.
+* The composer, nodal-officer submission, trends and comparative views, services/api.ts (axios interceptors and refresh) and exportToCSV have little or no coverage. I'd go after these next.
+* The nodal-officers and trends pages only have render-level checks so far.
+* RankingDetailModal tests print many "not wrapped in act(...)" warnings. They pass but are noisy.
+* bun.lock is still stale from the earlier dependency install (see my previous message).
+

@@ -93,7 +93,7 @@ docker compose up --build -d
 
 ## 🧪 Testing & Continuous Integration
 
-The project includes an enterprise-grade automated test suite with **116 automated tests** (100% passing) and **88% overall test coverage** across all Django apps, plus a 5-stage GitHub Actions CI pipeline.
+The project includes an enterprise-grade automated test suite with **161 backend tests** and **163 frontend tests** (100% passing), statement coverage reporting across all Django apps, and a 5-stage GitHub Actions CI pipeline.
 
 For in-depth details, architecture diagrams, and scenario matrices, see [**TESTING.md**](./TESTING.md).
 

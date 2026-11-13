@@ -197,9 +197,9 @@ class NodalOfficerAccessView(APIView):
         return Response(PortalAccessGrantSerializer(grants, many=True).data)
 
     def post(self, request, pk):
-        from django.utils import timezone
+        # PortalAccessGrant is imported here to avoid a cross-app import cycle;
+        # timezone and OfficerStatus are already imported at module level.
         from apps.data_requests.models import PortalAccessGrant
-        from apps.organogram.models import OfficerStatus
         officer = get_object_or_404(NodalOfficer, pk=pk)
         action = request.data.get('action', 'INVITE').upper()
 
@@ -234,7 +234,7 @@ class NodalOfficerAccessView(APIView):
                 'portal': app_base_url,
                 'from': getattr(settings, 'MAIL_FROM', 'DORA Office <dora@iitmandi.ac.in>'),
             }
-            subject = f"Nodal Officer access - IIT Mandi Ranking Portal"
+            subject = "Nodal Officer access - IIT Mandi Ranking Portal"
             body = render_template(INVITE_TEMPLATE, vars_dict)
             mail_res = send_mail(to=officer.email, subject=subject, body=body)
 

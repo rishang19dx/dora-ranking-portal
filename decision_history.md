@@ -197,3 +197,56 @@ This document serves as an immutable chronological log of key decisions taken by
   - `src/views/admin/AdminDataRequestComposer.tsx`
   - `src/views/admin/AdminDataRequestDetail.tsx`
 
+
+
+---
+
+## 2026-10-31: Phase 2 -- Comprehensive Migration Testing & CI Implementation
+
+**Team Member:** Yash
+**Current Phase:** Phase 2 (NIRF Ranking UI & Django Architecture Migration)
+
+**Context:** Following the Phase 2 migration from Next.js + Prisma to a decoupled Django 5.1 REST Framework backend + React 19 (Vite) frontend, the application required comprehensive automated testing across all migrated components (accounts, organogram, data requests, rankings, migrations), verification of data/schema integrity, bug discovery and remediation, and an enterprise Continuous Integration (CI) pipeline on GitHub Actions.
+
+**Decisions Made:**
+1. **Testing Stack Selection (Pytest + Pytest-Django + Pytest-Cov + Factory-Boy):**
+   * *Decision:* Standardized on `pytest` and `pytest-django` for test execution, `pytest-cov` for branch/statement coverage, and `factory-boy` for fixture factories.
+   * *Alternatives Considered:* Standard library `unittest` (too verbose, lacking parameterized fixtures), `nose2` (unmaintained).
+   * *Rationale:* Pytest seamlessly integrates with DRF's `APIClient`, supports modular fixtures across `conftest.py`, and enables detailed failure tracebacks.
+   * *Files Impacted:* `backend/requirements.txt`, `backend/pytest.ini`, `backend/.coveragerc`.
+
+2. **Dual-Database Testing Strategy (SQLite local & CI matrix, PostgreSQL in CI Integration):**
+   * *Decision:* Use SQLite for rapid local developer unit/integration tests (9.1s execution time for 116 tests) and provision a real PostgreSQL 16 container service in GitHub Actions for full dialect and relational integrity verification on `main`.
+   * *Alternatives Considered:* Mandating local Docker PostgreSQL for all tests (slows down local dev loops, creates friction).
+   * *Rationale:* SQLite supports all Django ORM features utilized in the codebase (`JSONField`, `UniqueConstraint`, relational FKs, M2M). The dedicated PostgreSQL CI stage ensures no dialect-specific regressions slip into production.
+   * *Files Impacted:* `backend/dora_backend/settings.py`, `.github/workflows/ci.yml`.
+
+3. **External Network Mocking & Deterministic Ranking Fixtures:**
+   * *Decision:* Mock all external web scraping network calls (`requests.get` to `nirfindia.org`) using `unittest.mock.patch` and create isolated temporary JSON ranking fixtures in `tmp_path` by dynamically patching `DATA_DIR` in `apps.rankings.scraper` and `apps.rankings.views`.
+   * *Alternatives Considered:* Live HTTP requests during tests (non-deterministic, subject to external network latency or website throttling), mocking `load_ranking_data` entirely (would bypass testing the file loading and JSON deserialization logic).
+   * *Rationale:* Patching `DATA_DIR` allows the actual JSON loading, parsing, and caching logic to be fully tested while ensuring zero dependency on external network access.
+   * *Files Impacted:* `backend/tests/conftest.py`, `backend/tests/test_rankings.py`.
+
+4. **LRU Cache Boundary Isolation:**
+   * *Decision:* Added automated fixture `clear_ranking_cache` with `autouse=True` in ranking view tests to explicitly invoke `load_ranking_data.cache_clear()` before and after test execution.
+   * *Alternatives Considered:* Relying on unique test parameters or disabling caching during tests.
+   * *Rationale:* `functools.lru_cache` persists across test function boundaries within the same pytest runner process, leading to silent cross-test contamination if files are modified in `tmp_path`. Explicit clearing guarantees determinism.
+   * *Files Impacted:* `backend/tests/test_rankings.py`, `backend/tests/conftest.py`.
+
+5. **Token Architecture & Upload Proof Isolation:**
+   * *Decision:* In `PortalAccessGrant` test fixtures, generate cryptographically random raw tokens via `generate_portal_token()`, store only the SHA-256 hash in `token_hash`, and attach `raw_token` to the model fixture for building client request URLs. For proof uploads, override `MEDIA_ROOT` with `tmp_path` to avoid writing test upload files into production media directories.
+   * *Alternatives Considered:* Bypassing token hashing in tests or hardcoding static tokens.
+   * *Rationale:* Accurately reflects the zero-knowledge token storage architecture and validates the entire grant verification pipeline end-to-end without filesystem pollution.
+   * *Files Impacted:* `backend/tests/conftest.py`, `backend/tests/test_data_requests.py`.
+
+6. **Continuous Integration (CI) Multi-Job Architecture:**
+   * *Decision:* Implemented a 5-job GitHub Actions pipeline in `.github/workflows/ci.yml` featuring matrix testing across Python 3.11 and 3.12, strict linting and static checks via Ruff, migration drift verification (`makemigrations --check --dry-run`), frontend TypeScript/Vite bundling, PostgreSQL 16 service integration, and Docker container verification with Buildx layer caching.
+   * *Alternatives Considered:* Monolithic single-script CI job.
+   * *Rationale:* Independent, parallel jobs provide rapid developer feedback (parallel execution), clear isolation of failure causes (lint vs unit test vs frontend build), and cost-effective runner utilization by running PostgreSQL only when relevant.
+   * *Files Impacted:* `.github/workflows/ci.yml`.
+
+7. **Code Quality and Linter Standardization (Ruff):**
+   * *Decision:* Adopted Ruff for backend Python linting, configured via `backend/ruff.toml` with Django-friendly rules (ignoring `RUF012` for class-level model/serializer configurations and `E501` for line lengths).
+   * *Alternatives Considered:* Flake8 + isort + Black (slower, requiring multiple tools).
+   * *Rationale:* Ruff provides sub-second execution speeds and unified linting, formatting, and import sorting rules.
+   * *Files Impacted:* `backend/ruff.toml`, `backend/requirements.txt`.

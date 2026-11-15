@@ -181,7 +181,7 @@ def run_cross_checks(request_id: str, cycle_year: int) -> List[Dict[str, Any]]:
         subs = sub_by_sec.get(sec_id, [])
         covered_units = {
             s.org_unit_id for s in subs
-            if s.status == SubmissionStatus.APPROVED or s.not_applicable
+            if s.status == SubmissionStatus.APPROVED
         }
         missing = active_unit_ids - covered_units
         if missing:

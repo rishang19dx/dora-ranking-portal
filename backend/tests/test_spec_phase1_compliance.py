@@ -604,3 +604,55 @@ def test_template_refuses_web_form_sections(seeded):
     res = APIClient().get('/api/form-schemas/NIRF/sections/sanctioned-intake/template/')
     assert res.status_code == 404
     assert 'web form' in res.json()['error']
+
+
+# -----------------------------------------------------------------------------
+# 2.10 Only checker-approved data reaches the export
+# -----------------------------------------------------------------------------
+
+def test_unapproved_data_never_reaches_the_dcs_export(admin):
+    """Regression: the roll-up summed every submission whatever its status."""
+    import openpyxl
+    req = DataRequest.objects.create(
+        reference='GATE-1', title='t', framework='NIRF', cycle_year=2027, subject='s',
+        message='m', deadline=timezone.now(), categories=['OVERALL'], data_item_ids=[],
+    )
+    schema = FormSchema.objects.filter(framework='NIRF', is_active=True).first()
+
+    def submission(status, projects):
+        return SectionSubmission.objects.create(
+            request=req, org_unit_id='sponsored-research', section_id='sponsored-research',
+            schema_version=schema.version, status=status,
+            payload={'sponsored': {'projects': {'2025-26': projects}}},
+        )
+
+    draft = submission(SubmissionStatus.DRAFT, 999)
+    buf_draft = admin.get(f'/api/nirf/cycles/2027/export/?category=OVERALL&requestId={req.id}').content
+    cells = [c.value for row in openpyxl.load_workbook(BytesIO(buf_draft)).active.iter_rows() for c in row]
+    assert 999 not in cells, 'draft figures must not be exported'
+
+    draft.status = SubmissionStatus.APPROVED
+    draft.save(update_fields=['status'])
+    buf_ok = admin.get(f'/api/nirf/cycles/2027/export/?category=OVERALL&requestId={req.id}').content
+    cells = [c.value for row in openpyxl.load_workbook(BytesIO(buf_ok)).active.iter_rows() for c in row]
+    assert 999 in cells
+
+
+def test_unapproved_not_applicable_does_not_count_as_covered(admin):
+    from apps.submissions.rollup import compute_category_rollup
+    req = DataRequest.objects.create(
+        reference='GATE-2', title='t', framework='NIRF', cycle_year=2027, subject='s',
+        message='m', deadline=timezone.now(), categories=['OVERALL'], data_item_ids=[],
+    )
+    schema = FormSchema.objects.filter(framework='NIRF', is_active=True).first()
+    sub = SectionSubmission.objects.create(
+        request=req, org_unit_id='cqst', section_id='sanctioned-intake',
+        schema_version=schema.version, status=SubmissionStatus.DRAFT, not_applicable=True,
+    )
+    coverage = compute_category_rollup('OVERALL', 2027, request_id=req.id)['coverage']['sanctioned-intake']
+    assert 'cqst' in coverage['missingUnits'], 'a maker\'s N/A claim is not settled until approved'
+
+    sub.status = SubmissionStatus.APPROVED
+    sub.save(update_fields=['status'])
+    coverage = compute_category_rollup('OVERALL', 2027, request_id=req.id)['coverage']['sanctioned-intake']
+    assert 'cqst' not in coverage['missingUnits']

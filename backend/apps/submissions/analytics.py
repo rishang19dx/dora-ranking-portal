@@ -141,7 +141,9 @@ def compute_department_analytics(
         expected = len(unit_section_ids) if is_academic_unit else len(
             {s.section_id for s in subs}
         )
-        settled = approved + not_applicable
+        # Approved already includes approved "not applicable" declarations;
+        # an unapproved N/A is not settled.
+        settled = approved
         covered_sections = {s.section_id for s in subs}
         missing_sections = (
             [sid for sid in unit_section_ids if sid not in covered_sections]
@@ -204,7 +206,7 @@ def compute_department_analytics(
         sec_expected = len(eligible_units) if submit_by == 'unit' else 1
         sec_settled = sum(
             1 for s in sec_subs
-            if s.status == SubmissionStatus.APPROVED or s.not_applicable
+            if s.status == SubmissionStatus.APPROVED
         )
         section_rollup.append({
             'sectionId': sid,
@@ -237,7 +239,7 @@ def compute_department_analytics(
                 1 for s in submission_list if s.status == SubmissionStatus.CORRECTION_REQUESTED
             ),
             'draft': sum(1 for s in submission_list if s.status == SubmissionStatus.DRAFT),
-            'overallCompletionPct': _pct(total_approved + total_na, expected_total),
+            'overallCompletionPct': _pct(total_approved, expected_total),
             'avgReviewTurnaroundHours': (
                 round(sum(all_turnarounds) / len(all_turnarounds), 1) if all_turnarounds else None
             ),
@@ -317,7 +319,9 @@ def compute_department_contributions(
     if unit_ids:
         submissions = submissions.filter(org_unit_id__in=unit_ids)
 
-    submissions = submissions.filter(
+    # Same rule as the export: only checker-approved data counts (spec 2.10),
+    # so the dashboard never shows a figure the DCS workbook will not contain.
+    submissions = submissions.filter(status=SubmissionStatus.APPROVED).filter(
         section_id__in=[
             'sponsored-project-register',
             'placement-outcomes',

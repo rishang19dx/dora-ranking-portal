@@ -56,10 +56,14 @@ def compute_category_rollup(
         subs = sub_by_sec.get(sec_id, [])
 
         if submit_by == 'unit':
+            # Covered means the checker approved it - a data return or a
+            # declaration that the section does not apply. An unapproved
+            # "not applicable" is a maker's claim, not settled data (2.10).
             covered_units = {
                 s.org_unit_id for s in subs
-                if (s.status == SubmissionStatus.APPROVED or s.not_applicable)
+                if s.status == SubmissionStatus.APPROVED
             }
+            approved_subs = [s for s in subs if s.status == SubmissionStatus.APPROVED]
             missing = active_unit_ids - covered_units
             coverage_report[sec_id] = {
                 'totalEligible': len(active_unit_ids),
@@ -81,7 +85,7 @@ def compute_category_rollup(
                 if kind == 'grid':
                     # Aggregate grid rows
                     aggregated_rows = {}
-                    for s in subs:
+                    for s in approved_subs:
                         if s.not_applicable:
                             continue
                         raw_grid_data = s.payload.get(b_id, [])
@@ -114,7 +118,7 @@ def compute_category_rollup(
 
                 elif kind == 'records':
                     all_records = []
-                    for s in subs:
+                    for s in approved_subs:
                         if s.not_applicable:
                             continue
                         for rec in s.records.filter(block_id=b_id):
@@ -130,10 +134,16 @@ def compute_category_rollup(
 
         else:
             # Central submission: take primary owner unit's submission
+            # Only checker-approved data reaches the export (spec 2.10).
             primary_unit_id = ownership.get('primaryOwnerUnitId')
-            sub = next((s for s in subs if s.org_unit_id == primary_unit_id and not s.not_applicable), None)
+            approved_central = [
+                s for s in subs
+                if s.status == SubmissionStatus.APPROVED and not s.not_applicable
+            ]
+            sub = next((s for s in approved_central if s.org_unit_id == primary_unit_id), None)
             if not sub:
-                sub = next((s for s in subs if not s.not_applicable), None)
+                sub = next(iter(approved_central), None)
+            pending = next((s for s in subs if s.org_unit_id == primary_unit_id), None)
 
             rolled_blocks = {}
             if sub:
@@ -147,12 +157,15 @@ def compute_category_rollup(
             sections_result[sec_id] = {
                 'definition': sec_def,
                 'submitBy': 'central',
-                'submissionId': sub.id if sub else None,
-                'status': sub.status if sub else 'PENDING',
+                'submissionId': sub.id if sub else (pending.id if pending else None),
+                'status': sub.status if sub else (pending.status if pending else 'PENDING'),
+                'complete': sub is not None,
                 'blocks': rolled_blocks,
             }
 
-    all_coverage_ok = all(c.get('complete', True) for c in coverage_report.values())
+    all_coverage_ok = all(c.get('complete', True) for c in coverage_report.values()) and all(
+        sec.get('complete', True) for sec in sections_result.values() if sec.get('submitBy') == 'central'
+    )
 
     return {
         'categoryId': category_id,

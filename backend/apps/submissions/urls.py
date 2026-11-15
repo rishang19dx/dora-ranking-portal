@@ -12,6 +12,8 @@ from .views import (
     AdminSubmissionActionView,
     NirfRollupView,
     NirfExportView,
+    DepartmentAnalyticsView,
+    BoardroomBriefingView,
 )
 
 urlpatterns = [
@@ -44,6 +46,10 @@ urlpatterns = [
     # Category Rollup & Export
     path('nirf/cycles/<str:year>/rollup/', NirfRollupView.as_view(), name='nirf_rollup'),
     path('nirf/cycles/<str:year>/rollup', NirfRollupView.as_view()),
+    path('nirf/cycles/<str:year>/department-analytics/', DepartmentAnalyticsView.as_view(), name='nirf_department_analytics'),
+    path('nirf/cycles/<str:year>/department-analytics', DepartmentAnalyticsView.as_view()),
+    path('nirf/cycles/<str:year>/briefing/', BoardroomBriefingView.as_view(), name='nirf_briefing'),
+    path('nirf/cycles/<str:year>/briefing', BoardroomBriefingView.as_view()),
     path('nirf/cycles/<str:year>/export/', NirfExportView.as_view(), name='nirf_export'),
     path('nirf/cycles/<str:year>/export', NirfExportView.as_view()),
 ]

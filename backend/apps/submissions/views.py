@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
-from apps.organogram.models import OrgUnit, Programme
+from apps.organogram.models import NodalOfficer, OrgUnit, Programme
 from apps.data_requests.models import DataRequest, DataRequestTarget, PortalAccessGrant, ProofUpload, TargetStatus
 from apps.data_requests.services import hash_token
 from apps.accounts.permissions import IsAdminOrDirector, IsAdminOrDirectorOrAuditorReadOnly
@@ -44,6 +44,8 @@ from .validation_engine import (
     apply_block_derives,
 )
 from .cross_checks import run_cross_checks
+from .analytics import compute_department_analytics, compute_department_contributions
+from .briefing import generate_briefing_pdf
 from .rollup import compute_category_rollup
 from .dcs_export import generate_category_excel
 
@@ -1082,6 +1084,135 @@ class NirfRollupView(APIView):
             return Response(rollup_res)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+def resolve_visible_units(user, requested_unit_id=None):
+    """
+    Which departments this user may see analytics for (spec 2.16 / 2.18).
+
+    Admin, Director and Auditor see the whole institute. A nodal officer sees
+    only the units they are assigned to - spec 2.18 is explicit that they
+    "cannot view other departments' raw data" - and is matched to their roster
+    entry by institutional email.
+
+    Returns (unit_ids or None for all, error_response or None).
+    """
+    role = getattr(user, 'role', None)
+    privileged = (
+        role in ('ADMIN', 'DIRECTOR', 'AUDITOR')
+        or user.is_staff
+        or user.is_superuser
+    )
+
+    if privileged:
+        return ([requested_unit_id] if requested_unit_id else None), None
+
+    officer = NodalOfficer.objects.filter(email__iexact=(user.email or '')).first()
+    own_units = list(officer.assigned_units.values_list('id', flat=True)) if officer else []
+
+    if not own_units:
+        return None, Response(
+            {'error': 'No department is assigned to this account.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if requested_unit_id:
+        if requested_unit_id not in own_units:
+            return None, Response(
+                {'error': 'You may only view analytics for your own department.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return [requested_unit_id], None
+
+    return own_units, None
+
+class DepartmentAnalyticsView(APIView):
+    """
+    Department-wise contribution and performance analytics (spec 2.16).
+
+    Returns both halves: `contribution` is what each department put into the
+    institutional score (research money, placement outcomes, Ph.D completions),
+    and `performance` is how it handled the collection cycle itself.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, year):
+        try:
+            cycle_year = int(year)
+        except (TypeError, ValueError):
+            return Response({'error': 'Invalid cycle year.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        request_id = request.query_params.get('requestId')
+        category_id = request.query_params.get('category')
+        unit_ids, denied = resolve_visible_units(
+            request.user, request.query_params.get('unitId')
+        )
+        if denied is not None:
+            return denied
+
+        contribution = compute_department_contributions(
+            cycle_year, request_id=request_id, unit_ids=unit_ids
+        )
+        performance = compute_department_analytics(
+            cycle_year, request_id=request_id, category_id=category_id
+        )
+
+        if unit_ids is not None:
+            allowed = set(unit_ids)
+            performance['departments'] = [
+                d for d in performance['departments'] if d['unitId'] in allowed
+            ]
+            # Institute-wide rollups and league tables are not this user's to see.
+            performance.pop('leaderboard', None)
+            contribution.pop('leaders', None)
+
+        return Response({
+            'cycleYear': cycle_year,
+            'scopedToUnits': unit_ids,
+            'contribution': contribution,
+            'performance': performance,
+        })
+
+class BoardroomBriefingView(APIView):
+    """
+    One-click boardroom-ready PDF briefing (spec 2.17).
+
+    Carries the cycle's submission statistics, the discrepancies cross-checks
+    flagged, and scenario-based score projections.
+    """
+    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+
+    def get(self, request, year):
+        from apps.rankings.views import load_ranking_data
+        from apps.rankings.scraper import TARGET_IITS, canonical_iit_name
+
+        try:
+            cycle_year = int(year)
+        except (TypeError, ValueError):
+            return Response({'error': 'Invalid cycle year.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            ranking_year = int(request.query_params.get('rankingYear', 2025))
+        except (TypeError, ValueError):
+            return Response({'error': 'Invalid rankingYear.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            pdf = generate_briefing_pdf(
+                cycle_year=cycle_year,
+                load_ranking_data=load_ranking_data,
+                canonical_name=canonical_iit_name,
+                peer_names=TARGET_IITS,
+                request_id=request.query_params.get('requestId'),
+                category_id=request.query_params.get('category'),
+                ranking_year=ranking_year,
+            )
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        filename = f"DORA_Boardroom_Briefing_NIRF_{cycle_year}.pdf"
+        response = HttpResponse(pdf.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
 class NirfExportView(APIView):
     permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]

@@ -1087,9 +1087,29 @@ export default function FormRenderer({
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-zinc-500">
-              Upload a spreadsheet matching the column names. Rows will be validated and imported into this section block.
-            </p>
+            {(() => {
+              const importBlock = section.blocks?.find((b: any) => b.id === importModalBlockId);
+              const keyField = importBlock?.rowKey
+                ? importBlock.fields?.find((f: any) => f.id === importBlock.rowKey)
+                : null;
+              return (
+                <div className="space-y-2">
+                  <p className="text-xs text-zinc-500">
+                    Rows are validated before anything is saved; rows with problems are listed and left out.{' '}
+                    {keyField
+                      ? `Rows are matched on “${keyField.label}”: existing ones are updated, new ones added.`
+                      : 'The sheet replaces this table’s current rows, and exact duplicate rows are skipped.'}
+                  </p>
+                  <a
+                    href={`/api/form-schemas/NIRF/sections/${section.id}/template/?blockId=${importModalBlockId}`}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-sage-700 hover:underline"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    Download the Excel template for this table
+                  </a>
+                </div>
+              );
+            })()}
             <div className="border-2 border-dashed border-zinc-200 hover:border-sage-400 rounded-2xl p-6 text-center cursor-pointer relative">
               <UploadSimple className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
               <p className="text-xs font-medium text-zinc-700">Choose .xlsx or .csv file</p>

@@ -53,6 +53,7 @@ from .analytics import compute_department_analytics, compute_department_contribu
 from .briefing import generate_briefing_pdf
 from .audit import diff_payload, diff_record, schema_pii_fields
 from .provenance import annotate_versions, proofs_for_submission, sections_for_item
+from .xlsx_templates import build_records_template
 from .rollup import compute_category_rollup
 from .dcs_export import generate_category_excel
 
@@ -1815,6 +1816,43 @@ class ProofDownloadView(APIView):
             filename=proof.file_name,
             content_type=proof.content_type or 'application/octet-stream',
         )
+
+
+class RecordsTemplateView(APIView):
+    """
+    Downloads the standardised Excel template for a records block (spec 2.3).
+
+    Contains no institutional data - only the schema's columns, dropdowns and
+    instructions - so it is open, like the schema endpoints themselves.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, framework, section_id):
+        schema_obj = FormSchema.objects.filter(framework=framework.upper(), is_active=True).first()
+        if not schema_obj:
+            return Response({'error': f"No active schema for '{framework}'."}, status=status.HTTP_404_NOT_FOUND)
+        sec_def = next((sd for sd in schema_obj.content.get('sections', []) if sd['id'] == section_id), None)
+        if not sec_def:
+            return Response({'error': 'Section not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        record_blocks = [b for b in sec_def.get('blocks', []) if b.get('kind') == 'records']
+        if not record_blocks:
+            return Response({'error': 'This section is entered through the web form; it has no spreadsheet template.'},
+                            status=status.HTTP_404_NOT_FOUND)
+        block_id = request.query_params.get('blockId')
+        block = next((b for b in record_blocks if b['id'] == block_id), None) if block_id else record_blocks[0]
+        if block is None:
+            return Response({'error': f"No records block '{block_id}' in this section.",
+                             'blocks': [b['id'] for b in record_blocks]}, status=status.HTTP_404_NOT_FOUND)
+
+        buf = build_records_template(sec_def, block, schema_obj.content.get('enums', {}))
+        filename = f"NIRF_{section_id}_{block['id']}_template.xlsx"
+        response = HttpResponse(
+            buf.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
 class NirfExportView(APIView):
     permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]

@@ -542,3 +542,65 @@ def test_typed_records_persist_update_and_delete(admin):
     row = section['records']['innovation-grants'][0]
     assert row['programme'] == 'TIDE 2.0' and row['amount'] == 900000 and row['_id']
     assert 'data' not in row, 'fields are flat, as the form reads them'
+
+
+# -----------------------------------------------------------------------------
+# 2.3 Standardised Excel templates
+# -----------------------------------------------------------------------------
+
+def test_template_layout_matches_what_the_importer_reads(seeded):
+    import openpyxl
+    res = APIClient().get('/api/form-schemas/NIRF/sections/faculty-details/template/?blockId=faculty')
+    assert res.status_code == 200
+    wb = openpyxl.load_workbook(BytesIO(res.content))
+
+    assert wb.active.title == 'Data', 'the importer reads the active sheet'
+    assert wb['Lists'].sheet_state == 'hidden'
+    headers = [c.value for c in wb['Data'][1]]
+    assert 'Designation' in headers and 'Name' in headers
+    assert 'Srno' not in headers, 'derived serial numbers are not typed in'
+    assert wb['Data'].max_row == 1, 'no guidance rows that would import as records'
+
+    designation_col = headers.index('Designation') + 1
+    from openpyxl.utils import get_column_letter
+    letter = get_column_letter(designation_col)
+    validations = [dv for dv in wb['Data'].data_validations.dataValidation
+                   if any(str(r).startswith(f'{letter}2') for r in dv.sqref.ranges)]
+    assert validations and validations[0].type == 'list'
+
+
+def test_filled_template_round_trips_through_the_importer(admin):
+    import openpyxl
+    token, c = _portal('faculty-service-matters', ['faculty-roster'], 'fac_template@iitmandi.ac.in')
+    blank = APIClient().get('/api/form-schemas/NIRF/sections/faculty-details/template/?blockId=faculty')
+    wb = openpyxl.load_workbook(BytesIO(blank.content))
+    ws = wb['Data']
+    headers = [cell.value for cell in ws[1]]
+    row = {
+        'Name': 'Dr Template', 'Designation': 'Assistant Professor', 'Gender': 'Female',
+        'Qualification': 'Ph.D', 'Experience (In Months)': 60,
+        'Currently working with institution?': 'Yes', 'Joining Date': '2020-07-01',
+        'Association type': 'Regular', 'School / centre (internal)': 'scee',
+        'Employee ID (internal)': 'T-001',
+    }
+    ws.append([row.get(h) for h in headers])
+    filled = BytesIO()
+    wb.save(filled)
+    filled.seek(0)
+    filled.name = 'faculty_template.xlsx'
+
+    res = c.post(f'/api/portal/{token}/forms/faculty-details/records/import/',
+                 {'file': filled, 'blockId': 'faculty'}, format='multipart')
+    assert res.status_code == 200, res.content
+    body = res.json()
+    assert body['created'] == 1 and not body['errors'], body
+    stored = SubmissionRecord.objects.get(row_key='T-001').data
+    assert stored['designation'] == 'assistant_professor'
+    assert stored['gender'] == 'female'
+    assert stored['currentlyWorking'] is True
+
+
+def test_template_refuses_web_form_sections(seeded):
+    res = APIClient().get('/api/form-schemas/NIRF/sections/sanctioned-intake/template/')
+    assert res.status_code == 404
+    assert 'web form' in res.json()['error']

@@ -17,6 +17,7 @@ from .views import (
     AuditLogView,
     ProofRepositoryView,
     ProofDownloadView,
+    RecordsTemplateView,
 )
 
 urlpatterns = [
@@ -25,6 +26,8 @@ urlpatterns = [
     path('form-schemas/<str:framework>', ActiveFormSchemaView.as_view()),
     path('form-schemas/<str:framework>/resolved/', ResolvedFormSchemaView.as_view(), name='resolved_form_schema'),
     path('form-schemas/<str:framework>/resolved', ResolvedFormSchemaView.as_view()),
+    path('form-schemas/<str:framework>/sections/<str:section_id>/template/', RecordsTemplateView.as_view(), name='records_template'),
+    path('form-schemas/<str:framework>/sections/<str:section_id>/template', RecordsTemplateView.as_view()),
 
     # Portal Form Endpoints (Token-Auth)
     path('portal/<str:token>/forms/', PortalFormsView.as_view(), name='portal_forms'),

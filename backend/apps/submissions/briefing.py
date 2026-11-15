@@ -111,6 +111,18 @@ def _table(data: List[List[Any]], col_widths=None, highlight_rows=None) -> Table
     return t
 
 
+def _inr(value) -> str:
+    """Rupee amount in Indian numbering, for prose lines in the briefing."""
+    try:
+        amount = float(value)
+    except (TypeError, ValueError):
+        return '-'
+    if amount >= 1_00_00_000:
+        return f"Rs. {amount / 1_00_00_000:.2f} Cr"
+    if amount >= 1_00_000:
+        return f"Rs. {amount / 1_00_000:.2f} L"
+    return f"Rs. {amount:,.0f}"
+
 def _fmt(val, dash='-', digits=2):
     if val is None:
         return dash
@@ -385,12 +397,12 @@ def generate_briefing_pdf(
             "Ph.D completions.", st['body']))
         story.append(Spacer(1, 3 * mm))
 
-        rows = [['School / Centre', 'Research funding (Rs.)', 'Share', 'Projects',
+        rows = [['School / Centre', 'Research funding', 'Share', 'Projects',
                  'Graduated', 'Placed', 'Placement rate', 'Ph.D out']]
         for d in contrib_rows:
             rows.append([
                 Paragraph(d['shortName'] or d['unitName'], st['cell']),
-                f"{d['researchFundingInr']:,.0f}",
+                _inr(d['researchFundingInr']),
                 f"{d['fundingSharePct']}%" if d['fundingSharePct'] is not None else '-',
                 str(d['researchProjects']),
                 str(int(d['graduated'])),
@@ -405,15 +417,19 @@ def generate_briefing_pdf(
 
         leaders = contrib['leaders']
         bullet_lines = []
-        for key, caption in (
-            ('mostResearchFunding', 'Most research funding'),
-            ('highestPlacementRate', 'Highest placement rate'),
-            ('mostPhdGraduated', 'Most Ph.D completions'),
+        for key, caption, fmt in (
+            ('mostResearchFunding', 'Most research funding', _inr),
+            ('highestPlacementRate', 'Highest placement rate', lambda v: f"{v}%"),
+            ('mostPhdGraduated', 'Most Ph.D completions', lambda v: f"{int(v)}"),
         ):
             led = leaders.get(key)
-            if led:
+            # A "leader" on a metric nobody reported anything for is noise, not
+            # a finding, so a zero value is left out.
+            if led and (led.get('value') or 0) > 0:
                 bullet_lines.append(
-                    f"&bull; <b>{caption}:</b> {led['shortName'] or led['unitName']} ({led['value']})")
+                    f"&bull; <b>{caption}:</b> {led['shortName'] or led['unitName']} "
+                    f"({fmt(led['value'])})"
+                )
         if bullet_lines:
             story.append(Paragraph('<br/>'.join(bullet_lines), st['body']))
 

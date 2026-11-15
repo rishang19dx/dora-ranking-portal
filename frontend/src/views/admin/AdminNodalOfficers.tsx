@@ -78,9 +78,28 @@ function NodalOfficers() {
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch('/api/nodal-officers');
+      const response = await fetch('/api/nodal-officers/');
       if (!response.ok) throw new Error('Unable to load the nodal officer roster.');
-      setData((await response.json()) as RosterPayload);
+      const raw = await response.json();
+      const officers: NodalOfficer[] = Array.isArray(raw) ? raw : (raw.officers ?? []);
+      const coverage: Record<string, UnitCoverage> = raw.coverage ? { ...raw.coverage } : {};
+
+      ORG_UNITS.forEach((unit) => {
+        if (!coverage[unit.id]) {
+          coverage[unit.id] = { unitId: unit.id, officerIds: [], openRequests: 0, pendingRequests: 0 };
+        }
+      });
+
+      officers.forEach((officer) => {
+        if (officer.status === 'REVOKED') return;
+        (officer.unitIds || []).forEach((unitId) => {
+          if (coverage[unitId] && !coverage[unitId].officerIds.includes(officer.id)) {
+            coverage[unitId].officerIds.push(officer.id);
+          }
+        });
+      });
+
+      setData({ officers, coverage });
     } catch (error) {
       showToast((error as Error).message, 'error');
     } finally {
@@ -153,7 +172,7 @@ function NodalOfficers() {
         unitIds: form.unitIds,
       };
       const response = await fetch(
-        editing ? `/api/nodal-officers/${editing.id}` : '/api/nodal-officers',
+        editing ? `/api/nodal-officers/${editing.id}/` : '/api/nodal-officers/',
         {
           method: editing ? 'PATCH' : 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -161,7 +180,16 @@ function NodalOfficers() {
         },
       );
       const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? 'The officer could not be saved.');
+      if (!response.ok) {
+        const errorMsg =
+          body.error ??
+          (typeof body === 'object'
+            ? Object.entries(body)
+                .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+                .join('; ')
+            : 'The officer could not be saved.');
+        throw new Error(errorMsg);
+      }
 
       showToast(
         editing ? 'Nodal officer updated.' : `${payload.name} added to the roster.`,
@@ -180,7 +208,7 @@ function NodalOfficers() {
   const runAccessAction = async (officer: NodalOfficer, action: 'INVITE' | 'REVOKE' | 'RESTORE') => {
     setBusyId(officer.id);
     try {
-      const response = await fetch(`/api/nodal-officers/${officer.id}/access`, {
+      const response = await fetch(`/api/nodal-officers/${officer.id}/access/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
@@ -199,7 +227,7 @@ function NodalOfficers() {
   const removeOfficer = async (officer: NodalOfficer) => {
     setBusyId(officer.id);
     try {
-      const response = await fetch(`/api/nodal-officers/${officer.id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/nodal-officers/${officer.id}/`, { method: 'DELETE' });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error ?? 'The officer could not be removed.');

@@ -23,6 +23,9 @@ echo "Running Django migrations..."
 echo "Seeding Organogram & Nodal Officers..."
 ./venv/bin/python manage.py seed_organogram
 
+echo "Loading NIRF Form Schema..."
+./venv/bin/python manage.py load_form_schema
+
 echo "Collecting Django static files..."
 ./venv/bin/python manage.py collectstatic --noinput
 

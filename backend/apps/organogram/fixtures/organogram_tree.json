@@ -2,8 +2,10 @@
   "id": "iit-mandi",
   "name": "Indian Institute of Technology Mandi",
   "shortName": "IIT Mandi",
+  "kind": "OFFICE",
   "type": "GOVERNANCE",
   "head": "Institute",
+  "email": null,
   "description": "Root of the institute organogram. All ranking data rolls up to this node.",
   "dataScopes": [],
   "children": [
@@ -11,17 +13,21 @@
       "id": "standing-committee",
       "name": "Institute Standing Committee (Recommendations to Board of Governors)",
       "shortName": "ISC",
+      "kind": "OFFICE",
       "type": "GOVERNANCE",
       "head": "Chairperson, Standing Committee",
+      "email": null,
       "description": "Recommends institute-level policy to the Board of Governors.",
       "dataScopes": [
         "governance-records"
-      ]
+      ],
+      "children": []
     },
     {
       "id": "director",
       "name": "Director's Office",
       "shortName": "Director",
+      "kind": "OFFICE",
       "type": "EXECUTIVE",
       "head": "Director",
       "email": "director@iitmandi.ac.in",
@@ -32,94 +38,136 @@
       ],
       "children": [
         {
+          "id": "ranking-cell",
+          "name": "Ranking Cell",
+          "shortName": "RC",
+          "kind": "OFFICE",
+          "type": "ADMINISTRATIVE",
+          "head": "Nodal Officer, Ranking Cell",
+          "email": null,
+          "description": "Institutional ranking data collection, compilation and reporting (functionally under DORA).",
+          "dataScopes": [],
+          "children": []
+        },
+        {
           "id": "execom",
           "name": "Institute ExeCom (All Deans and Registrar)",
           "shortName": "ExeCom",
+          "kind": "OFFICE",
           "type": "EXECUTIVE",
           "head": "Institute Executive Committee",
+          "email": null,
           "description": "Executive committee of all Deans and the Registrar.",
           "dataScopes": [
             "governance-records"
-          ]
+          ],
+          "children": []
         },
         {
           "id": "audit",
           "name": "Audit",
+          "shortName": null,
+          "kind": "OFFICE",
           "type": "FUNCTIONAL",
           "head": "Internal Audit Officer",
+          "email": null,
           "description": "Internal and statutory audit of institute accounts.",
           "dataScopes": [
             "audited-statements"
-          ]
+          ],
+          "children": []
         },
         {
           "id": "recruitment-cell",
           "name": "Recruitment Cell (under Deputy Registrar I)",
           "shortName": "Recruitment",
+          "kind": "OFFICE",
           "type": "ADMINISTRATIVE",
           "head": "Deputy Registrar I",
+          "email": null,
           "description": "Faculty and staff recruitment, sanctioned vs filled positions.",
           "dataScopes": [
             "sanctioned-positions",
             "faculty-roster"
-          ]
+          ],
+          "children": []
         },
         {
           "id": "dean-infra",
           "name": "Dean, Infrastructure & Services",
           "shortName": "Infrastructure",
+          "kind": "OFFICE",
           "type": "ADMINISTRATIVE",
           "head": "Dean, Infrastructure & Services",
           "email": "deaninfra@iitmandi.ac.in",
           "description": "Campus infrastructure, services and utilities.",
           "dataScopes": [
             "campus-infrastructure",
-            "capital-expenditure"
+            "capital-expenditure",
+            "sustainability-practices"
           ],
           "children": [
             {
               "id": "estate-works",
               "name": "Estate & Works",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Superintending Engineer",
+              "email": null,
               "description": "Built-up area, laboratories, classrooms and ongoing works.",
               "dataScopes": [
                 "campus-infrastructure",
-                "capital-expenditure"
-              ]
+                "capital-expenditure",
+                "pcs-facilities",
+                "sustainability-practices"
+              ],
+              "children": []
             },
             {
               "id": "medical-services",
               "name": "Medical Services",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Senior Medical Officer",
+              "email": null,
               "description": "Health centre facilities and medical support for students and staff.",
               "dataScopes": [
                 "campus-infrastructure",
-                "student-facilities"
-              ]
+                "student-facilities",
+                "health-wellbeing-community"
+              ],
+              "children": []
             },
             {
               "id": "it-services",
               "name": "IT Services & Communications",
               "shortName": "IT Services",
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Head, Computer Centre",
+              "email": null,
               "description": "Network, computing facilities, digital learning infrastructure.",
               "dataScopes": [
                 "campus-infrastructure",
                 "digital-learning"
-              ]
+              ],
+              "children": []
             },
             {
               "id": "transport",
               "name": "Transport",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Transport Officer",
+              "email": null,
               "description": "Institute transport fleet and campus mobility.",
               "dataScopes": [
                 "campus-infrastructure"
-              ]
+              ],
+              "children": []
             }
           ]
         },
@@ -127,6 +175,7 @@
           "id": "dean-academics",
           "name": "Dean, Academics",
           "shortName": "Academics",
+          "kind": "OFFICE",
           "type": "ACADEMIC",
           "head": "Dean, Academics",
           "email": "deanacad@iitmandi.ac.in",
@@ -135,50 +184,66 @@
             "student-intake",
             "admissions",
             "graduation-outcomes",
-            "digital-learning"
+            "digital-learning",
+            "nep-iks-governance",
+            "institute-profile"
           ],
           "children": [
             {
               "id": "jee-gate-admissions",
               "name": "JEE, GATE & Admissions",
               "shortName": "Admissions",
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Chairperson, Admissions",
+              "email": null,
               "description": "Entrance examinations, seat matrix, regional and social diversity of intake.",
               "dataScopes": [
                 "admissions",
                 "student-intake",
-                "diversity"
-              ]
+                "diversity",
+                "nep-iks-governance"
+              ],
+              "children": []
             },
             {
               "id": "academic-courses-research",
               "name": "Academic Courses and Research",
               "shortName": "Academic Section",
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Assistant Registrar (Academics)",
+              "email": null,
               "description": "Programme structure, examination results, graduation outcomes.",
               "dataScopes": [
                 "graduation-outcomes",
                 "student-intake",
-                "phd-awarded"
-              ]
+                "phd-awarded",
+                "placement-higher-studies"
+              ],
+              "children": []
             },
             {
               "id": "library",
               "name": "Library",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Librarian",
+              "email": null,
               "description": "Library holdings, e-resource subscriptions and annual library expenditure.",
               "dataScopes": [
                 "library-resources",
-                "operational-expenditure"
-              ]
+                "operational-expenditure",
+                "capital-expenditure"
+              ],
+              "children": []
             },
             {
               "id": "shss",
               "name": "School of Humanities and Social Sciences",
               "shortName": "SHSS",
+              "kind": "SCHOOL",
               "type": "ACADEMIC",
               "head": "Chairperson, SHSS",
               "email": "shssoffice@iitmandi.ac.in",
@@ -189,58 +254,70 @@
                 "phd-awarded",
                 "publications",
                 "placement-higher-studies",
-                "sponsored-projects-school"
+                "sponsored-projects-school",
+                "innovation-education"
               ],
               "children": [
                 {
                   "id": "shss-faculty-body",
                   "name": "School Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
                   "type": "ACADEMIC",
                   "head": "School Faculty Body, SHSS",
+                  "email": null,
                   "description": "Faculty of SHSS. Custodian of individual faculty qualifications and publication records.",
                   "dataScopes": [
                     "faculty-roster",
                     "publications",
                     "phd-awarded"
-                  ]
+                  ],
+                  "children": []
                 }
               ]
             },
             {
               "id": "sbs",
               "name": "School of Biosciences and Bioengineering",
-              "shortName": "SBS",
+              "shortName": "SBBE",
+              "kind": "SCHOOL",
               "type": "ACADEMIC",
-              "head": "Chairperson, SBS",
+              "head": "Chairperson, SBBE",
               "email": "chairsbs@iitmandi.ac.in",
-              "description": "School faculty body - academic programmes, faculty roster and research output for SBS.",
+              "description": "School faculty body - academic programmes, faculty roster and research output for SBBE.",
               "dataScopes": [
                 "student-intake",
                 "faculty-roster",
                 "phd-awarded",
                 "publications",
                 "placement-higher-studies",
-                "sponsored-projects-school"
+                "sponsored-projects-school",
+                "innovation-education"
               ],
               "children": [
                 {
                   "id": "sbs-faculty-body",
                   "name": "School Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
                   "type": "ACADEMIC",
-                  "head": "School Faculty Body, SBS",
-                  "description": "Faculty of SBS. Custodian of individual faculty qualifications and publication records.",
+                  "head": "School Faculty Body, SBBE",
+                  "email": null,
+                  "description": "Faculty of SBBE. Custodian of individual faculty qualifications and publication records.",
                   "dataScopes": [
                     "faculty-roster",
                     "publications",
                     "phd-awarded"
-                  ]
+                  ],
+                  "children": []
                 }
               ]
             },
             {
               "id": "scee",
-              "name": "School of Civil and Environmental Engineering",
+              "name": "School of Computing and Electrical Engineering",
               "shortName": "SCEE",
+              "kind": "SCHOOL",
               "type": "ACADEMIC",
               "head": "Chairperson, SCEE",
               "email": "chairscee@iitmandi.ac.in",
@@ -251,119 +328,33 @@
                 "phd-awarded",
                 "publications",
                 "placement-higher-studies",
-                "sponsored-projects-school"
+                "sponsored-projects-school",
+                "innovation-education"
               ],
               "children": [
                 {
                   "id": "scee-faculty-body",
                   "name": "School Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
                   "type": "ACADEMIC",
                   "head": "School Faculty Body, SCEE",
+                  "email": null,
                   "description": "Faculty of SCEE. Custodian of individual faculty qualifications and publication records.",
                   "dataScopes": [
                     "faculty-roster",
                     "publications",
                     "phd-awarded"
-                  ]
-                }
-              ]
-            },
-            {
-              "id": "se",
-              "name": "School of Engineering",
-              "shortName": "SE",
-              "type": "ACADEMIC",
-              "head": "Chairperson, SE",
-              "description": "School faculty body - academic programmes, faculty roster and research output for SE.",
-              "dataScopes": [
-                "student-intake",
-                "faculty-roster",
-                "phd-awarded",
-                "publications",
-                "placement-higher-studies",
-                "sponsored-projects-school"
-              ],
-              "children": [
-                {
-                  "id": "se-faculty-body",
-                  "name": "School Faculty Body",
-                  "type": "ACADEMIC",
-                  "head": "School Faculty Body, SE",
-                  "description": "Faculty of SE. Custodian of individual faculty qualifications and publication records.",
-                  "dataScopes": [
-                    "faculty-roster",
-                    "publications",
-                    "phd-awarded"
-                  ]
-                }
-              ]
-            },
-            {
-              "id": "smss",
-              "name": "School of Mathematical and Statistical Sciences",
-              "shortName": "SMSS",
-              "type": "ACADEMIC",
-              "head": "Chairperson, SMSS",
-              "email": "chairsmss@iitmandi.ac.in",
-              "description": "School faculty body - academic programmes, faculty roster and research output for SMSS.",
-              "dataScopes": [
-                "student-intake",
-                "faculty-roster",
-                "phd-awarded",
-                "publications",
-                "placement-higher-studies",
-                "sponsored-projects-school"
-              ],
-              "children": [
-                {
-                  "id": "smss-faculty-body",
-                  "name": "School Faculty Body",
-                  "type": "ACADEMIC",
-                  "head": "School Faculty Body, SMSS",
-                  "description": "Faculty of SMSS. Custodian of individual faculty qualifications and publication records.",
-                  "dataScopes": [
-                    "faculty-roster",
-                    "publications",
-                    "phd-awarded"
-                  ]
-                }
-              ]
-            },
-            {
-              "id": "som",
-              "name": "School of Management",
-              "shortName": "SoM",
-              "type": "ACADEMIC",
-              "head": "Chairperson, SoM",
-              "email": "chairsom@iitmandi.ac.in",
-              "description": "School faculty body - academic programmes, faculty roster and research output for SoM.",
-              "dataScopes": [
-                "student-intake",
-                "faculty-roster",
-                "phd-awarded",
-                "publications",
-                "placement-higher-studies",
-                "sponsored-projects-school"
-              ],
-              "children": [
-                {
-                  "id": "som-faculty-body",
-                  "name": "School Faculty Body",
-                  "type": "ACADEMIC",
-                  "head": "School Faculty Body, SoM",
-                  "description": "Faculty of SoM. Custodian of individual faculty qualifications and publication records.",
-                  "dataScopes": [
-                    "faculty-roster",
-                    "publications",
-                    "phd-awarded"
-                  ]
+                  ],
+                  "children": []
                 }
               ]
             },
             {
               "id": "scene",
-              "name": "School of Chemical Sciences and Energy Engineering",
+              "name": "School of Civil and Environmental Engineering",
               "shortName": "SCENE",
+              "kind": "SCHOOL",
               "type": "ACADEMIC",
               "head": "Chairperson, SCENE",
               "email": "chair_scene@iitmandi.ac.in",
@@ -374,20 +365,210 @@
                 "phd-awarded",
                 "publications",
                 "placement-higher-studies",
-                "sponsored-projects-school"
+                "sponsored-projects-school",
+                "innovation-education"
               ],
               "children": [
                 {
                   "id": "scene-faculty-body",
                   "name": "School Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
                   "type": "ACADEMIC",
                   "head": "School Faculty Body, SCENE",
+                  "email": null,
                   "description": "Faculty of SCENE. Custodian of individual faculty qualifications and publication records.",
                   "dataScopes": [
                     "faculty-roster",
                     "publications",
                     "phd-awarded"
-                  ]
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "smss",
+              "name": "School of Mathematical and Statistical Sciences",
+              "shortName": "SMSS",
+              "kind": "SCHOOL",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SMSS",
+              "email": "chairsmss@iitmandi.ac.in",
+              "description": "School faculty body - academic programmes, faculty roster and research output for SMSS.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education"
+              ],
+              "children": [
+                {
+                  "id": "smss-faculty-body",
+                  "name": "School Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SMSS",
+                  "email": null,
+                  "description": "Faculty of SMSS. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "som",
+              "name": "School of Management",
+              "shortName": "SM",
+              "kind": "SCHOOL",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SM",
+              "email": "chairsom@iitmandi.ac.in",
+              "description": "School faculty body - academic programmes, faculty roster and research output for SM.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education"
+              ],
+              "children": [
+                {
+                  "id": "som-faculty-body",
+                  "name": "School Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SM",
+                  "email": null,
+                  "description": "Faculty of SM. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "smme",
+              "name": "School of Mechanical and Materials Engineering",
+              "shortName": "SMME",
+              "kind": "SCHOOL",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SMME",
+              "email": null,
+              "description": "School faculty body - academic programmes, faculty roster and research output for SMME.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education"
+              ],
+              "children": [
+                {
+                  "id": "smme-faculty-body",
+                  "name": "School Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SMME",
+                  "email": null,
+                  "description": "Faculty of SMME. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "scs",
+              "name": "School of Chemical Sciences",
+              "shortName": "SCS",
+              "kind": "SCHOOL",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SCS",
+              "email": null,
+              "description": "School faculty body - academic programmes, faculty roster and research output for SCS.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education"
+              ],
+              "children": [
+                {
+                  "id": "scs-faculty-body",
+                  "name": "School Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SCS",
+                  "email": null,
+                  "description": "Faculty of SCS. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "sps",
+              "name": "School of Physical Sciences",
+              "shortName": "SPS",
+              "kind": "SCHOOL",
+              "type": "ACADEMIC",
+              "head": "Chairperson, SPS",
+              "email": null,
+              "description": "School faculty body - academic programmes, faculty roster and research output for SPS.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education"
+              ],
+              "children": [
+                {
+                  "id": "sps-faculty-body",
+                  "name": "School Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "School Faculty Body, SPS",
+                  "email": null,
+                  "description": "Faculty of SPS. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
                 }
               ]
             },
@@ -395,6 +576,7 @@
               "id": "cqst",
               "name": "Centre for Quantum Science and Technologies",
               "shortName": "CQST",
+              "kind": "CENTRE",
               "type": "ACADEMIC",
               "head": "Coordinator, CQST",
               "email": "chaircqst@iitmandi.ac.in",
@@ -405,20 +587,25 @@
                 "phd-awarded",
                 "publications",
                 "placement-higher-studies",
-                "sponsored-projects-school"
+                "sponsored-projects-school",
+                "innovation-education"
               ],
               "children": [
                 {
                   "id": "cqst-faculty-body",
                   "name": "Centre Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
                   "type": "ACADEMIC",
                   "head": "Centre Faculty Body, CQST",
+                  "email": null,
                   "description": "Faculty of CQST. Custodian of individual faculty qualifications and publication records.",
                   "dataScopes": [
                     "faculty-roster",
                     "publications",
                     "phd-awarded"
-                  ]
+                  ],
+                  "children": []
                 }
               ]
             },
@@ -426,6 +613,7 @@
               "id": "amrc",
               "name": "Advanced Materials Research Centre",
               "shortName": "AMRC",
+              "kind": "CENTRE",
               "type": "ACADEMIC",
               "head": "Coordinator, AMRC",
               "email": "amrc@iitmandi.ac.in",
@@ -436,20 +624,248 @@
                 "phd-awarded",
                 "publications",
                 "placement-higher-studies",
-                "sponsored-projects-school"
+                "sponsored-projects-school",
+                "innovation-education"
               ],
               "children": [
                 {
                   "id": "amrc-faculty-body",
                   "name": "Centre Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
                   "type": "ACADEMIC",
                   "head": "Centre Faculty Body, AMRC",
+                  "email": null,
                   "description": "Faculty of AMRC. Custodian of individual faculty qualifications and publication records.",
                   "dataScopes": [
                     "faculty-roster",
                     "publications",
                     "phd-awarded"
-                  ]
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "iksmha",
+              "name": "Indian Knowledge System and Mental Health Applications Centre",
+              "shortName": "IKSMHA",
+              "kind": "CENTRE",
+              "type": "ACADEMIC",
+              "head": "Coordinator, IKSMHA",
+              "email": null,
+              "description": "Centre faculty body - academic programmes, faculty roster and research output for IKSMHA.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education",
+                "nep-iks-governance"
+              ],
+              "children": [
+                {
+                  "id": "iksmha-faculty-body",
+                  "name": "Centre Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "Centre Faculty Body, IKSMHA",
+                  "email": null,
+                  "description": "Faculty of IKSMHA. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "c3dar",
+              "name": "Centre for Climate Change and Disaster Management",
+              "shortName": "C3DAR",
+              "kind": "CENTRE",
+              "type": "ACADEMIC",
+              "head": "Coordinator, C3DAR",
+              "email": null,
+              "description": "Centre faculty body - academic programmes, faculty roster and research output for C3DAR.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education"
+              ],
+              "children": [
+                {
+                  "id": "c3dar-faculty-body",
+                  "name": "Centre Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "Centre Faculty Body, C3DAR",
+                  "email": null,
+                  "description": "Faculty of C3DAR. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "c4dfed",
+              "name": "Centre for Design & Fabrication of Electronic Device",
+              "shortName": "C4DFED",
+              "kind": "CENTRE",
+              "type": "ACADEMIC",
+              "head": "Coordinator, C4DFED",
+              "email": null,
+              "description": "Centre faculty body - academic programmes, faculty roster and research output for C4DFED.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education"
+              ],
+              "children": [
+                {
+                  "id": "c4dfed-faculty-body",
+                  "name": "Centre Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "Centre Faculty Body, C4DFED",
+                  "email": null,
+                  "description": "Faculty of C4DFED. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "cair",
+              "name": "Centre for Artificial Intelligence and Robotics",
+              "shortName": "CAIR",
+              "kind": "CENTRE",
+              "type": "ACADEMIC",
+              "head": "Coordinator, CAIR",
+              "email": null,
+              "description": "Centre faculty body - academic programmes, faculty roster and research output for CAIR.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education"
+              ],
+              "children": [
+                {
+                  "id": "cair-faculty-body",
+                  "name": "Centre Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "Centre Faculty Body, CAIR",
+                  "email": null,
+                  "description": "Faculty of CAIR. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "chci",
+              "name": "Centre for Human-Computer Interaction",
+              "shortName": "CHCi",
+              "kind": "CENTRE",
+              "type": "ACADEMIC",
+              "head": "Coordinator, CHCi",
+              "email": null,
+              "description": "Centre faculty body - academic programmes, faculty roster and research output for CHCi.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education"
+              ],
+              "children": [
+                {
+                  "id": "chci-faculty-body",
+                  "name": "Centre Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "Centre Faculty Body, CHCi",
+                  "email": null,
+                  "description": "Faculty of CHCi. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "biox",
+              "name": "BioX Centre",
+              "shortName": "BioX",
+              "kind": "CENTRE",
+              "type": "ACADEMIC",
+              "head": "Coordinator, BioX",
+              "email": null,
+              "description": "Centre faculty body - academic programmes, faculty roster and research output for BioX.",
+              "dataScopes": [
+                "student-intake",
+                "faculty-roster",
+                "phd-awarded",
+                "publications",
+                "placement-higher-studies",
+                "sponsored-projects-school",
+                "innovation-education"
+              ],
+              "children": [
+                {
+                  "id": "biox-faculty-body",
+                  "name": "Centre Faculty Body",
+                  "shortName": null,
+                  "kind": "OFFICE",
+                  "type": "ACADEMIC",
+                  "head": "Centre Faculty Body, BioX",
+                  "email": null,
+                  "description": "Faculty of BioX. Custodian of individual faculty qualifications and publication records.",
+                  "dataScopes": [
+                    "faculty-roster",
+                    "publications",
+                    "phd-awarded"
+                  ],
+                  "children": []
                 }
               ]
             }
@@ -459,6 +875,7 @@
           "id": "dean-students",
           "name": "Dean, Student Affairs",
           "shortName": "Student Affairs",
+          "kind": "OFFICE",
           "type": "ADMINISTRATIVE",
           "head": "Dean, Student Affairs",
           "email": "deanstudents@iitmandi.ac.in",
@@ -466,61 +883,114 @@
           "dataScopes": [
             "student-facilities",
             "alumni-contribution",
-            "diversity"
+            "diversity",
+            "pcs-facilities",
+            "health-wellbeing-community"
           ],
           "children": [
             {
               "id": "cultural-activities",
               "name": "Cultural Activities",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Faculty In-charge, Cultural Affairs",
+              "email": null,
               "description": "Cultural festivals, clubs and student societies.",
               "dataScopes": [
-                "student-facilities"
-              ]
+                "student-facilities",
+                "health-wellbeing-community"
+              ],
+              "children": []
             },
             {
               "id": "sports",
               "name": "Sports",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Faculty In-charge, Sports",
+              "email": null,
               "description": "Sports infrastructure, participation and achievements.",
               "dataScopes": [
-                "student-facilities"
-              ]
+                "student-facilities",
+                "health-wellbeing-community"
+              ],
+              "children": []
             },
             {
               "id": "hostels",
               "name": "Hostels",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Chief Warden",
+              "email": null,
               "description": "Hostel capacity, occupancy and residential facilities.",
               "dataScopes": [
                 "student-facilities",
-                "campus-infrastructure"
-              ]
+                "campus-infrastructure",
+                "sustainability-practices"
+              ],
+              "children": []
             },
             {
               "id": "foreign-students",
               "name": "Foreign Students Office",
               "shortName": "International",
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Advisor, International Relations",
+              "email": null,
               "description": "International student enrolment, exchange programmes and MoUs.",
               "dataScopes": [
                 "diversity",
                 "international-outlook"
-              ]
+              ],
+              "children": []
             },
             {
               "id": "alumni-affairs",
               "name": "Alumni Affairs",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Head, Alumni Relations",
+              "email": null,
               "description": "Alumni network, endowments and financial contributions.",
               "dataScopes": [
                 "alumni-contribution"
-              ]
+              ],
+              "children": []
+            },
+            {
+              "id": "cnp-cell",
+              "name": "CnP Cell (Career and Placement)",
+              "shortName": "CnP",
+              "kind": "OFFICE",
+              "type": "FUNCTIONAL",
+              "head": "Faculty In-charge, CnP Cell",
+              "email": null,
+              "description": "Career and placement cell, graduation outcomes and student recruitment.",
+              "dataScopes": [
+                "placement-higher-studies",
+                "graduation-outcomes"
+              ],
+              "children": []
+            },
+            {
+              "id": "womens-cell",
+              "name": "Women's Cell",
+              "shortName": "Women's Cell",
+              "kind": "OFFICE",
+              "type": "FUNCTIONAL",
+              "head": "Chairperson, Women's Cell",
+              "email": null,
+              "description": "Support, safety and gender diversity initiatives.",
+              "dataScopes": [
+                "diversity"
+              ],
+              "children": []
             }
           ]
         },
@@ -528,6 +998,7 @@
           "id": "dean-sric",
           "name": "Dean, Sponsored Research & Industrial Consultancy",
           "shortName": "SRIC",
+          "kind": "OFFICE",
           "type": "ACADEMIC",
           "head": "Dean, SRIC",
           "email": "deansric@iitmandi.ac.in",
@@ -542,44 +1013,88 @@
             {
               "id": "sponsored-research",
               "name": "Sponsored Research",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Associate Dean, Sponsored Research",
+              "email": null,
               "description": "Externally funded research projects and grant receipts.",
               "dataScopes": [
                 "sponsored-projects"
-              ]
+              ],
+              "children": []
             },
             {
               "id": "consultancy",
               "name": "Consultancy",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Associate Dean, Consultancy",
+              "email": null,
               "description": "Industry consultancy projects and earnings.",
               "dataScopes": [
                 "consultancy"
-              ]
+              ],
+              "children": []
             },
             {
               "id": "ipr-entrepreneurship",
               "name": "IPR & Entrepreneurship Policy",
               "shortName": "IPR & Startups",
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Head, IPR Cell",
+              "email": null,
               "description": "Patents filed, published and granted; incubated startups.",
               "dataScopes": [
                 "patents",
                 "entrepreneurship"
-              ]
+              ],
+              "children": []
             },
             {
               "id": "continuing-education",
               "name": "Continuing Education",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Head, Continuing Education",
+              "email": null,
               "description": "Outreach programmes, executive education and short courses.",
               "dataScopes": [
-                "outreach-programmes"
-              ]
+                "outreach-programmes",
+                "innovation-education"
+              ],
+              "children": []
+            },
+            {
+              "id": "catalyst",
+              "name": "IIT Mandi Catalyst",
+              "shortName": "Catalyst",
+              "kind": "OFFICE",
+              "type": "FUNCTIONAL",
+              "head": "Faculty In-charge, Catalyst",
+              "email": null,
+              "description": "Technology business incubator at IIT Mandi.",
+              "dataScopes": [
+                "entrepreneurship"
+              ],
+              "children": []
+            },
+            {
+              "id": "ihub",
+              "name": "IIT Mandi iHub and HCI Foundation",
+              "shortName": "iHub",
+              "kind": "OFFICE",
+              "type": "FUNCTIONAL",
+              "head": "CEO, iHub",
+              "email": null,
+              "description": "Technology Innovation Hub on Human-Computer Interaction.",
+              "dataScopes": [
+                "entrepreneurship"
+              ],
+              "children": []
             }
           ]
         },
@@ -587,6 +1102,7 @@
           "id": "dean-finance",
           "name": "Dean, Finance & Purchase",
           "shortName": "Finance",
+          "kind": "OFFICE",
           "type": "ADMINISTRATIVE",
           "head": "Dean, Finance & Purchase",
           "email": "deanfinance@iitmandi.ac.in",
@@ -600,34 +1116,46 @@
             {
               "id": "budget",
               "name": "Budget",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Deputy Registrar (Finance)",
+              "email": null,
               "description": "Annual budget allocation and utilisation.",
               "dataScopes": [
                 "capital-expenditure",
                 "operational-expenditure"
-              ]
+              ],
+              "children": []
             },
             {
               "id": "stores-purchase",
               "name": "Stores & Purchase",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Assistant Registrar (Stores & Purchase)",
+              "email": null,
               "description": "Equipment procurement and capital asset register.",
               "dataScopes": [
                 "capital-expenditure"
-              ]
+              ],
+              "children": []
             },
             {
               "id": "accounts",
               "name": "Accounts",
+              "shortName": null,
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Assistant Registrar (Accounts)",
+              "email": null,
               "description": "Audited financial statements and expenditure heads.",
               "dataScopes": [
                 "audited-statements",
                 "operational-expenditure"
-              ]
+              ],
+              "children": []
             }
           ]
         },
@@ -635,47 +1163,85 @@
           "id": "dean-faculty",
           "name": "Dean, Faculty",
           "shortName": "Faculty Affairs",
+          "kind": "OFFICE",
           "type": "ADMINISTRATIVE",
           "head": "Dean, Faculty",
           "email": "deanfaculty@iitmandi.ac.in",
           "description": "All service matters and facilities for faculty.",
           "dataScopes": [
             "faculty-roster",
-            "sanctioned-positions"
+            "sanctioned-positions",
+            "innovation-education"
           ],
           "children": [
             {
               "id": "faculty-service-matters",
               "name": "Faculty Service Matters & Facilities",
               "shortName": "Faculty Services",
+              "kind": "OFFICE",
               "type": "FUNCTIONAL",
               "head": "Assistant Registrar (Faculty Affairs)",
+              "email": null,
               "description": "Faculty appointments, qualifications, experience and retention records.",
               "dataScopes": [
                 "faculty-roster",
                 "sanctioned-positions"
-              ]
+              ],
+              "children": []
             }
           ]
         },
         {
           "id": "registrar",
           "name": "Registrar",
+          "shortName": null,
+          "kind": "OFFICE",
           "type": "ADMINISTRATIVE",
           "head": "Registrar",
           "email": "registrar@iitmandi.ac.in",
           "description": "Chief administrative officer of the institute.",
           "dataScopes": [
             "governance-records",
-            "institute-profile"
+            "institute-profile",
+            "nep-iks-governance"
           ],
           "children": [
+            {
+              "id": "reservation-cell",
+              "name": "Reservation Cell",
+              "shortName": "Reservation Cell",
+              "kind": "OFFICE",
+              "type": "FUNCTIONAL",
+              "head": "Liaison Officer, Reservation Cell",
+              "email": null,
+              "description": "Implementation of reservation policies and diversity reporting.",
+              "dataScopes": [
+                "diversity"
+              ],
+              "children": []
+            },
+            {
+              "id": "grievance-redressal-committee",
+              "name": "Grievances Redressal Committee",
+              "shortName": "GRC",
+              "kind": "OFFICE",
+              "type": "GOVERNANCE",
+              "head": "Chairperson, GRC",
+              "email": null,
+              "description": "Staff, faculty and student grievance redressal mechanism.",
+              "dataScopes": [
+                "nep-iks-governance"
+              ],
+              "children": []
+            },
             {
               "id": "deputy-registrar-1",
               "name": "Deputy Registrar I",
               "shortName": "DR-I",
+              "kind": "OFFICE",
               "type": "ADMINISTRATIVE",
               "head": "Deputy Registrar I",
+              "email": null,
               "description": "Establishment matters for non-teaching employees.",
               "dataScopes": [
                 "non-teaching-staff"
@@ -685,8 +1251,10 @@
                   "id": "non-teaching-service",
                   "name": "Service Matters, Non-teaching Employees",
                   "shortName": "Establishment",
+                  "kind": "OFFICE",
                   "type": "FUNCTIONAL",
                   "head": "Assistant Registrar (Establishment)",
+                  "email": null,
                   "description": "Non-teaching staff strength, sanctioned and filled posts.",
                   "dataScopes": [
                     "non-teaching-staff",
@@ -697,12 +1265,15 @@
                       "id": "rti-legal",
                       "name": "RTI, Parliament Questions & Legal Services",
                       "shortName": "RTI & Legal",
+                      "kind": "OFFICE",
                       "type": "FUNCTIONAL",
                       "head": "Public Information Officer",
+                      "email": null,
                       "description": "External queries, RTI responses and legal compliance records.",
                       "dataScopes": [
                         "governance-records"
-                      ]
+                      ],
+                      "children": []
                     }
                   ]
                 }
@@ -712,8 +1283,10 @@
               "id": "deputy-registrar-2",
               "name": "Deputy Registrar II",
               "shortName": "DR-II",
+              "kind": "OFFICE",
               "type": "ADMINISTRATIVE",
               "head": "Deputy Registrar II",
+              "email": null,
               "description": "Statutory bodies and institute public relations.",
               "dataScopes": [
                 "governance-records"
@@ -723,8 +1296,10 @@
                   "id": "statutory-meetings",
                   "name": "Meetings of BoG, Finance Committee & Senate",
                   "shortName": "Statutory Bodies",
+                  "kind": "OFFICE",
                   "type": "FUNCTIONAL",
                   "head": "Assistant Registrar (Council Affairs)",
+                  "email": null,
                   "description": "Minutes and resolutions of statutory bodies.",
                   "dataScopes": [
                     "governance-records"
@@ -734,13 +1309,16 @@
                       "id": "public-relations",
                       "name": "Public Relations & Guest Facilities",
                       "shortName": "Public Relations",
+                      "kind": "OFFICE",
                       "type": "FUNCTIONAL",
                       "head": "Public Relations Officer",
+                      "email": null,
                       "description": "Institute perception, media presence and visitor facilities.",
                       "dataScopes": [
                         "perception",
                         "institute-profile"
-                      ]
+                      ],
+                      "children": []
                     }
                   ]
                 }

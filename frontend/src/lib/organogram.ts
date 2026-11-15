@@ -15,10 +15,13 @@ export type OrgUnitType =
   | 'ADMINISTRATIVE'
   | 'FUNCTIONAL';
 
+export type OrgUnitKind = 'SCHOOL' | 'CENTRE' | 'OFFICE';
+
 export interface OrgUnit {
   id: string;
   name: string;
   shortName?: string;
+  kind?: OrgUnitKind;
   type: OrgUnitType;
   /** Designation of the office holder responsible for the unit. */
   head?: string;
@@ -52,11 +55,13 @@ const school = (
   shortName: string,
   email: string | undefined,
   kind: 'School' | 'Centre',
+  extraScopes: string[] = [],
 ): OrgUnit => ({
   id,
   name,
   shortName,
   type: 'ACADEMIC',
+  kind: kind === 'School' ? 'SCHOOL' : 'CENTRE',
   head: kind === 'School' ? `Chairperson, ${shortName}` : `Coordinator, ${shortName}`,
   email,
   description: `${kind} faculty body - academic programmes, faculty roster and research output for ${shortName}.`,
@@ -67,12 +72,15 @@ const school = (
     'publications',
     'placement-higher-studies',
     'sponsored-projects-school',
+    'innovation-education',
+    ...extraScopes,
   ],
   children: [
     {
       id: `${id}-faculty-body`,
       name: `${kind} Faculty Body`,
       type: 'ACADEMIC',
+      kind: 'OFFICE',
       head: `${kind} Faculty Body, ${shortName}`,
       description: `Faculty of ${shortName}. Custodian of individual faculty qualifications and publication records.`,
       dataScopes: ['faculty-roster', 'publications', 'phd-awarded'],
@@ -109,6 +117,16 @@ export const ORGANOGRAM: OrgUnit = {
       dataScopes: ['governance-records', 'institute-profile'],
       children: [
         {
+          id: 'ranking-cell',
+          name: 'Ranking Cell',
+          shortName: 'RC',
+          type: 'ADMINISTRATIVE',
+          kind: 'OFFICE',
+          head: 'Nodal Officer, Ranking Cell',
+          description: 'Institutional ranking data collection, compilation and reporting (functionally under DORA).',
+          dataScopes: [],
+        },
+        {
           id: 'execom',
           name: 'Institute ExeCom (All Deans and Registrar)',
           shortName: 'ExeCom',
@@ -142,7 +160,7 @@ export const ORGANOGRAM: OrgUnit = {
           head: 'Dean, Infrastructure & Services',
           email: 'deaninfra@iitmandi.ac.in',
           description: 'Campus infrastructure, services and utilities.',
-          dataScopes: ['campus-infrastructure', 'capital-expenditure'],
+          dataScopes: ['campus-infrastructure', 'capital-expenditure', 'sustainability-practices'],
           children: [
             {
               id: 'estate-works',
@@ -150,7 +168,7 @@ export const ORGANOGRAM: OrgUnit = {
               type: 'FUNCTIONAL',
               head: 'Superintending Engineer',
               description: 'Built-up area, laboratories, classrooms and ongoing works.',
-              dataScopes: ['campus-infrastructure', 'capital-expenditure'],
+              dataScopes: ['campus-infrastructure', 'capital-expenditure', 'pcs-facilities', 'sustainability-practices'],
             },
             {
               id: 'medical-services',
@@ -158,7 +176,7 @@ export const ORGANOGRAM: OrgUnit = {
               type: 'FUNCTIONAL',
               head: 'Senior Medical Officer',
               description: 'Health centre facilities and medical support for students and staff.',
-              dataScopes: ['campus-infrastructure', 'student-facilities'],
+              dataScopes: ['campus-infrastructure', 'student-facilities', 'health-wellbeing-community'],
             },
             {
               id: 'it-services',
@@ -187,7 +205,7 @@ export const ORGANOGRAM: OrgUnit = {
           head: 'Dean, Academics',
           email: 'deanacad@iitmandi.ac.in',
           description: 'Admissions, academic programmes, examinations and the library.',
-          dataScopes: ['student-intake', 'admissions', 'graduation-outcomes', 'digital-learning'],
+          dataScopes: ['student-intake', 'admissions', 'graduation-outcomes', 'digital-learning', 'nep-iks-governance', 'institute-profile'],
           children: [
             {
               id: 'jee-gate-admissions',
@@ -196,7 +214,7 @@ export const ORGANOGRAM: OrgUnit = {
               type: 'FUNCTIONAL',
               head: 'Chairperson, Admissions',
               description: 'Entrance examinations, seat matrix, regional and social diversity of intake.',
-              dataScopes: ['admissions', 'student-intake', 'diversity'],
+              dataScopes: ['admissions', 'student-intake', 'diversity', 'nep-iks-governance'],
             },
             {
               id: 'academic-courses-research',
@@ -205,7 +223,7 @@ export const ORGANOGRAM: OrgUnit = {
               type: 'FUNCTIONAL',
               head: 'Assistant Registrar (Academics)',
               description: 'Programme structure, examination results, graduation outcomes.',
-              dataScopes: ['graduation-outcomes', 'student-intake', 'phd-awarded'],
+              dataScopes: ['graduation-outcomes', 'student-intake', 'phd-awarded', 'placement-higher-studies'],
             },
             {
               id: 'library',
@@ -213,17 +231,25 @@ export const ORGANOGRAM: OrgUnit = {
               type: 'FUNCTIONAL',
               head: 'Librarian',
               description: 'Library holdings, e-resource subscriptions and annual library expenditure.',
-              dataScopes: ['library-resources', 'operational-expenditure'],
+              dataScopes: ['library-resources', 'operational-expenditure', 'capital-expenditure'],
             },
             school('shss', 'School of Humanities and Social Sciences', 'SHSS', 'shssoffice@iitmandi.ac.in', 'School'),
-            school('sbs', 'School of Biosciences and Bioengineering', 'SBS', 'chairsbs@iitmandi.ac.in', 'School'),
-            school('scee', 'School of Civil and Environmental Engineering', 'SCEE', 'chairscee@iitmandi.ac.in', 'School'),
-            school('se', 'School of Engineering', 'SE', undefined, 'School'),
+            school('sbs', 'School of Biosciences and Bioengineering', 'SBBE', 'chairsbs@iitmandi.ac.in', 'School'),
+            school('scee', 'School of Computing and Electrical Engineering', 'SCEE', 'chairscee@iitmandi.ac.in', 'School'),
+            school('scene', 'School of Civil and Environmental Engineering', 'SCENE', 'chair_scene@iitmandi.ac.in', 'School'),
             school('smss', 'School of Mathematical and Statistical Sciences', 'SMSS', 'chairsmss@iitmandi.ac.in', 'School'),
-            school('som', 'School of Management', 'SoM', 'chairsom@iitmandi.ac.in', 'School'),
-            school('scene', 'School of Chemical Sciences and Energy Engineering', 'SCENE', 'chair_scene@iitmandi.ac.in', 'School'),
+            school('som', 'School of Management', 'SM', 'chairsom@iitmandi.ac.in', 'School'),
+            school('smme', 'School of Mechanical and Materials Engineering', 'SMME', undefined, 'School'),
+            school('scs', 'School of Chemical Sciences', 'SCS', undefined, 'School'),
+            school('sps', 'School of Physical Sciences', 'SPS', undefined, 'School'),
             school('cqst', 'Centre for Quantum Science and Technologies', 'CQST', 'chaircqst@iitmandi.ac.in', 'Centre'),
             school('amrc', 'Advanced Materials Research Centre', 'AMRC', 'amrc@iitmandi.ac.in', 'Centre'),
+            school('iksmha', 'Indian Knowledge System and Mental Health Applications Centre', 'IKSMHA', undefined, 'Centre', ['nep-iks-governance']),
+            school('c3dar', 'Centre for Climate Change and Disaster Management', 'C3DAR', undefined, 'Centre'),
+            school('c4dfed', 'Centre for Design & Fabrication of Electronic Device', 'C4DFED', undefined, 'Centre'),
+            school('cair', 'Centre for Artificial Intelligence and Robotics', 'CAIR', undefined, 'Centre'),
+            school('chci', 'Centre for Human-Computer Interaction', 'CHCi', undefined, 'Centre'),
+            school('biox', 'BioX Centre', 'BioX', undefined, 'Centre'),
           ],
         },
         {
@@ -234,7 +260,7 @@ export const ORGANOGRAM: OrgUnit = {
           head: 'Dean, Student Affairs',
           email: 'deanstudents@iitmandi.ac.in',
           description: 'Student life, hostels, sports, alumni and international students.',
-          dataScopes: ['student-facilities', 'alumni-contribution', 'diversity'],
+          dataScopes: ['student-facilities', 'alumni-contribution', 'diversity', 'pcs-facilities', 'health-wellbeing-community'],
           children: [
             {
               id: 'cultural-activities',
@@ -242,7 +268,7 @@ export const ORGANOGRAM: OrgUnit = {
               type: 'FUNCTIONAL',
               head: 'Faculty In-charge, Cultural Affairs',
               description: 'Cultural festivals, clubs and student societies.',
-              dataScopes: ['student-facilities'],
+              dataScopes: ['student-facilities', 'health-wellbeing-community'],
             },
             {
               id: 'sports',
@@ -250,7 +276,7 @@ export const ORGANOGRAM: OrgUnit = {
               type: 'FUNCTIONAL',
               head: 'Faculty In-charge, Sports',
               description: 'Sports infrastructure, participation and achievements.',
-              dataScopes: ['student-facilities'],
+              dataScopes: ['student-facilities', 'health-wellbeing-community'],
             },
             {
               id: 'hostels',
@@ -258,7 +284,7 @@ export const ORGANOGRAM: OrgUnit = {
               type: 'FUNCTIONAL',
               head: 'Chief Warden',
               description: 'Hostel capacity, occupancy and residential facilities.',
-              dataScopes: ['student-facilities', 'campus-infrastructure'],
+              dataScopes: ['student-facilities', 'campus-infrastructure', 'sustainability-practices'],
             },
             {
               id: 'foreign-students',
@@ -276,6 +302,26 @@ export const ORGANOGRAM: OrgUnit = {
               head: 'Head, Alumni Relations',
               description: 'Alumni network, endowments and financial contributions.',
               dataScopes: ['alumni-contribution'],
+            },
+            {
+              id: 'cnp-cell',
+              name: 'CnP Cell (Career and Placement)',
+              shortName: 'CnP',
+              type: 'FUNCTIONAL',
+              kind: 'OFFICE',
+              head: 'Faculty In-charge, CnP Cell',
+              description: 'Career and placement cell, graduation outcomes and student recruitment.',
+              dataScopes: ['placement-higher-studies', 'graduation-outcomes'],
+            },
+            {
+              id: 'womens-cell',
+              name: "Women's Cell",
+              shortName: "Women's Cell",
+              type: 'FUNCTIONAL',
+              kind: 'OFFICE',
+              head: "Chairperson, Women's Cell",
+              description: 'Support, safety and gender diversity initiatives.',
+              dataScopes: ['diversity'],
             },
           ],
         },
@@ -320,7 +366,27 @@ export const ORGANOGRAM: OrgUnit = {
               type: 'FUNCTIONAL',
               head: 'Head, Continuing Education',
               description: 'Outreach programmes, executive education and short courses.',
-              dataScopes: ['outreach-programmes'],
+              dataScopes: ['outreach-programmes', 'innovation-education'],
+            },
+            {
+              id: 'catalyst',
+              name: 'IIT Mandi Catalyst',
+              shortName: 'Catalyst',
+              type: 'FUNCTIONAL',
+              kind: 'OFFICE',
+              head: 'Faculty In-charge, Catalyst',
+              description: 'Technology business incubator at IIT Mandi.',
+              dataScopes: ['entrepreneurship'],
+            },
+            {
+              id: 'ihub',
+              name: 'IIT Mandi iHub and HCI Foundation',
+              shortName: 'iHub',
+              type: 'FUNCTIONAL',
+              kind: 'OFFICE',
+              head: 'CEO, iHub',
+              description: 'Technology Innovation Hub on Human-Computer Interaction.',
+              dataScopes: ['entrepreneurship'],
             },
           ],
         },
@@ -368,7 +434,7 @@ export const ORGANOGRAM: OrgUnit = {
           head: 'Dean, Faculty',
           email: 'deanfaculty@iitmandi.ac.in',
           description: 'All service matters and facilities for faculty.',
-          dataScopes: ['faculty-roster', 'sanctioned-positions'],
+          dataScopes: ['faculty-roster', 'sanctioned-positions', 'innovation-education'],
           children: [
             {
               id: 'faculty-service-matters',
@@ -388,8 +454,28 @@ export const ORGANOGRAM: OrgUnit = {
           head: 'Registrar',
           email: 'registrar@iitmandi.ac.in',
           description: 'Chief administrative officer of the institute.',
-          dataScopes: ['governance-records', 'institute-profile'],
+          dataScopes: ['governance-records', 'institute-profile', 'nep-iks-governance'],
           children: [
+            {
+              id: 'reservation-cell',
+              name: 'Reservation Cell',
+              shortName: 'Reservation Cell',
+              type: 'FUNCTIONAL',
+              kind: 'OFFICE',
+              head: 'Liaison Officer, Reservation Cell',
+              description: 'Implementation of reservation policies and diversity reporting.',
+              dataScopes: ['diversity'],
+            },
+            {
+              id: 'grievance-redressal-committee',
+              name: 'Grievances Redressal Committee',
+              shortName: 'GRC',
+              type: 'GOVERNANCE',
+              kind: 'OFFICE',
+              head: 'Chairperson, GRC',
+              description: 'Staff, faculty and student grievance redressal mechanism.',
+              dataScopes: ['nep-iks-governance'],
+            },
             {
               id: 'deputy-registrar-1',
               name: 'Deputy Registrar I',
@@ -547,17 +633,29 @@ export function scopesForUnits(unitIds: string[]): string[] {
   return Array.from(scopes);
 }
 
-/** Schools and centres headed by a Chairperson/Coordinator under Dean, Academics. */
+/** Schools headed by a Chairperson under Dean, Academics. */
 export const SCHOOL_UNIT_IDS = [
-  'shss',
   'sbs',
   'scee',
-  'se',
+  'scene',
+  'shss',
   'smss',
   'som',
-  'scene',
+  'smme',
+  'scs',
+  'sps',
+];
+
+/** Centres headed by a Coordinator under Dean, Academics. */
+export const CENTRE_UNIT_IDS = [
   'cqst',
   'amrc',
+  'iksmha',
+  'c3dar',
+  'c4dfed',
+  'cair',
+  'chci',
+  'biox',
 ];
 
 /** Offices reporting directly to the Director. */

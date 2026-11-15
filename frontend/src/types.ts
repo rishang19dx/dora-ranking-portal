@@ -48,6 +48,7 @@ export interface RankingItem {
   verified: boolean;
   source_url?: string;
   source_document?: string;
+  methodology_notes?: string;
   remarks?: string;
   is_demo?: boolean;
   created_at: string;
@@ -66,6 +67,18 @@ export interface RankingParameter {
   maximum_score: number;
   percentage: number;
   remarks?: string;
+}
+
+export interface ParameterScore {
+  id: string;
+  ranking_id: string;
+  code: string;
+  name: string;
+  max_score: number;
+  score: number;
+  weight: number;
+  category: string;
+  trend?: "up" | "down" | "stable";
 }
 
 export interface RankingDocument {
@@ -94,9 +107,10 @@ export interface NewsUpdate {
 export interface ComparativeData {
   id: string;
   institute_name: string;
-  year: number;
-  agency_name: string;
+  ranking_name: string;
   category_name: string;
+  agency_name: string;
+  year: number;
   rank: number;
   score: number;
   teaching: number;
@@ -122,6 +136,62 @@ export interface AuditLog {
   new_value?: string;
   timestamp: string;
   ip_address?: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  user_name: string;
+  user_role: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  entity_name: string;
+  details?: string;
+  timestamp: string;
+  ip_address?: string;
+}
+
+export interface DocumentProof {
+  id: string;
+  ranking_id: string;
+  ranking_name: string;
+  category: string;
+  title: string;
+  file_name: string;
+  file_size: string;
+  file_type: "pdf" | "xlsx" | "csv" | "docx";
+  uploaded_by: string;
+  uploaded_at: string;
+  verified: boolean;
+  notes?: string;
+}
+
+export interface NewsItem {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  source_url?: string;
+  published_date: string;
+  agency_id?: string;
+  category: "NIRF" | "QS" | "THE" | "General";
+  featured?: boolean;
+}
+
+export interface YearFilter {
+  label: string;
+  value: number | "all";
+}
+
+export interface MetricCardData {
+  title: string;
+  value: string | number;
+  previousValue?: string | number;
+  change?: string;
+  changeType?: "positive" | "negative" | "neutral";
+  subtitle: string;
+  badge?: string;
+  icon: string;
 }
 
 export interface PortalStats {
@@ -154,6 +224,19 @@ export type ViewTab =
   | "about"
   | "admin";
 
+export type ActiveTab =
+  | "overview"
+  | "rankings"
+  | "trends"
+  | "agencies"
+  | "categories"
+  | "parameters"
+  | "documents"
+  | "comparative"
+  | "news"
+  | "about"
+  | "admin";
+
 // Re-export domain modules
 export * from './lib/types';
 export * from './lib/data-catalogue';
@@ -166,6 +249,41 @@ export interface NirfRankItem {
   state: string;
   score: number | null;
   rank: number | string;
+}
+
+export interface MandiYearlyTrend {
+  year: number;
+  rank: number | string;
+  score: number | null;
+  previous_rank?: number | string | null;
+  rank_change?: number;
+  parameters?: {
+    tlr: number;
+    rpc: number;
+    go: number;
+    oi: number;
+    pr: number;
+  };
+  city?: string;
+  state?: string;
+}
+
+export interface PeerInstituteTrend {
+  institute: string;
+  short_name: string;
+  is_target: boolean;
+  ranks: Record<string, number | string>;
+  scores: Record<string, number | null>;
+  latest_rank: number | string | null;
+  latest_score: number | null;
+}
+
+export interface TrendsApiResponse {
+  years: number[];
+  categories: string[];
+  target_institute: string;
+  iit_mandi_trends: Record<string, MandiYearlyTrend[]>;
+  peer_comparison: Record<string, PeerInstituteTrend[]>;
 }
 
 export interface PortalContext {

@@ -22,5 +22,11 @@ backend/venv/
 backend/media/
 backend/staticfiles/
 frontend/dist/
+work_logs/*
 
 
+# Testing coverage artifacts
+.coverage
+.coverage*
+coverage.xml
+htmlcov/

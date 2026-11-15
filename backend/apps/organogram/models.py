@@ -8,10 +8,20 @@ class OrgUnitType(models.TextChoices):
     ADMINISTRATIVE = 'ADMINISTRATIVE', 'Administrative'
     FUNCTIONAL = 'FUNCTIONAL', 'Functional'
 
+class OrgUnitKind(models.TextChoices):
+    SCHOOL = 'SCHOOL', 'School'
+    CENTRE = 'CENTRE', 'Centre'
+    OFFICE = 'OFFICE', 'Office'
+
 class OrgUnit(models.Model):
     id = models.CharField(max_length=128, primary_key=True)
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=128, blank=True, null=True)
+    kind = models.CharField(
+        max_length=32,
+        choices=OrgUnitKind.choices,
+        default=OrgUnitKind.OFFICE
+    )
     type = models.CharField(max_length=32, choices=OrgUnitType.choices)
     head = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
@@ -67,3 +77,23 @@ class NodalOfficer(models.Model):
 
     def __str__(self):
         return f"{self.name} <{self.email}>"
+
+def generate_programme_id():
+    return f"prg_{uuid.uuid4().hex[:12]}"
+
+class Programme(models.Model):
+    id = models.CharField(max_length=64, primary_key=True, default=generate_programme_id)
+    unit = models.ForeignKey(OrgUnit, on_delete=models.CASCADE, related_name='programmes')
+    name = models.CharField(max_length=255)
+    nirf_level = models.CharField(max_length=32)
+    active = models.BooleanField(default=True)
+    start_academic_year = models.CharField(max_length=32, blank=True, null=True)
+    end_academic_year = models.CharField(max_length=32, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['unit', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.nirf_level}) - {self.unit.short_name or self.unit.id}"

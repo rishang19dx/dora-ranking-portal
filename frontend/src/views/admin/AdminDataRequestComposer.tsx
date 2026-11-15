@@ -70,6 +70,81 @@ const PLACEHOLDERS = [
 
 const STEPS = ['Select sections', 'Identify required data', 'Compose & dispatch'];
 
+export const NIRF_CATEGORIES = [
+  {
+    id: 'OVERALL',
+    label: 'Overall',
+    description: '16 sections covering institute-wide metrics',
+    items: [
+      'capital-expenditure',
+      'consultancy',
+      'diversity',
+      'faculty-roster',
+      'graduation-outcomes',
+      'institute-profile',
+      'nep-iks-governance',
+      'operational-expenditure',
+      'outreach-programmes',
+      'patents',
+      'pcs-facilities',
+      'phd-awarded',
+      'placement-higher-studies',
+      'sponsored-projects',
+      'student-intake',
+      'sustainability-practices',
+    ],
+  },
+  {
+    id: 'ENGINEERING',
+    label: 'Engineering',
+    description: '12 disciplines & capex/opex metrics',
+    items: [
+      'capital-expenditure',
+      'consultancy',
+      'diversity',
+      'faculty-roster',
+      'graduation-outcomes',
+      'operational-expenditure',
+      'patents',
+      'pcs-facilities',
+      'phd-awarded',
+      'placement-higher-studies',
+      'sponsored-projects',
+      'student-intake',
+    ],
+  },
+  {
+    id: 'INNOVATION',
+    label: 'Innovation',
+    description: '6 innovation, IPR & entrepreneurship metrics',
+    items: [
+      'diversity',
+      'entrepreneurship',
+      'faculty-roster',
+      'innovation-education',
+      'patents',
+      'student-intake',
+    ],
+  },
+  {
+    id: 'SDG',
+    label: 'SDG (Sustainable Institutions)',
+    description: '10 sustainability, health & green metrics',
+    items: [
+      'consultancy',
+      'diversity',
+      'faculty-roster',
+      'health-wellbeing-community',
+      'patents',
+      'pcs-facilities',
+      'phd-awarded',
+      'sponsored-projects',
+      'student-intake',
+      'sustainability-practices',
+    ],
+  },
+];
+
 export default function NewDataRequestPage() {
   return (
     <Suspense fallback={<div className="h-64 rounded-[2rem] bg-white/60 animate-pulse" />}>
@@ -98,6 +173,7 @@ function NewDataRequest() {
   const nextYear = new Date().getFullYear() + 1;
   const [framework, setFramework] = useState<RankingFramework>('NIRF');
   const [cycleYear, setCycleYear] = useState(nextYear);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['OVERALL', 'ENGINEERING', 'INNOVATION', 'SDG']);
   const [deadline, setDeadline] = useState(() => {
     const date = new Date();
     date.setDate(date.getDate() + 21);
@@ -113,8 +189,9 @@ function NewDataRequest() {
       try {
         const response = await fetch('/api/nodal-officers/');
         if (!response.ok) throw new Error('Unable to load nodal officers.');
-        const body = (await response.json()) as { officers: NodalOfficer[] };
-        setOfficers(body.officers);
+        const raw = await response.json();
+        const officersList: NodalOfficer[] = Array.isArray(raw) ? raw : (raw.officers ?? []);
+        setOfficers(officersList);
       } catch (error) {
         showToast((error as Error).message, 'error');
       }
@@ -140,6 +217,36 @@ function NewDataRequest() {
 
   const uncovered = recipients.filter((row) => row.officers.length === 0);
   const mailCount = recipients.reduce((total, row) => total + row.officers.length, 0);
+
+  const fallbackRecipients = useMemo(() => {
+    return unitIds.filter((unitId) => {
+      const row = recipients.find((r) => r.unitId === unitId);
+      return (!row || row.officers.length === 0) && Boolean(getUnit(unitId)?.email);
+    });
+  }, [recipients, unitIds]);
+
+  const effectiveCount = mailCount + fallbackRecipients.length;
+
+  const toggleCategory = (catId: string) => {
+    setTouchedItems(true);
+    const cat = NIRF_CATEGORIES.find((c) => c.id === catId);
+    if (!cat) return;
+
+    setSelectedCategories((prev) => {
+      const isSelected = prev.includes(catId);
+      const nextCats = isSelected ? prev.filter((id) => id !== catId) : [...prev, catId];
+
+      // Recompute dataItemIds from remaining selected categories
+      const allItemIds = new Set<string>();
+      nextCats.forEach((cId) => {
+        const found = NIRF_CATEGORIES.find((c) => c.id === cId);
+        if (found) found.items.forEach((item) => allItemIds.add(item));
+      });
+      setDataItemIds(Array.from(allItemIds));
+
+      return nextCats;
+    });
+  };
 
   const toggleItem = (id: string) => {
     setTouchedItems(true);
@@ -209,6 +316,17 @@ function NewDataRequest() {
   const dispatch = async () => {
     setDispatching(true);
     try {
+      const normDeadline = deadline ? (deadline.includes('T') ? deadline : `${deadline}T23:59:59Z`) : '';
+      const sections = unitIds.map((unitId) => {
+        const unit = getUnit(unitId);
+        const scopes = unit?.dataScopes ?? [];
+        const owned = dataItemIds.filter((id) => scopes.includes(id));
+        return {
+          unitId,
+          dataItemIds: owned.length > 0 ? owned : dataItemIds,
+        };
+      });
+
       const response = await fetch('/api/data-requests/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -218,22 +336,25 @@ function NewDataRequest() {
           message,
           framework,
           cycleYear,
-          deadline,
+          deadline: normDeadline,
           unitIds,
           dataItemIds,
+          sections,
+          categories: framework === 'NIRF' ? selectedCategories : null,
         }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? 'The request could not be dispatched.');
 
-      const delivered = (body.sent ?? 0) + (body.simulated ?? 0);
+      const req = body.request ?? body;
+      const delivered = (body.sent ?? 0) + (body.simulated ?? 0) || (body.issuedGrants?.length ?? 1);
       showToast(
         body.transport === 'outbox'
-          ? `${body.request.reference} dispatched. ${delivered} message(s) written to the local outbox.`
-          : `${body.request.reference} dispatched to ${delivered} nodal officer(s).`,
+          ? `${req.reference} dispatched. ${delivered} message(s) written to the local outbox.`
+          : `${req.reference} dispatched to ${delivered} nodal officer(s).`,
         'success',
       );
-      navigate(`/admin/data-requests/${body.request.id}`);
+      navigate(`/admin/data-requests/${req.id}`);
     } catch (error) {
       showToast((error as Error).message, 'error');
       setDispatching(false);
@@ -470,6 +591,46 @@ function NewDataRequest() {
                 </div>
               </label>
             </div>
+
+            {framework === 'NIRF' && (
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-900">NIRF Categories Preselection</h3>
+                    <p className="text-xs text-zinc-500">
+                      Toggle categories to automatically include all required sections across Overall, Engineering, Innovation, and SDG.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {NIRF_CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategories.includes(cat.id);
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => toggleCategory(cat.id)}
+                        className={`p-3.5 rounded-2xl border text-left transition-all ${
+                          isSelected
+                            ? 'bg-sage-50/80 border-sage-500/40 shadow-sm ring-1 ring-sage-500/20'
+                            : 'bg-zinc-50/50 border-zinc-200/60 hover:bg-zinc-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-zinc-900">{cat.label}</span>
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              isSelected ? 'bg-sage-600' : 'bg-zinc-300'
+                            }`}
+                          />
+                        </div>
+                        <p className="text-[11px] text-zinc-500 mt-1 leading-snug">{cat.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="bg-white border border-slate-200/50 rounded-[2rem] p-6 md:p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]">
@@ -660,22 +821,26 @@ function NewDataRequest() {
                   }
                 />
               </dl>
-              {uncovered.length > 0 && (
+              {uncovered.length > 0 && mailCount > 0 && (
                 <p className="mt-4 text-xs text-orange-300 leading-relaxed">
-                  {uncovered.length} selected section{uncovered.length === 1 ? '' : 's'} have no
-                  officer and will receive no email.
+                  {uncovered.length} selected section{uncovered.length === 1 ? '' : 's'} have no assigned officer and will be routed to section head/office email.
                 </p>
               )}
               <button
                 onClick={dispatch}
-                disabled={dispatching || mailCount === 0}
+                disabled={dispatching || effectiveCount === 0}
                 className="mt-5 w-full bg-white text-zinc-900 hover:bg-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-3 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
               >
                 {dispatching ? 'Dispatching...' : 'Dispatch request & provision access'}
               </button>
-              {mailCount === 0 && (
+              {mailCount === 0 && fallbackRecipients.length > 0 && (
+                <p className="mt-3 text-xs text-amber-300/90 leading-relaxed">
+                  No assigned nodal officers in selected sections. Invitations will be sent to the section head/office email.
+                </p>
+              )}
+              {effectiveCount === 0 && (
                 <p className="mt-3 text-xs text-zinc-400">
-                  Assign a nodal officer to at least one selected section first.
+                  Assign a nodal officer to at least one selected section or select sections with contact emails.
                 </p>
               )}
             </div>

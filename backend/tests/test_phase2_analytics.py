@@ -275,3 +275,81 @@ def test_briefing_is_denied_to_a_nodal_officer(cycle_with_department_data):
     officer_user = _user('NODAL_OFFICER', 'p2officer')
     res = _client(officer_user).get('/api/nirf/cycles/2027/briefing/')
     assert res.status_code == 403
+
+
+def test_joint_projects_are_counted_once_for_the_institute(cycle_with_department_data):
+    """Spec 2.7: a joint project in two registers is not double-counted."""
+    req = cycle_with_department_data
+    scee_reg = SectionSubmission.objects.get(request=req, org_unit_id='scee',
+                                             section_id='sponsored-project-register')
+    sbs_reg = SectionSubmission.objects.get(request=req, org_unit_id='sbs',
+                                            section_id='sponsored-project-register')
+    joint = {'title': 'Joint bio-sensing', 'fundingAgency': 'DST', 'sanctionOrderNo': 'DST/JNT/42',
+             'receivedFy0': 2_000_000, 'sanctionedAmountInr': 4_000_000}
+    for i, reg in enumerate((scee_reg, sbs_reg)):
+        SubmissionRecord.objects.create(submission=reg, block_id='projects',
+                                        row_key=f'joint{i}', data=dict(joint), position=9)
+
+    admin = _user('ADMIN', 'joint_admin')
+    contrib = _client(admin).get('/api/nirf/cycles/2027/department-analytics/').json()['contribution']
+    by_unit = {d['unitId']: d for d in contrib['departments']}
+    inst = contrib['institute']
+
+    # Each unit keeps the credit for the joint grant...
+    assert by_unit['scee']['researchFundingInr'] == 10_000_000
+    assert by_unit['sbs']['researchFundingInr'] == 3_000_000
+    # ...but the institute counts it once: 8M + 1M + 2M, not 8M + 1M + 2M + 2M.
+    assert inst['totalResearchFundingInr'] == 11_000_000
+    assert inst['creditedResearchFundingInr'] == 13_000_000
+    assert inst['jointProjects'] == 1 and inst['jointProjectFundingInr'] == 2_000_000
+    assert inst['totalResearchProjects'] == 4
+    assert round(sum(d['fundingSharePct'] for d in contrib['departments']), 0) == 100
+
+
+def _approve_register(req, unit_id, amount, graduated=40, placed=30):
+    schema = FormSchema.objects.filter(framework='NIRF', is_active=True).first()
+    reg = SectionSubmission.objects.create(
+        request=req, org_unit_id=unit_id, section_id='sponsored-project-register',
+        schema_version=schema.version, status=SubmissionStatus.APPROVED, payload={},
+    )
+    SubmissionRecord.objects.create(submission=reg, block_id='projects', row_key=f'{unit_id}-p',
+                                    data={'title': f'{unit_id} grant', 'fundingAgency': 'SERB',
+                                          'receivedFy0': amount}, position=1)
+    SectionSubmission.objects.create(
+        request=req, org_unit_id=unit_id, section_id='placement-outcomes',
+        schema_version=schema.version, status=SubmissionStatus.APPROVED,
+        payload={'ug': {'UG4-2025': {'graduated': graduated, 'placed': placed}}},
+    )
+
+
+def _head_of(unit_id, username):
+    user = _user('NODAL_OFFICER', username)
+    officer = NodalOfficer.objects.create(name=f'{unit_id} head', email=user.email,
+                                          status=OfficerStatus.ACTIVE)
+    officer.assigned_units.add(OrgUnit.objects.get(id=unit_id))
+    return _client(user)
+
+
+def test_department_head_benchmark_is_withheld_with_too_few_peers(cycle_with_department_data):
+    """Two reporting units: a median would expose the only peer's figures."""
+    body = _head_of('scee', 'scee_head_few').get('/api/nirf/cycles/2027/department-analytics/').json()
+    assert body['benchmark']['withheld'] is True
+
+
+def test_department_head_gets_anonymous_medians_with_enough_peers(cycle_with_department_data):
+    req = cycle_with_department_data
+    for unit_id, amount in (('scene', 2_000_000), ('smss', 500_000), ('som', 4_000_000)):
+        _approve_register(req, unit_id, amount)
+
+    res = _head_of('scee', 'scee_head_many').get('/api/nirf/cycles/2027/department-analytics/')
+    body = res.json()
+    bench = body['benchmark']
+    assert bench['withheld'] is False and bench['unitsCompared'] == 5
+    # Funding across the five units: 8M, 1M, 2M, 0.5M, 4M -> median 2M.
+    assert bench['medianResearchFundingInr'] == 2_000_000
+    assert bench['medianPlacementRatePct'] is not None
+
+    # No other unit is named anywhere in a department head's response.
+    raw = res.content.decode()
+    for other in ('"sbs"', '"scene"', '"smss"', '"som"'):
+        assert other not in raw, f'{other} leaked into a scoped response'

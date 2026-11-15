@@ -509,6 +509,9 @@ export interface DepartmentAnalyticsResponse {
     institute: {
       departmentsReporting: number;
       totalResearchFundingInr: number;
+      creditedResearchFundingInr?: number;
+      jointProjects?: number;
+      jointProjectFundingInr?: number;
       totalResearchProjects: number;
       totalGraduated: number;
       totalPlaced: number;
@@ -549,6 +552,20 @@ export interface DepartmentAnalyticsResponse {
     }>;
     leaderboard?: Record<string, DepartmentPerformance[]>;
   };
+  /** Anonymous institute medians, present only in a department-scoped view. */
+  benchmark?: DepartmentBenchmark | null;
+}
+
+export interface DepartmentBenchmark {
+  withheld: boolean;
+  reason?: string;
+  unitsCompared?: number;
+  medianResearchFundingInr?: number | null;
+  medianPlacementRatePct?: number | null;
+  medianOutcomeRatePct?: number | null;
+  medianPhdGraduated?: number | null;
+  medianCompletionPct?: number | null;
+  medianFirstPassApprovalPct?: number | null;
 }
 
 // ---------------------------------------------------------------------------

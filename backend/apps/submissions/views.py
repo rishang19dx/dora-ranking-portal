@@ -1431,6 +1431,45 @@ def resolve_visible_units(user, requested_unit_id=None):
 
     return own_units, None
 
+BENCHMARK_MIN_OTHERS = 3
+
+def department_benchmark(cycle_year, request_id, own_units, performance_rows):
+    """
+    Institute medians a department head can measure their unit against (2.16).
+
+    Only medians are exposed and no unit is named, so no other department's
+    data is shown (2.18). Below BENCHMARK_MIN_OTHERS reporting peers even a
+    median would let a head back out a peer's figure, so it is withheld.
+    """
+    from statistics import median
+
+    full = compute_department_contributions(cycle_year, request_id=request_id)
+    others = [d for d in full['departments'] if d['unitId'] not in own_units]
+    if len(others) < BENCHMARK_MIN_OTHERS:
+        return {
+            'withheld': True,
+            'reason': (
+                f'Fewer than {BENCHMARK_MIN_OTHERS} other units have approved returns; '
+                'a benchmark would reveal their figures.'
+            ),
+        }
+
+    def med(values):
+        values = [v for v in values if v is not None]
+        return round(median(values), 2) if values else None
+
+    academic = [d for d in performance_rows if d.get('isAcademicUnit')]
+    return {
+        'withheld': False,
+        'unitsCompared': len(full['departments']),
+        'medianResearchFundingInr': med([d['researchFundingInr'] for d in full['departments']]),
+        'medianPlacementRatePct': med([d['placementRatePct'] for d in full['departments']]),
+        'medianOutcomeRatePct': med([d['outcomeRatePct'] for d in full['departments']]),
+        'medianPhdGraduated': med([d['phdGraduated'] for d in full['departments']]),
+        'medianCompletionPct': med([d['completionPct'] for d in academic]),
+        'medianFirstPassApprovalPct': med([d['firstPassApprovalPct'] for d in academic if d['approved']]),
+    }
+
 class DepartmentAnalyticsView(APIView):
     """
     Department-wise contribution and performance analytics (spec 2.16).
@@ -1462,20 +1501,27 @@ class DepartmentAnalyticsView(APIView):
             cycle_year, request_id=request_id, category_id=category_id
         )
 
+        benchmark = None
         if unit_ids is not None:
             allowed = set(unit_ids)
+            institute_performance = performance
+            performance = dict(performance)
             performance['departments'] = [
-                d for d in performance['departments'] if d['unitId'] in allowed
+                d for d in institute_performance['departments'] if d['unitId'] in allowed
             ]
             # Institute-wide rollups and league tables are not this user's to see.
             performance.pop('leaderboard', None)
             contribution.pop('leaders', None)
+            benchmark = department_benchmark(
+                cycle_year, request_id, allowed, institute_performance['departments']
+            )
 
         return Response({
             'cycleYear': cycle_year,
             'scopedToUnits': unit_ids,
             'contribution': contribution,
             'performance': performance,
+            'benchmark': benchmark,
         })
 
 class BoardroomBriefingView(APIView):

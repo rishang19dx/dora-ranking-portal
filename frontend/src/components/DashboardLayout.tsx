@@ -215,6 +215,7 @@ function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile }: { p
           <>
             <NavItem to="/nodal-officer" icon={<ChartBar weight="duotone" className="w-5 h-5" />} label="My Dashboard" active={pathname === "/nodal-officer"} open={sidebarOpen} />
             <NavItem to="/nodal-officer/submissions/new" icon={<FileText weight="duotone" className="w-5 h-5" />} label="Submit Data" active={pathname.includes("/submissions/new")} open={sidebarOpen} />
+            <NavItem to="/nodal-officer/analytics" icon={<Medal weight="duotone" className="w-5 h-5" />} label="My Analytics" active={pathname.includes("/nodal-officer/analytics")} open={sidebarOpen} />
           </>
         ) : (
           <>

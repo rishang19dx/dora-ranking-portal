@@ -298,6 +298,20 @@ def _latest_year_key(row: Dict[str, Any]) -> Optional[str]:
     return sorted(years)[-1] if years else None
 
 
+def _project_key(data: dict) -> str:
+    """
+    Identity of a sponsored project across unit registers.
+
+    The sanction order number identifies a grant; where it is missing, the
+    normalised title and funding agency stand in.
+    """
+    order = str(data.get('sanctionOrderNo') or '').strip().upper()
+    if order:
+        return f'order:{order}'
+    title = ' '.join(str(data.get('title') or '').lower().split())
+    agency = ' '.join(str(data.get('fundingAgency') or '').lower().split())
+    return f'title:{title}|{agency}'
+
 def compute_department_contributions(
     cycle_year: int,
     request_id: Optional[str] = None,
@@ -332,6 +346,7 @@ def compute_department_contributions(
     )
 
     by_unit: Dict[str, Dict[str, Any]] = {}
+    institute_projects: Dict[str, Dict[str, Any]] = {}
 
     def bucket(sub):
         entry = by_unit.setdefault(sub.org_unit_id, {
@@ -364,6 +379,13 @@ def compute_department_contributions(
         if sub.section_id == 'sponsored-project-register':
             for rec in sub.records.filter(block_id='projects'):
                 data = rec.data if isinstance(rec.data, dict) else {}
+                # A joint project appears in every participating unit's
+                # register. Each unit keeps the credit; the institute total
+                # counts the project once (spec 2.7).
+                project_key = _project_key(data)
+                institute_projects.setdefault(project_key, {
+                    'amount': _num(data.get('receivedFy0')), 'units': set(),
+                })['units'].add(sub.org_unit_id)
                 entry['researchFundingInr'] += _num(data.get('receivedFy0'))
                 entry['sanctionedResearchInr'] += _num(data.get('sanctionedAmountInr'))
                 entry['researchProjects'] += 1
@@ -412,7 +434,11 @@ def compute_department_contributions(
             'fundingPerStudentInr': round(entry['researchFundingInr'] / strength, 2) if strength else None,
         })
 
+    # Shares are of the credited total, so they sum to 100% even when a joint
+    # project credits several units; the institute figure is de-duplicated.
     total_funding = sum(d['researchFundingInr'] for d in departments)
+    deduplicated_funding = sum(p['amount'] for p in institute_projects.values())
+    joint = [p for p in institute_projects.values() if len(p['units']) > 1]
     for d in departments:
         d['fundingSharePct'] = _pct(
             int(d['researchFundingInr']), int(total_funding)
@@ -439,8 +465,11 @@ def compute_department_contributions(
         'departments': sorted(departments, key=lambda d: -d['researchFundingInr']),
         'institute': {
             'departmentsReporting': len(departments),
-            'totalResearchFundingInr': round(total_funding, 2),
-            'totalResearchProjects': sum(d['researchProjects'] for d in departments),
+            'totalResearchFundingInr': round(deduplicated_funding, 2),
+            'creditedResearchFundingInr': round(total_funding, 2),
+            'totalResearchProjects': len(institute_projects),
+            'jointProjects': len(joint),
+            'jointProjectFundingInr': round(sum(p['amount'] for p in joint), 2),
             'totalGraduated': int(sum(d['graduated'] for d in departments)),
             'totalPlaced': int(sum(d['placed'] for d in departments)),
             'totalHigherStudies': int(sum(d['higherStudies'] for d in departments)),

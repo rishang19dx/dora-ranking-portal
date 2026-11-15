@@ -13,6 +13,7 @@ import AdminAuditLog from './views/admin/AdminAuditLog';
 import AdminProofRepository from './views/admin/AdminProofRepository';
 import NodalOfficerPortal from './views/nodal-officer/NodalOfficerPortal';
 import NodalOfficerSubmission from './views/nodal-officer/NodalOfficerSubmission';
+import NodalOfficerAnalytics from './views/nodal-officer/NodalOfficerAnalytics';
 import RestrictedPortalPage from './views/portal/RestrictedPortalPage';
 import { RankingsView } from './views/RankingsView';
 import { DocumentsView } from './views/DocumentsView';
@@ -51,6 +52,7 @@ export default function AppRoutes() {
       <Route path="/nodal-officer" element={<DashboardLayout />}>
         <Route index element={<NodalOfficerPortal />} />
         <Route path="submissions/new" element={<NodalOfficerSubmission />} />
+        <Route path="analytics" element={<NodalOfficerAnalytics />} />
       </Route>
 
       {/* Fallback */}

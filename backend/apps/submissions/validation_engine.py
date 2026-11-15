@@ -3,6 +3,7 @@ Validation and derive engine for NIRF DCS form schemas.
 Enforces type constraints, field requirements, custom validation rules, and computed fields.
 """
 
+import re as _re
 from datetime import datetime, date
 
 def amount_in_words_inr(number) -> str:
@@ -127,6 +128,230 @@ def parse_date(val):
         except Exception:
             return None
 
+NUMERIC_TYPES = {'integer', 'decimal', 'currencyInr', 'percent'}
+OTHER_SENTINEL = 'OTHER'
+
+def _is_blank(value) -> bool:
+    return value is None or (isinstance(value, str) and value.strip() == '')
+
+def _option_values(field_def: dict, enums: dict = None) -> list:
+    options = field_def.get('options')
+    if not options and enums and field_def.get('enum') in (enums or {}):
+        options = enums[field_def['enum']].get('options', [])
+    return [o.get('value') if isinstance(o, dict) else o for o in (options or [])]
+
+def _allows_other(field_def: dict, enums: dict = None) -> bool:
+    if 'allowOther' in field_def:
+        return bool(field_def['allowOther'])
+    if enums and field_def.get('enum') in (enums or {}):
+        return bool(enums[field_def['enum']].get('allowOther'))
+    return False
+
+def check_field_value(field_def: dict, value, enums: dict = None):
+    """
+    Deterministic type and bounds check for one entered value (spec 2.8).
+
+    Returns an error message, or None when the value is acceptable. Blank
+    values pass here - whether a value is *required* is checked separately -
+    and derived values are never checked, since the officer did not type them.
+
+    This is the server's authoritative check: the form renderer constrains
+    inputs too, but anything reaching the API (a scripted client, a stale tab,
+    a spreadsheet import) must be held to the same rules.
+    """
+    if field_def.get('derive') or _is_blank(value):
+        return None
+
+    label = field_def.get('label') or field_def.get('id') or 'Value'
+    ftype = field_def.get('type') or 'text'
+
+    if ftype in NUMERIC_TYPES:
+        if isinstance(value, bool):
+            return f"'{label}' must be a number."
+        try:
+            number = float(str(value).replace(',', '').strip())
+        except (TypeError, ValueError):
+            return f"'{label}' must be a number."
+        if number != number or number in (float('inf'), float('-inf')):
+            return f"'{label}' must be a finite number."
+
+        if ftype == 'integer' and not number.is_integer():
+            return f"'{label}' must be a whole number."
+
+        minimum = field_def.get('min')
+        maximum = field_def.get('max')
+        if ftype == 'percent':
+            minimum = 0 if minimum is None else minimum
+            maximum = 100 if maximum is None else maximum
+        if ftype == 'currencyInr' and minimum is None:
+            minimum = 0
+
+        if minimum is not None and number < minimum:
+            if minimum == 0:
+                return f"'{label}' cannot be negative."
+            return f"'{label}' must be at least {minimum}."
+        if maximum is not None and number > maximum:
+            if ftype == 'percent':
+                return f"'{label}' cannot exceed {maximum}%."
+            return f"'{label}' must be at most {maximum}."
+        return None
+
+    if ftype == 'boolean':
+        if isinstance(value, bool):
+            return None
+        if str(value).strip().lower() in ('true', 'false', 'yes', 'no', '1', '0'):
+            return None
+        return f"'{label}' must be Yes or No."
+
+    if ftype == 'enum':
+        allowed = _option_values(field_def, enums)
+        if not allowed:
+            return None
+        if value in allowed:
+            return None
+        if _allows_other(field_def, enums) and value == OTHER_SENTINEL:
+            return None
+        return f"'{label}' has an unrecognised option: {value!r}."
+
+    if ftype == 'multiEnum':
+        if not isinstance(value, list):
+            return f"'{label}' must be a list of options."
+        allowed = _option_values(field_def, enums)
+        if not allowed:
+            return None
+        other_ok = _allows_other(field_def, enums)
+        bad = [v for v in value if v not in allowed and not (other_ok and v == OTHER_SENTINEL)]
+        if bad:
+            return f"'{label}' has unrecognised option(s): {', '.join(map(str, bad))}."
+        return None
+
+    if ftype == 'year':
+        text = str(value).strip()
+        if not (text.isdigit() and len(text) == 4 and 1900 <= int(text) <= 2100):
+            return f"'{label}' must be a four-digit year."
+        return None
+
+    if ftype == 'date':
+        if parse_date(value) is None:
+            return f"'{label}' must be a valid date."
+        return None
+
+    if ftype in ('text', 'longText'):
+        max_len = field_def.get('maxLength')
+        if max_len is not None and len(str(value)) > max_len:
+            return f"'{label}' must be at most {max_len} characters."
+        return None
+
+    return None
+
+
+# Abbreviations that recur in departmental spreadsheets. Expanded token-wise
+# before matching, so "Asst. Prof." and "Assistant Professor" land on the same
+# canonical option (spec 2.7: normalising variations in designation).
+_TOKEN_EXPANSIONS = {
+    'asst': 'assistant',
+    'assoc': 'associate',
+    'prof': 'professor',
+    'profs': 'professor',
+    'f': 'female',
+    'm': 'male',
+}
+
+def _slug(text) -> str:
+    raw = _re.sub(r'[^a-z0-9]+', ' ', str(text).lower().replace('.', ' ')).split()
+    return '_'.join(_TOKEN_EXPANSIONS.get(tok, tok) for tok in raw)
+
+def normalize_import_value(field_def: dict, raw, enums: dict = None):
+    """
+    Coerce one spreadsheet cell to the schema's canonical representation.
+
+    Spreadsheets carry human text ("Professor", "Yes", "1,20,000"); the form
+    stores canonical values ("professor", True, 120000). Without this step an
+    imported record and a typed one disagree on the same fact.
+
+    Returns (value, other_text). `other_text` is set only when an enum allows
+    'Other' and the cell matched no option. A value that cannot be coerced is
+    returned unchanged so the validator can flag it against the row.
+    """
+    if isinstance(raw, str):
+        raw = raw.strip()
+    if raw is None or raw == '':
+        return None, None
+
+    ftype = field_def.get('type') or 'text'
+
+    if ftype in NUMERIC_TYPES:
+        if isinstance(raw, bool):
+            return raw, None
+        if isinstance(raw, (int, float)):
+            number = float(raw)
+        else:
+            try:
+                number = float(str(raw).replace(',', '').replace('Rs.', '').replace('₹', '').strip())
+            except ValueError:
+                return raw, None
+        if ftype == 'integer' and number.is_integer():
+            return int(number), None
+        return number, None
+
+    if ftype == 'boolean':
+        if isinstance(raw, bool):
+            return raw, None
+        text = str(raw).strip().lower()
+        if text in ('true', 'yes', 'y', '1'):
+            return True, None
+        if text in ('false', 'no', 'n', '0'):
+            return False, None
+        return raw, None
+
+    if ftype == 'enum':
+        options = field_def.get('options')
+        if not options and enums and field_def.get('enum') in enums:
+            options = enums[field_def['enum']].get('options', [])
+        options = options or []
+        target = _slug(raw)
+        for opt in options:
+            value = opt.get('value') if isinstance(opt, dict) else opt
+            label = opt.get('label', value) if isinstance(opt, dict) else opt
+            if raw == value or target in (_slug(value), _slug(label)):
+                return value, None
+        if _allows_other(field_def, enums):
+            return OTHER_SENTINEL, str(raw)
+        return raw, None
+
+    if ftype == 'multiEnum':
+        parts = raw if isinstance(raw, list) else _re.split(r'[;,|]', str(raw))
+        single = dict(field_def, type='enum')
+        out, others = [], []
+        for part in parts:
+            value, other = normalize_import_value(single, part, enums)
+            if value is not None:
+                out.append(value)
+            if other:
+                others.append(other)
+        return out, ('; '.join(others) or None)
+
+    if ftype == 'date':
+        if isinstance(raw, (datetime, date)):
+            return (raw.date() if isinstance(raw, datetime) else raw).isoformat(), None
+        parsed = parse_date(raw)
+        if parsed is None:
+            for fmt in ('%d-%m-%Y', '%d/%m/%Y', '%d.%m.%Y'):
+                try:
+                    parsed = datetime.strptime(str(raw), fmt).date()
+                    break
+                except ValueError:
+                    continue
+        return (parsed.isoformat() if parsed else raw), None
+
+    if ftype == 'year':
+        if isinstance(raw, float) and raw.is_integer():
+            return int(raw), None
+        text = str(raw).strip()
+        return (int(text) if text.isdigit() else raw), None
+
+    return (str(raw) if not isinstance(raw, str) else raw), None
+
 def validate_rule(rule_cfg: dict, row_data: dict) -> bool:
     """
     Evaluates a single validation rule. Returns True if valid, False if violated.
@@ -187,6 +412,7 @@ def validate_block_data(block_def: dict, block_data: any, context: dict = None) 
     if kind == 'questionnaire':
         data_dict = block_data if isinstance(block_data, dict) else {}
         questions = block_def.get('questions', [])
+        enums = (context or {}).get('enums')
         for q in questions:
             qid = q['id']
             val = data_dict.get(qid)
@@ -195,6 +421,16 @@ def validate_block_data(block_def: dict, block_data: any, context: dict = None) 
                     'blockId': block_def['id'],
                     'field': qid,
                     'message': f"'{q['label']}' is required."
+                })
+                continue
+            problem = check_field_value(q, val, enums)
+            if problem:
+                errors.append({'blockId': block_def['id'], 'field': qid, 'message': problem})
+            elif val == OTHER_SENTINEL and _allows_other(q, enums) and _is_blank(data_dict.get(f'{qid}_other')):
+                errors.append({
+                    'blockId': block_def['id'],
+                    'field': f'{qid}_other',
+                    'message': f"Specify the 'Other' option for '{q['label']}'.",
                 })
         for v in block_def.get('validations', []):
             if not validate_rule(v['rule'], data_dict):
@@ -210,28 +446,62 @@ def validate_block_data(block_def: dict, block_data: any, context: dict = None) 
 
     elif kind == 'grid':
         if isinstance(block_data, dict):
-            rows_data = list(block_data.values())
+            keyed_rows = [(k, v) for k, v in block_data.items()]
         elif isinstance(block_data, list):
-            rows_data = block_data
+            keyed_rows = [(_row_id(r, idx), r) for idx, r in enumerate(block_data)]
         else:
-            rows_data = []
+            keyed_rows = []
+        rows_data = [r for _, r in keyed_rows]
 
         col_axis = block_def.get('columnAxis', {})
         fields = block_def.get('resolvedColumns') or col_axis.get('fields', [])
         rules = block_def.get('validations', [])
+        enums = (context or {}).get('enums')
 
-        for idx, row in enumerate(rows_data):
+        # Fixed rows may override the shared cell type (a words row is text)
+        # or be derived entirely; both change what a cell may legally hold.
+        row_defs = {
+            str(r.get('id')): r
+            for r in (block_def.get('rowAxis', {}) or {}).get('rows', []) or []
+            if isinstance(r, dict)
+        }
+
+        for idx, (row_key, row) in enumerate(keyed_rows):
             if isinstance(row, dict):
+                row_def = row_defs.get(str(row_key), {})
+                row_label = row_def.get('label') or row_key
                 for f in fields:
+                    val = row.get(f['id'])
                     if f.get('required') and not f.get('derive'):
-                        val = row.get(f['id'])
                         if val is None or val == '':
                             errors.append({
                                 'blockId': block_def['id'],
-                                'row': idx,
+                                'row': row_key,
                                 'field': f['id'],
                                 'message': f"Field '{f.get('label', f['id'])}' is required."
                             })
+                            continue
+
+                    effective = dict(f)
+                    if row_def.get('derive'):
+                        effective['derive'] = row_def['derive']
+                    if row_def.get('type'):
+                        effective['type'] = row_def['type']
+                        for bound in ('min', 'max'):
+                            effective.pop(bound, None)
+                            if bound in row_def:
+                                effective[bound] = row_def[bound]
+                    # Name the cell the way the officer sees it: row, then column.
+                    if col_axis.get('type') == 'years':
+                        effective['label'] = f"{row_label} ({f.get('label', f['id'])})"
+                    problem = check_field_value(effective, val, enums)
+                    if problem:
+                        errors.append({
+                            'blockId': block_def['id'],
+                            'row': row_key,
+                            'field': f['id'],
+                            'message': problem,
+                        })
 
             # Check row-level validation rules
             for v in rules:
@@ -262,6 +532,7 @@ def validate_block_data(block_def: dict, block_data: any, context: dict = None) 
                 'message': f"At least {min_rows} row(s) required in {block_def.get('title')}."
             })
 
+        enums = (context or {}).get('enums')
         for idx, row in enumerate(records):
             for f in fields:
                 fid = f['id']
@@ -272,6 +543,15 @@ def validate_block_data(block_def: dict, block_data: any, context: dict = None) 
                         'row': idx,
                         'field': fid,
                         'message': f"Field '{f['label']}' is required on row {idx + 1}."
+                    })
+                    continue
+                problem = check_field_value(f, val, enums)
+                if problem:
+                    errors.append({
+                        'blockId': block_def['id'],
+                        'row': idx,
+                        'field': fid,
+                        'message': f"{problem} (row {idx + 1})",
                     })
 
             for v in rules:

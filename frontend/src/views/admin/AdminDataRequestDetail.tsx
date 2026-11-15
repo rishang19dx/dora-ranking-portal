@@ -69,6 +69,8 @@ export default function DataRequestDetailPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<any | null>(null);
   const [correctionModalSubId, setCorrectionModalSubId] = useState<string | null>(null);
   const [correctionComment, setCorrectionComment] = useState('');
+  // The same reason modal serves both decisions that send work back to the maker.
+  const [correctionModalAction, setCorrectionModalAction] = useState<'requestCorrection' | 'reject'>('requestCorrection');
   const [performingAction, setPerformingAction] = useState(false);
 
   // Rollup & Export state
@@ -170,7 +172,7 @@ export default function DataRequestDetailPage() {
     }
   };
 
-  const handleSubmissionAction = async (subId: string, action: 'approve' | 'requestCorrection' | 'reopen', comment?: string) => {
+  const handleSubmissionAction = async (subId: string, action: 'approve' | 'reject' | 'requestCorrection' | 'reopen', comment?: string) => {
     setPerformingAction(true);
     try {
       const res = await fetch(`/api/submissions/${subId}/actions/`, {
@@ -185,7 +187,13 @@ export default function DataRequestDetailPage() {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || 'Action failed');
 
-      showToast(`Submission ${action === 'approve' ? 'approved' : action === 'requestCorrection' ? 'sent back for correction' : 'reopened'}`, 'success');
+      const outcome = {
+        approve: 'approved',
+        reject: 'rejected and returned to the nodal officer',
+        requestCorrection: 'sent back for correction',
+        reopen: 'reopened',
+      }[action];
+      showToast(`Submission ${outcome}`, 'success');
       setCorrectionModalSubId(null);
       setCorrectionComment('');
       load();
@@ -548,7 +556,21 @@ export default function DataRequestDetailPage() {
                               <button
                                 type="button"
                                 disabled={performingAction}
-                                onClick={() => setCorrectionModalSubId(sub.id)}
+                                onClick={() => {
+                                  setCorrectionModalAction('reject');
+                                  setCorrectionModalSubId(sub.id);
+                                }}
+                                className="px-2.5 py-1 text-xs font-semibold text-white bg-dusty-rose-700 hover:bg-dusty-rose-800 rounded-lg"
+                              >
+                                Reject
+                              </button>
+                              <button
+                                type="button"
+                                disabled={performingAction}
+                                onClick={() => {
+                                  setCorrectionModalAction('requestCorrection');
+                                  setCorrectionModalSubId(sub.id);
+                                }}
                                 className="px-2.5 py-1 text-xs font-semibold text-dusty-rose-700 bg-dusty-rose-50 hover:bg-dusty-rose-100 rounded-lg"
                               >
                                 Request Fix
@@ -826,9 +848,13 @@ export default function DataRequestDetailPage() {
       {correctionModalSubId && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-[2rem] max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="font-bold text-zinc-900">Request Data Correction</h3>
+            <h3 className="font-bold text-zinc-900">
+              {correctionModalAction === 'reject' ? 'Reject Submission' : 'Request Data Correction'}
+            </h3>
             <p className="text-xs text-zinc-500">
-              Provide feedback for the nodal officer detailing the figures or records that require amendment.
+              {correctionModalAction === 'reject'
+                ? 'Record why this submission is rejected. It returns to the nodal officer, and the decision is written to the audit trail.'
+                : 'Provide feedback for the nodal officer detailing the figures or records that require amendment.'}
             </p>
             <textarea
               value={correctionComment}
@@ -849,11 +875,11 @@ export default function DataRequestDetailPage() {
                 type="button"
                 disabled={!correctionComment.trim() || performingAction}
                 onClick={() =>
-                  handleSubmissionAction(correctionModalSubId, 'requestCorrection', correctionComment)
+                  handleSubmissionAction(correctionModalSubId, correctionModalAction, correctionComment)
                 }
                 className="px-4 py-2 text-xs font-semibold text-white bg-dusty-rose-700 hover:bg-dusty-rose-800 disabled:opacity-50 rounded-xl"
               >
-                Send Request
+                {correctionModalAction === 'reject' ? 'Reject' : 'Send Request'}
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import json
 import csv
 import io
 import copy
+import hashlib
 import openpyxl
 from datetime import datetime
 from django.utils import timezone
@@ -42,10 +43,13 @@ from .validation_engine import (
     validate_block_data,
     evaluate_derive,
     apply_block_derives,
+    check_field_value,
+    normalize_import_value,
 )
 from .cross_checks import run_cross_checks
 from .analytics import compute_department_analytics, compute_department_contributions
 from .briefing import generate_briefing_pdf
+from .audit import diff_payload, diff_record, schema_pii_fields
 from .rollup import compute_category_rollup
 from .dcs_export import generate_category_excel
 
@@ -575,6 +579,16 @@ class PortalFormSaveView(APIView):
         payload = request.data.get('payload', sub.payload)
         not_applicable = request.data.get('notApplicable', sub.not_applicable)
 
+        # Snapshot before anything is overwritten, for the audit diff.
+        previous_payload = copy.deepcopy(sub.payload) if isinstance(sub.payload, dict) else {}
+        previous_not_applicable = sub.not_applicable
+        audit_schema = FormSchema.objects.filter(framework='NIRF', is_active=True).first()
+        audit_sec_def = next(
+            (sd for sd in (audit_schema.content.get('sections', []) if audit_schema else [])
+             if sd['id'] == section_id),
+            None,
+        )
+
         sub.payload = payload
         sub.not_applicable = not_applicable
 
@@ -598,7 +612,8 @@ class PortalFormSaveView(APIView):
         sub.revision += 1
         sub.save()
 
-        # Audit log (PII-free)
+        # Audit log: old and new value of every changed cell (spec 2.11), with
+        # personal fields redacted per the schema's pii flags.
         SubmissionAuditLog.objects.create(
             submission=sub,
             actor_type='OFFICER',
@@ -607,7 +622,9 @@ class PortalFormSaveView(APIView):
             delta={
                 'revision': sub.revision,
                 'notApplicable': sub.not_applicable,
+                'notApplicableChanged': previous_not_applicable != sub.not_applicable,
                 'blockKeys': list(payload.keys()) if isinstance(payload, dict) else [],
+                **diff_payload(previous_payload, sub.payload, schema_pii_fields(audit_sec_def)),
             }
         )
 
@@ -672,7 +689,10 @@ class PortalFormSubmitView(APIView):
                 else:
                     b_data = sub.payload.get(b_id, {} if blk['kind'] == 'grid' else {})
 
-                errs, warns = validate_block_data(blk, b_data, {'submittingUnitId': grant.org_unit.id})
+                errs, warns = validate_block_data(
+                    blk, b_data,
+                    {'submittingUnitId': grant.org_unit.id, 'enums': schema.get('enums', {})},
+                )
                 all_errors.extend(errs)
                 all_warnings.extend(warns)
 
@@ -820,28 +840,83 @@ class PortalRecordsImportView(APIView):
             return Response({'error': 'Unsupported file format. Please upload .csv or .xlsx'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Field matching
+        enums = schema_obj.content.get('enums', {})
         field_defs = target_block.get('fields', [])
+        fields_by_id = {f['id']: f for f in field_defs}
         alias_map = {}
         for f in field_defs:
             fid = f['id']
             alias_map[fid.lower()] = fid
-            alias_map[f.get('label', '').lower().replace(' ', '')] = fid
+            alias_map[f.get('label', '').lower().replace(' ', '').replace('_', '')] = fid
 
+        def canonical_header(header):
+            return alias_map.get(str(header).strip().lower().replace(' ', '').replace('_', ''))
+
+        # Spec 2.8: a sheet missing a mandatory column is rejected outright,
+        # rather than producing a record set with that field silently blank.
+        headers = set()
+        for r in rows:
+            headers.update(h for h in (canonical_header(k) for k in r.keys()) if h)
+        required_ids = [
+            f['id'] for f in field_defs
+            if f.get('required') and not f.get('derive') and f['id'] != 'unitId'
+        ]
+        missing_columns = [fid for fid in required_ids if fid not in headers]
+        if rows and missing_columns:
+            return Response({
+                'error': 'The sheet is missing mandatory column(s).',
+                'missingColumns': [
+                    {'field': fid, 'label': fields_by_id[fid].get('label', fid)}
+                    for fid in missing_columns
+                ],
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        pii = schema_pii_fields(sec_def)
         created_count = 0
         updated_count = 0
+        skipped_empty = 0
         errors = []
+        record_changes = []
 
         for idx, r in enumerate(rows, start=1):
+            # Spreadsheet row numbers, counting the header row.
+            sheet_row = idx + 1
+            if not any(v not in (None, '') and str(v).strip() for v in r.values()):
+                skipped_empty += 1
+                continue
+
             normalized = {}
             for k, v in r.items():
-                clean_k = str(k).strip().lower().replace(' ', '').replace('_', '')
-                if clean_k in alias_map:
-                    target_id = alias_map[clean_k]
-                    normalized[target_id] = v
+                target_id = canonical_header(k)
+                if not target_id:
+                    continue
+                value, other_text = normalize_import_value(fields_by_id[target_id], v, enums)
+                normalized[target_id] = value
+                if other_text:
+                    normalized[f'{target_id}_other'] = other_text
 
             row_key_val = normalized.get(row_key_field)
-            if not row_key_val:
-                errors.append({'row': idx, 'error': f"Missing unique key '{row_key_field}'."})
+            if row_key_val in (None, ''):
+                errors.append({'row': sheet_row, 'field': row_key_field,
+                               'error': f"Missing unique key '{row_key_field}'."})
+                continue
+
+            # Spec 2.8: corrupted or out-of-range cells are flagged against the
+            # sheet row and the row is not written, so bad data never lands.
+            row_errors = []
+            for fid, f in fields_by_id.items():
+                if f.get('derive'):
+                    continue
+                val = normalized.get(fid)
+                if f.get('required') and fid != 'unitId' and (val is None or str(val).strip() == ''):
+                    row_errors.append({'row': sheet_row, 'field': fid,
+                                       'error': f"'{f.get('label', fid)}' is required."})
+                    continue
+                problem = check_field_value(f, val, enums)
+                if problem:
+                    row_errors.append({'row': sheet_row, 'field': fid, 'error': problem})
+            if row_errors:
+                errors.extend(row_errors)
                 continue
 
             # Check unit assignment for faculty or records with unitId
@@ -849,6 +924,15 @@ class PortalRecordsImportView(APIView):
             unit_obj = None
             if unit_val:
                 unit_obj = OrgUnit.objects.filter(id=unit_val).first()
+                if unit_obj is None:
+                    errors.append({'row': sheet_row, 'field': 'unitId',
+                                   'error': f"Unknown school / centre '{unit_val}'."})
+                    continue
+
+            existing = SubmissionRecord.objects.filter(
+                submission=sub, block_id=b_id, row_key=str(row_key_val)
+            ).first()
+            previous_data = dict(existing.data) if existing and isinstance(existing.data, dict) else None
 
             rec, created = SubmissionRecord.objects.update_or_create(
                 submission=sub,
@@ -865,7 +949,16 @@ class PortalRecordsImportView(APIView):
             else:
                 updated_count += 1
 
-        # Audit log (PII-free)
+            # Row keys are often personal (employee IDs), so redact them too.
+            key_label = '[redacted]' if row_key_field in pii else str(row_key_val)
+            changes = diff_record(previous_data, normalized, pii)
+            if changes and len(record_changes) < 200:
+                record_changes.append({
+                    'rowKey': key_label,
+                    'created': created,
+                    'changes': changes,
+                })
+
         SubmissionAuditLog.objects.create(
             submission=sub,
             actor_type='OFFICER',
@@ -876,6 +969,8 @@ class PortalRecordsImportView(APIView):
                 'createdCount': created_count,
                 'updatedCount': updated_count,
                 'errorCount': len(errors),
+                'skippedEmptyRows': skipped_empty,
+                'records': record_changes,
             }
         )
 
@@ -883,6 +978,7 @@ class PortalRecordsImportView(APIView):
             'created': created_count,
             'updated': updated_count,
             'errors': errors,
+            'skippedEmptyRows': skipped_empty,
             'totalProcessed': len(rows),
         })
 
@@ -994,80 +1090,100 @@ class AdminSubmissionDetailView(APIView):
         return Response(data)
 
 class AdminSubmissionActionView(APIView):
+    """
+    The checker's half of maker-checker (spec 2.10).
+
+    Each decision is only legal from specific states, so a checker cannot, for
+    example, approve a draft the maker never submitted. Every decision is
+    written to the audit trail with the state it moved the submission from and
+    to (spec 2.11).
+
+    - `approve`            SUBMITTED -> APPROVED. Data is final only here.
+    - `reject`             SUBMITTED -> CORRECTION_REQUESTED. The checker's
+                           explicit "Reject" on a submission; reason required.
+    - `requestCorrection`  SUBMITTED -> CORRECTION_REQUESTED. Raising a
+                           correction request against a flagged error.
+    - `reopen`             APPROVED / CORRECTION_REQUESTED -> DRAFT. An
+                           audited override to unlock a settled submission.
+    """
     permission_classes = [IsAdminOrDirector]
+
+    TRANSITIONS = {
+        'approve': ({SubmissionStatus.SUBMITTED}, SubmissionStatus.APPROVED, 'APPROVE', False),
+        'reject': ({SubmissionStatus.SUBMITTED}, SubmissionStatus.CORRECTION_REQUESTED, 'REJECT', True),
+        'requestCorrection': (
+            {SubmissionStatus.SUBMITTED}, SubmissionStatus.CORRECTION_REQUESTED, 'REQUEST_CORRECTION', True,
+        ),
+        'reopen': (
+            {SubmissionStatus.APPROVED, SubmissionStatus.CORRECTION_REQUESTED},
+            SubmissionStatus.DRAFT, 'REOPEN', False,
+        ),
+    }
 
     def post(self, request, pk):
         sub = get_object_or_404(SectionSubmission, pk=pk)
         action = request.data.get('action')
-        comment = request.data.get('comment', '').strip()
+        comment = (request.data.get('comment') or '').strip()
 
-        if action == 'approve':
-            # Check faculty-unit-confirmation if section is faculty-details
-            if sub.section_id == 'faculty-details':
-                unit_ids = set(sub.records.filter(block_id='faculty').values_list('unit_id', flat=True))
-                unit_ids.discard(None)
-                if unit_ids:
-                    confirmed = set(RecordVerification.objects.filter(
-                        submission=sub,
-                        unit_id__in=unit_ids,
-                        status=VerificationStatus.CONFIRMED
-                    ).values_list('unit_id', flat=True))
-                    unconfirmed = unit_ids - confirmed
-                    if unconfirmed:
-                        return Response({
-                            'error': f"Cannot approve faculty details: Confirmation pending from units: {', '.join(sorted(unconfirmed))}."
-                        }, status=status.HTTP_400_BAD_REQUEST)
+        if action not in self.TRANSITIONS:
+            return Response({'error': f"Unknown action: '{action}'"}, status=status.HTTP_400_BAD_REQUEST)
 
-            sub.status = SubmissionStatus.APPROVED
+        allowed_from, to_status, audit_action, needs_comment = self.TRANSITIONS[action]
+        from_status = sub.status
+
+        if from_status not in allowed_from:
+            return Response({
+                'error': (
+                    f"Cannot {action} a submission that is '{from_status}'. "
+                    f"Allowed from: {', '.join(sorted(allowed_from))}."
+                ),
+            }, status=status.HTTP_409_CONFLICT)
+
+        if needs_comment and not comment:
+            reason = 'rejecting' if action == 'reject' else 'requesting corrections'
+            return Response({'error': f'A comment is required when {reason}.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if action == 'approve' and sub.section_id == 'faculty-details':
+            unit_ids = set(sub.records.filter(block_id='faculty').values_list('unit_id', flat=True))
+            unit_ids.discard(None)
+            if unit_ids:
+                confirmed = set(RecordVerification.objects.filter(
+                    submission=sub,
+                    unit_id__in=unit_ids,
+                    status=VerificationStatus.CONFIRMED
+                ).values_list('unit_id', flat=True))
+                unconfirmed = unit_ids - confirmed
+                if unconfirmed:
+                    return Response({
+                        'error': f"Cannot approve faculty details: Confirmation pending from units: {', '.join(sorted(unconfirmed))}."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+        sub.status = to_status
+        sub.review_comment = comment
+        if action in ('approve', 'reject', 'requestCorrection'):
             sub.reviewed_by = request.user
             sub.reviewed_at = timezone.now()
-            sub.review_comment = comment
-            sub.save()
+        sub.save()
 
-            SubmissionAuditLog.objects.create(
-                submission=sub,
-                actor_type='ADMIN',
-                actor_id=str(request.user.id),
-                action='APPROVE',
-                delta={'comment': comment}
-            )
-
-        elif action == 'requestCorrection':
-            if not comment:
-                return Response({'error': 'Comment is required when requesting corrections.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            sub.status = SubmissionStatus.CORRECTION_REQUESTED
-            sub.review_comment = comment
-            sub.save()
-
+        if to_status == SubmissionStatus.CORRECTION_REQUESTED:
             target = DataRequestTarget.objects.filter(request=sub.request, org_unit=sub.org_unit).first()
             if target:
                 target.status = TargetStatus.PARTIAL
                 target.save(update_fields=['status'])
 
-            SubmissionAuditLog.objects.create(
-                submission=sub,
-                actor_type='ADMIN',
-                actor_id=str(request.user.id),
-                action='REQUEST_CORRECTION',
-                delta={'comment': comment}
-            )
-
-        elif action == 'reopen':
-            sub.status = SubmissionStatus.DRAFT
-            sub.review_comment = comment
-            sub.save()
-
-            SubmissionAuditLog.objects.create(
-                submission=sub,
-                actor_type='ADMIN',
-                actor_id=str(request.user.id),
-                action='REOPEN',
-                delta={'comment': comment}
-            )
-
-        else:
-            return Response({'error': f"Unknown action: '{action}'"}, status=status.HTTP_400_BAD_REQUEST)
+        SubmissionAuditLog.objects.create(
+            submission=sub,
+            actor_type='ADMIN',
+            actor_id=str(request.user.id),
+            action=audit_action,
+            delta={
+                'comment': comment,
+                'fromStatus': from_status,
+                'toStatus': to_status,
+                'revision': sub.revision,
+            }
+        )
 
         return Response(SectionSubmissionSerializer(sub).data)
 
@@ -1210,9 +1326,34 @@ class BoardroomBriefingView(APIView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         filename = f"DORA_Boardroom_Briefing_NIRF_{cycle_year}.pdf"
+        audit_export(
+            request, 'boardroom-briefing', pdf.getvalue(),
+            cycleYear=cycle_year, rankingYear=ranking_year,
+            requestId=request.query_params.get('requestId'), filename=filename,
+        )
         response = HttpResponse(pdf.getvalue(), content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
+
+
+def audit_export(request, kind: str, payload: bytes, **details):
+    """
+    Records an export in the audit trail (spec 2.11 lists export alongside
+    create/edit/approve/reject). The SHA-256 of the exact bytes handed out is
+    kept, so a file that later turns up can be matched to who generated it.
+    """
+    SubmissionAuditLog.objects.create(
+        submission=None,
+        actor_type='ADMIN',
+        actor_id=str(getattr(request.user, 'id', '') or ''),
+        action='EXPORT',
+        delta={
+            'kind': kind,
+            'sha256': hashlib.sha256(payload).hexdigest(),
+            'bytes': len(payload),
+            **details,
+        },
+    )
 
 class NirfExportView(APIView):
     permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
@@ -1225,6 +1366,11 @@ class NirfExportView(APIView):
         try:
             excel_buffer = generate_category_excel(category, int(year), request_id, allow_partial)
             filename = f"NIRF_{year}_{category}_DCS_IIT_Mandi.xlsx"
+            audit_export(
+                request, 'dcs-excel', excel_buffer.getvalue(),
+                category=category, cycleYear=int(year), requestId=request_id,
+                allowPartial=allow_partial, filename=filename,
+            )
             response = HttpResponse(
                 excel_buffer.getvalue(),
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

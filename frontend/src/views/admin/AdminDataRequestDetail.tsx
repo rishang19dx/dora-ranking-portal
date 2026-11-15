@@ -21,6 +21,8 @@ import {
 import { FileSpreadsheet } from 'lucide-react';
 
 import { ORG_TYPE_STYLES } from '../../components/organogram/OrgTree';
+import { proofService } from '../../services/api';
+import type { ProofEntry } from '../../types';
 import { useToast } from '../../components/ToastProvider';
 import { dataItemLabel } from '../../lib/data-catalogue';
 import { getUnit, unitLabel, ORG_UNITS } from '../../lib/organogram';
@@ -823,6 +825,46 @@ export default function DataRequestDetailPage() {
                 {selectedSubmission.warningNote}
               </div>
             )}
+
+            {/* Provenance: the proofs these figures rest on (spec 2.4) */}
+            <div>
+              <span className="text-xs font-semibold text-zinc-700 block mb-1">
+                Supporting evidence ({(selectedSubmission.proofs ?? []).length})
+              </span>
+              {(selectedSubmission.proofs ?? []).length ? (
+                <ul className="divide-y divide-slate-100 border border-slate-200/70 rounded-xl">
+                  {(selectedSubmission.proofs as ProofEntry[]).map((p) => (
+                    <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium text-zinc-900 truncate">{p.fileName}</div>
+                        <div className="text-[11px] text-zinc-500">
+                          {p.dataItemId} · {new Date(p.uploadedAt).toLocaleString('en-IN')}
+                          {p.uploadedBy ? ` · ${p.uploadedBy}` : ''}
+                          {p.note ? ` · “${p.note}”` : ''}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                          p.isLatest ? 'bg-sage-50 text-sage-700' : 'bg-zinc-100 text-zinc-500'
+                        }`}>
+                          v{p.version}/{p.versionCount}{p.isLatest ? ' current' : ''}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => proofService.download(p.id, p.fileName).catch(() =>
+                            showToast('Could not download the proof.', 'error'))}
+                          className="text-[11px] font-semibold text-sage-700 hover:underline"
+                        >
+                          Download
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-zinc-500">No proofs uploaded for this section yet.</p>
+              )}
+            </div>
 
             <div>
               <span className="text-xs font-semibold text-zinc-700 block mb-1">Raw Payload (JSON):</span>

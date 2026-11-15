@@ -15,6 +15,8 @@ from .views import (
     DepartmentAnalyticsView,
     BoardroomBriefingView,
     AuditLogView,
+    ProofRepositoryView,
+    ProofDownloadView,
 )
 
 urlpatterns = [
@@ -43,6 +45,12 @@ urlpatterns = [
     path('submissions/<str:pk>', AdminSubmissionDetailView.as_view()),
     path('submissions/<str:pk>/actions/', AdminSubmissionActionView.as_view(), name='admin_submission_action'),
     path('submissions/<str:pk>/actions', AdminSubmissionActionView.as_view()),
+
+    # Proof repository and authenticated download (spec 2.4)
+    path('proofs/', ProofRepositoryView.as_view(), name='proof_repository'),
+    path('proofs', ProofRepositoryView.as_view()),
+    path('proofs/<str:pk>/download/', ProofDownloadView.as_view(), name='proof_download'),
+    path('proofs/<str:pk>/download', ProofDownloadView.as_view()),
 
     # Audit trail (auditor interface, spec 2.11)
     path('audit-log/', AuditLogView.as_view(), name='audit_log'),

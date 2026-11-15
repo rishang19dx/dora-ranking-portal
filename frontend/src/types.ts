@@ -598,3 +598,36 @@ export interface AuditLogResponse {
   actions: string[];
 }
 
+// ---------------------------------------------------------------------------
+// Proof repository & provenance (spec 2.4)
+// ---------------------------------------------------------------------------
+
+export interface ProofEntry {
+  id: string;
+  requestId: string;
+  requestReference: string | null;
+  cycleYear: number | null;
+  unitId: string;
+  unitName: string | null;
+  dataItemId: string;
+  fileName: string;
+  size: number;
+  contentType: string;
+  checksum: string;
+  note: string;
+  uploadedAt: string;
+  uploadedBy: string | null;
+  version: number;
+  versionCount: number;
+  isLatest: boolean;
+  downloadUrl: string;
+  sections?: Array<{ sectionId: string; title: string }>;
+}
+
+export interface ProofRepositoryResponse {
+  count: number;
+  page: number;
+  pageSize: number;
+  results: ProofEntry[];
+}
+

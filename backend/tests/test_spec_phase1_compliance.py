@@ -360,3 +360,82 @@ def test_audit_log_csv_export_is_itself_audited(audited_history):
     log = SubmissionAuditLog.objects.filter(action='EXPORT').latest('timestamp')
     assert log.delta['kind'] == 'audit-log-csv'
     assert log.delta['filters'] == {'action': 'REJECT'}
+
+
+# -----------------------------------------------------------------------------
+# 2.4 Proof provenance, versioning and repository
+# -----------------------------------------------------------------------------
+
+@pytest.fixture
+def proof_cycle(admin, settings, tmp_path):
+    """SRIC uploads a sanction PDF, then a corrected one, for its section."""
+    settings.MEDIA_ROOT = str(tmp_path)
+    token, c = _portal('sponsored-research', ['sponsored-projects'], 'sric_proofs@iitmandi.ac.in')
+
+    def upload(content, name, note=''):
+        f = BytesIO(content)
+        f.name = name
+        res = c.post(f'/api/portal/{token}/upload/',
+                     {'file': f, 'dataItemId': 'sponsored-projects', 'note': note},
+                     format='multipart')
+        assert res.status_code == 201, res.content
+        return res.json()['id']
+
+    first = upload(b'%PDF-1.4 sanction order v1', 'sanction_orders.pdf', 'Original')
+    second = upload(b'%PDF-1.4 sanction order v2 corrected', 'sanction_orders.pdf', 'Corrected amounts')
+    sub = SectionSubmission.objects.get(section_id='sponsored-research')
+    return {'first': first, 'second': second, 'submission': sub}
+
+
+def test_submission_detail_traces_figures_to_their_proofs(proof_cycle):
+    """Spec 2.4: from a figure, the auditor reaches the exact sanction PDF."""
+    auditor = _role_client('AUDITOR', 'prov_auditor')
+    res = auditor.get(f"/api/submissions/{proof_cycle['submission'].id}/")
+    assert res.status_code == 200
+    proofs = res.json()['proofs']
+    assert [p['id'] for p in proofs] == [proof_cycle['second'], proof_cycle['first']]
+    assert 'sponsored-projects' in res.json()['evidenceItemIds']
+
+
+def test_corrected_uploads_are_versioned_not_overwritten(proof_cycle):
+    auditor = _role_client('AUDITOR', 'version_auditor')
+    proofs = {p['id']: p for p in auditor.get(
+        f"/api/submissions/{proof_cycle['submission'].id}/").json()['proofs']}
+
+    original, corrected = proofs[proof_cycle['first']], proofs[proof_cycle['second']]
+    assert (original['version'], original['isLatest']) == (1, False)
+    assert (corrected['version'], corrected['isLatest']) == (2, True)
+    assert original['versionCount'] == corrected['versionCount'] == 2
+    assert original['checksum'] != corrected['checksum'], 'history is kept, not overwritten'
+
+
+def test_repository_is_searchable_and_keeps_true_version_numbers(proof_cycle):
+    auditor = _role_client('AUDITOR', 'repo_auditor')
+    hits = auditor.get('/api/proofs/?q=Corrected').json()
+    assert hits['count'] == 1
+    only = hits['results'][0]
+    # Filtering must not renumber: the corrected file is still v2 of 2.
+    assert (only['version'], only['versionCount']) == (2, 2)
+    assert {'sectionId': 'sponsored-research', 'title': 'Sponsored Research Details'} in only['sections']
+
+    latest = auditor.get('/api/proofs/?latestOnly=1&sectionId=sponsored-research').json()
+    assert [r['id'] for r in latest['results']] == [proof_cycle['second']]
+
+
+def test_proof_download_is_authenticated_and_integrity_checked(proof_cycle):
+    url = f"/api/proofs/{proof_cycle['first']}/download/"
+    assert APIClient().get(url).status_code in (401, 403)
+    assert _role_client('NODAL_OFFICER', 'dl_officer').get(url).status_code == 403
+
+    auditor = _role_client('AUDITOR', 'dl_auditor')
+    res = auditor.get(url)
+    assert res.status_code == 200
+    assert b''.join(res.streaming_content) == b'%PDF-1.4 sanction order v1'
+    assert 'attachment' in res['Content-Disposition']
+
+    # A file altered on disk after upload is refused rather than served.
+    from apps.data_requests.models import ProofUpload
+    proof = ProofUpload.objects.get(id=proof_cycle['first'])
+    with open(proof.file.path, 'wb') as fh:
+        fh.write(b'%PDF-1.4 tampered')
+    assert auditor.get(url).status_code == 409

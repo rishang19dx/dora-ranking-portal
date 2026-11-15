@@ -52,6 +52,7 @@ from .cross_checks import run_cross_checks
 from .analytics import compute_department_analytics, compute_department_contributions
 from .briefing import generate_briefing_pdf
 from .audit import diff_payload, diff_record, schema_pii_fields
+from .provenance import annotate_versions, proofs_for_submission, sections_for_item
 from .rollup import compute_category_rollup
 from .dcs_export import generate_category_excel
 
@@ -1086,6 +1087,16 @@ class AdminSubmissionDetailView(APIView):
         # Audit logs (PII-free)
         data['auditLogs'] = SubmissionAuditLogSerializer(sub.audit_logs.all(), many=True).data
 
+        # Provenance: the proofs this submission's figures rest on (spec 2.4).
+        prov_schema = FormSchema.objects.filter(framework='NIRF', is_active=True).first()
+        prov_sec = next(
+            (sd for sd in (prov_schema.content.get('sections', []) if prov_schema else [])
+             if sd['id'] == sub.section_id),
+            None,
+        )
+        data['proofs'] = proofs_for_submission(sub, prov_sec)
+        data['evidenceItemIds'] = (prov_sec or {}).get('catalogueItemIds', [])
+
         # Cross checks
         data['crossChecks'] = run_cross_checks(sub.request_id, sub.request.cycle_year)
 
@@ -1518,6 +1529,117 @@ class AuditLogView(APIView):
         stamp = timezone.now().strftime('%Y%m%d_%H%M')
         response['Content-Disposition'] = f'attachment; filename="DORA_Audit_Log_{stamp}.csv"'
         return response
+
+
+class ProofRepositoryView(APIView):
+    """
+    The centralised, searchable proof repository (spec 2.4).
+
+    Every proof ever uploaded, with its version within its evidence slot and
+    the schema sections it supports. Read-only for Admin, Director and
+    Auditor (spec 2.18: the auditor has read access to raw proofs).
+    """
+    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    MAX_PAGE_SIZE = 200
+
+    def get(self, request):
+        params = request.query_params
+        qs = ProofUpload.objects.select_related('request', 'org_unit', 'officer')
+
+        if params.get('requestId'):
+            qs = qs.filter(request_id=params['requestId'])
+        if params.get('unitId'):
+            qs = qs.filter(org_unit_id=params['unitId'])
+        if params.get('dataItemId'):
+            qs = qs.filter(data_item_id=params['dataItemId'])
+        if params.get('cycleYear'):
+            try:
+                qs = qs.filter(request__cycle_year=int(params['cycleYear']))
+            except (TypeError, ValueError):
+                return Response({'error': "'cycleYear' must be a year."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        schema_obj = FormSchema.objects.filter(framework='NIRF', is_active=True).first()
+        schema = schema_obj.content if schema_obj else {}
+        if params.get('sectionId'):
+            sec = next((sd for sd in schema.get('sections', []) if sd['id'] == params['sectionId']), None)
+            qs = qs.filter(data_item_id__in=(sec or {}).get('catalogueItemIds') or ['__none__'])
+
+        q = (params.get('q') or '').strip()
+        if q:
+            qs = qs.filter(
+                Q(file_name__icontains=q) | Q(note__icontains=q) | Q(data_item_id__icontains=q)
+                | Q(org_unit__name__icontains=q) | Q(request__reference__icontains=q)
+                | Q(checksum__iexact=q)
+            )
+
+        # Versions are computed over each whole evidence slot, so a filtered
+        # view still reports "v2 of 3" rather than renumbering what it shows.
+        slot_keys = set(qs.values_list('request_id', 'org_unit_id', 'data_item_id'))
+        slot_filter = Q(pk__in=[])
+        for req_id, unit_id, item_id in slot_keys:
+            slot_filter |= Q(request_id=req_id, org_unit_id=unit_id, data_item_id=item_id)
+        versioned = {
+            row['id']: row
+            for row in annotate_versions(
+                ProofUpload.objects.filter(slot_filter).select_related('request', 'org_unit', 'officer')
+            )
+        }
+        visible_ids = list(qs.order_by('-uploaded_at').values_list('id', flat=True))
+        rows = [versioned[i] for i in visible_ids if i in versioned]
+        if params.get('latestOnly') in ('1', 'true', 'yes'):
+            rows = [r for r in rows if r['isLatest']]
+        for row in rows:
+            row['sections'] = sections_for_item(schema, row['dataItemId'])
+
+        try:
+            page = max(int(params.get('page', 1)), 1)
+            page_size = min(max(int(params.get('pageSize', 50)), 1), self.MAX_PAGE_SIZE)
+        except (TypeError, ValueError):
+            return Response({'error': 'page and pageSize must be integers.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'count': len(rows),
+            'page': page,
+            'pageSize': page_size,
+            'results': rows[(page - 1) * page_size: page * page_size],
+        })
+
+class ProofDownloadView(APIView):
+    """
+    Authenticated proof download.
+
+    Proof files live under MEDIA_ROOT, which Django serves only in DEBUG - so
+    in development they were reachable by anyone holding the path, and in
+    production not at all. This serves them to Admin, Director and Auditor
+    only, and re-verifies the stored SHA-256 so a tampered file is refused.
+    """
+    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+
+    def get(self, request, pk):
+        from django.http import FileResponse
+        proof = get_object_or_404(ProofUpload, pk=pk)
+        try:
+            handle = proof.file.open('rb')
+        except (FileNotFoundError, ValueError):
+            return Response({'error': 'The stored file is missing.'}, status=status.HTTP_410_GONE)
+
+        digest = hashlib.sha256()
+        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+            digest.update(chunk)
+        if proof.checksum and digest.hexdigest() != proof.checksum:
+            handle.close()
+            return Response({'error': 'Integrity check failed: the stored file does not match its checksum.'},
+                            status=status.HTTP_409_CONFLICT)
+        handle.seek(0)
+
+        return FileResponse(
+            handle,
+            as_attachment=True,
+            filename=proof.file_name,
+            content_type=proof.content_type or 'application/octet-stream',
+        )
 
 class NirfExportView(APIView):
     permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]

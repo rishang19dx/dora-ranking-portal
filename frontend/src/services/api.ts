@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type {
   AuditLogResponse,
+  ProofRepositoryResponse,
   DepartmentAnalyticsResponse,
   GapAnalysisResponse,
   ParameterTrendsResponse,
@@ -297,6 +298,47 @@ export const auditService = {
     const link = document.createElement('a');
     link.href = url;
     link.download = `DORA_Audit_Log_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  },
+};
+
+export interface ProofFilters {
+  q?: string;
+  sectionId?: string;
+  unitId?: string;
+  requestId?: string;
+  dataItemId?: string;
+  cycleYear?: number;
+  latestOnly?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export const proofService = {
+  /** The searchable proof repository (Admin, Director, Auditor). */
+  async list(filters: ProofFilters = {}): Promise<ProofRepositoryResponse> {
+    const params: Record<string, string | number> = {};
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v === undefined || v === '' || v === null || v === false) return;
+      params[k] = v === true ? 1 : (v as string | number);
+    });
+    const res = await api.get('/api/proofs/', { params });
+    return res.data;
+  },
+
+  /**
+   * Downloads one proof through the authenticated endpoint, which also
+   * re-verifies the file against its stored SHA-256.
+   */
+  async download(id: string, fileName: string): Promise<void> {
+    const res = await api.get(`/api/proofs/${id}/download/`, { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data as Blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     link.remove();

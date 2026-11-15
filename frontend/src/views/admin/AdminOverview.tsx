@@ -51,11 +51,14 @@ export default function AdminOverview() {
     (async () => {
       setLoading(true);
       // Each panel degrades on its own: the ranking data is public and cached,
-      // while the cycle analytics need an authenticated session.
+      // while the cycle analytics need an authenticated session. Each call is
+      // started inside .then() so even a synchronous throw becomes a settled
+      // rejection instead of escaping allSettled as an unhandled error.
+      const settle = <T,>(load: () => Promise<T>) => Promise.resolve().then(load);
       const [t, g, a] = await Promise.allSettled([
-        rankingsService.getParameterTrends(CATEGORY, { last: range }),
-        rankingsService.getGapAnalysis(CATEGORY, RANKING_YEAR),
-        analyticsService.getDepartmentAnalytics(CYCLE_YEAR),
+        settle(() => rankingsService.getParameterTrends(CATEGORY, { last: range })),
+        settle(() => rankingsService.getGapAnalysis(CATEGORY, RANKING_YEAR)),
+        settle(() => analyticsService.getDepartmentAnalytics(CYCLE_YEAR)),
       ]);
       if (cancelled) return;
       if (t.status === 'fulfilled') setTrends(t.value);

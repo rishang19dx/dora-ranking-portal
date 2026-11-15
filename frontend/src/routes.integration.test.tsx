@@ -14,11 +14,28 @@ vi.mock('./services/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./services/api')>();
   return {
     ...actual,
+    // Every service the routed views call is stubbed at the network boundary;
+    // a view calling a method missing here throws, and Vitest fails the run
+    // on the resulting unhandled error even when every assertion passes.
     rankingsService: {
       getRankings: vi.fn().mockResolvedValue({ count: 0, data: [] }),
       getSecondGenIITs: vi.fn().mockResolvedValue({ count: 0, data: [] }),
       getTrends: vi.fn().mockResolvedValue({}),
       updateScraper: vi.fn().mockResolvedValue({ message: 'ok' }),
+      getParameterTrends: vi.fn().mockResolvedValue({ years: [], trends: {}, parameterOrder: [], labels: {}, weights: {} }),
+      getGapAnalysis: vi.fn().mockResolvedValue({ analysis: {}, parameterOrder: [], labels: {}, weights: {} }),
+    },
+    analyticsService: {
+      getDepartmentAnalytics: vi.fn().mockRejectedValue(new Error('not authenticated in tests')),
+      downloadBriefing: vi.fn().mockResolvedValue(undefined),
+    },
+    auditService: {
+      list: vi.fn().mockResolvedValue({ count: 0, page: 1, pageSize: 50, results: [], actions: [] }),
+      exportCsv: vi.fn().mockResolvedValue(undefined),
+    },
+    proofService: {
+      list: vi.fn().mockResolvedValue({ count: 0, page: 1, pageSize: 50, results: [] }),
+      download: vi.fn().mockResolvedValue(undefined),
     },
   };
 });

@@ -439,3 +439,106 @@ def test_proof_download_is_authenticated_and_integrity_checked(proof_cycle):
     with open(proof.file.path, 'wb') as fh:
         fh.write(b'%PDF-1.4 tampered')
     assert auditor.get(url).status_code == 409
+
+
+# -----------------------------------------------------------------------------
+# 2.3 Records: typed rows persist, imports keep distinct records
+# -----------------------------------------------------------------------------
+
+GRANT_HEADER = 'govtOrganisation,programme,amount,year\n'
+
+
+def _grants_import(c, token, body, mode=None):
+    f = BytesIO((GRANT_HEADER + body).encode('utf-8'))
+    f.name = 'grants.csv'
+    data = {'file': f, 'blockId': 'innovation-grants'}
+    if mode:
+        data['mode'] = mode
+    return c.post(f'/api/portal/{token}/forms/startup-ecosystem/records/import/', data, format='multipart')
+
+
+def test_many_grants_from_one_agency_stay_distinct(admin):
+    """
+    Regression: the block had no declared key, so the import keyed on the
+    first field. IIT Mandi's 2026 Innovation submission lists 82 DST grants;
+    they collapsed into one record.
+    """
+    token, c = _portal('catalyst', ['entrepreneurship'], 'catalyst_grants@iitmandi.ac.in')
+    res = _grants_import(c, token,
+        'DST,TIDE 2.0,820863,2024-25\n'
+        'DST,NIDHI PRAYAS,1000000,2024-25\n'
+        'DST,Inspire,250000,2023-24\n'
+        'DST,TIDE 2.0,820863,2024-25\n')   # exact repeat of row 1
+    assert res.status_code == 200, res.content
+    body = res.json()
+    assert body['created'] == 3
+    assert body['duplicatesSkipped'] == 1
+    assert body['mode'] == 'replace'
+    assert SubmissionRecord.objects.filter(block_id='innovation-grants').count() == 3
+
+    # The form gets the stored list back in the flat shape it renders.
+    first = body['records'][0]
+    assert first['govtOrganisation'] == 'DST' and first['amount'] == 820863 and first['_id']
+
+
+def test_reimporting_a_corrected_sheet_replaces_the_list(admin):
+    token, c = _portal('catalyst', ['entrepreneurship'], 'catalyst_redo@iitmandi.ac.in')
+    _grants_import(c, token, 'DST,TIDE 2.0,820863,2024-25\nDBT,BIG,5000000,2024-25\n')
+    res = _grants_import(c, token, 'DST,TIDE 2.0,820863,2024-25\nDBT,BIG,5500000,2024-25\n')
+    body = res.json()
+    assert body['removed'] == 1 and body['created'] == 1 and body['updated'] == 1
+    amounts = sorted(r.data['amount'] for r in SubmissionRecord.objects.filter(block_id='innovation-grants'))
+    assert amounts == [820863, 5500000], 'the corrected figure replaces, rather than joins, the old one'
+
+    log = SubmissionAuditLog.objects.filter(action='IMPORT').latest('timestamp')
+    assert log.delta['removedCount'] == 1
+    assert any(r.get('removed') for r in log.delta['records'])
+
+
+def test_a_sheet_with_no_valid_rows_never_wipes_the_list(admin):
+    token, c = _portal('catalyst', ['entrepreneurship'], 'catalyst_safe@iitmandi.ac.in')
+    _grants_import(c, token, 'DST,TIDE 2.0,820863,2024-25\n')
+    res = _grants_import(c, token, 'DST,TIDE 2.0,not-a-number,2024-25\n')
+    assert res.status_code == 400
+    assert SubmissionRecord.objects.filter(block_id='innovation-grants').count() == 1
+
+
+def test_typed_records_persist_update_and_delete(admin):
+    """Regression: rows typed into the form were never sent to the server."""
+    token, c = _portal('catalyst', ['entrepreneurship'], 'catalyst_typed@iitmandi.ac.in')
+    sub = SectionSubmission.objects.get(section_id='startup-ecosystem')
+
+    def put(records):
+        sub.refresh_from_db()
+        res = c.put(f'/api/portal/{token}/forms/startup-ecosystem/',
+                    {'revision': sub.revision, 'notApplicable': False, 'payload': {},
+                     'records': {'innovation-grants': records}}, format='json')
+        assert res.status_code == 200, res.content
+        return res.json()['records']['innovation-grants']
+
+    saved = put([
+        {'govtOrganisation': 'DST', 'programme': 'TIDE 2.0', 'amount': '820863', 'year': '2024-25'},
+        {'govtOrganisation': 'MeitY', 'programme': 'YFRF', 'amount': 95430, 'year': '2024-25'},
+    ])
+    assert len(saved) == 2 and all(r['_id'] for r in saved)
+    assert saved[0]['amount'] == 820863, 'typed values are normalised to canonical form'
+
+    # Edit one (identified by _id), drop the other.
+    edited = dict(saved[0], amount=900000)
+    after = put([edited])
+    assert [r['_id'] for r in after] == [saved[0]['_id']], 'edits update in place, not duplicate'
+    assert SubmissionRecord.objects.get(id=saved[0]['_id']).data['amount'] == 900000
+    assert not SubmissionRecord.objects.filter(id=saved[1]['_id']).exists()
+
+    log = SubmissionAuditLog.objects.filter(action='UPDATE').latest('timestamp')
+    entries = log.delta['records']['innovation-grants']
+    assert any(e.get('removed') for e in entries)
+    change = next(ch for e in entries if not e.get('removed') for ch in e['changes'] if ch['field'] == 'amount')
+    assert (change['old'], change['new']) == (820863, 900000)
+
+    # And the portal reloads them in the flat shape the form renders.
+    reloaded = c.get(f'/api/portal/{token}/forms/').json()
+    section = next(x for x in reloaded['sections'] if x['section']['id'] == 'startup-ecosystem')
+    row = section['records']['innovation-grants'][0]
+    assert row['programme'] == 'TIDE 2.0' and row['amount'] == 900000 and row['_id']
+    assert 'data' not in row, 'fields are flat, as the form reads them'

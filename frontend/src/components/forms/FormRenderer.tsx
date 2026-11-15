@@ -74,6 +74,8 @@ export default function FormRenderer({
   const payloadRef = useRef(payload);
   const notApplicableRef = useRef(notApplicable);
   const revisionRef = useRef(revision);
+  const recordsRef = useRef(records);
+  recordsRef.current = records;
   payloadRef.current = payload;
   notApplicableRef.current = notApplicable;
   revisionRef.current = revision;
@@ -177,10 +179,14 @@ export default function FormRenderer({
       if (isLocked) return;
       setSaveState('saving');
       try {
+        // Records travel with every save: before, rows typed into a records
+        // table were never sent, so they vanished on reload.
+        const sentRecords = recordsRef.current;
         const body = {
           revision: revisionRef.current,
           notApplicable: notApplicableRef.current,
           payload: payloadRef.current,
+          records: sentRecords,
           warningNote,
         };
 
@@ -199,6 +205,29 @@ export default function FormRenderer({
         setRevision(data.revision);
         revisionRef.current = data.revision;
         isDirtyRef.current = false;
+
+        // Adopt server ids for rows created by this save. If the officer kept
+        // typing while it was in flight, only stamp ids onto the rows that
+        // were sent, so the next save updates them instead of re-creating.
+        if (data.records) {
+          setRecords((prev) => {
+            const next = { ...prev };
+            Object.entries(data.records as Record<string, any[]>).forEach(([blockId, serverRows]) => {
+              const sent = sentRecords[blockId] || [];
+              const local = prev[blockId] || [];
+              if (local === sent) {
+                next[blockId] = serverRows;
+                return;
+              }
+              next[blockId] = local.map((row: any, i: number) =>
+                row && !row._id && sent[i] && !sent[i]._id && serverRows[i]?._id
+                  ? { ...row, _id: serverRows[i]._id }
+                  : row,
+              );
+            });
+            return next;
+          });
+        }
         setSaveState('saved');
         if (onSave) onSave(data);
         if (manual) {
@@ -221,7 +250,7 @@ export default function FormRenderer({
       performSave(false);
     }, 1500);
     return () => clearTimeout(timer);
-  }, [payload, notApplicable, performSave, isLocked]);
+  }, [payload, records, notApplicable, performSave, isLocked]);
 
   // Handle cell change for grid block
   const handleGridCellChange = (blockId: string, rowKey: string, colId: string, val: any) => {
@@ -323,7 +352,8 @@ export default function FormRenderer({
 
       const resData = await res.json();
       if (!res.ok) {
-        throw new Error(resData.error || 'Import failed');
+        const missing = (resData.missingColumns || []).map((m: any) => m.label).join(', ');
+        throw new Error(missing ? `${resData.error} Missing: ${missing}.` : resData.error || 'Import failed');
       }
 
       if (resData.records) {
@@ -333,10 +363,13 @@ export default function FormRenderer({
         }));
       }
 
+      const notes = [
+        resData.removed ? `${resData.removed} replaced` : '',
+        resData.duplicatesSkipped ? `${resData.duplicatesSkipped} duplicate row(s) skipped` : '',
+        resData.errors?.length ? `${resData.errors.length} row issue(s) flagged` : '',
+      ].filter(Boolean).join(', ');
       showToast(
-        `Import complete: ${resData.importedCount ?? 0} rows imported${
-          resData.errors?.length ? ` with ${resData.errors.length} warnings/errors` : ''
-        }`,
+        `Import complete: ${resData.importedCount ?? 0} rows imported${notes ? ` (${notes})` : ''}`,
         resData.errors?.length ? 'info' : 'success'
       );
       setImportModalBlockId(null);

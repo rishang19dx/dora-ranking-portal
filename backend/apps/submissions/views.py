@@ -431,8 +431,7 @@ class PortalFormsView(APIView):
             records_by_block = {}
             for blk in sec.get('blocks', []):
                 if blk['kind'] == 'records':
-                    recs = sub.records.filter(block_id=blk['id'])
-                    records_by_block[blk['id']] = SubmissionRecordSerializer(recs, many=True).data
+                    records_by_block[blk['id']] = portal_records(sub, blk['id'])
 
             # Attached proofs for this section's catalogue items
             proofs = ProofUpload.objects.filter(
@@ -474,6 +473,110 @@ class PortalFormsView(APIView):
             'yearContext': year_ctx,
             'sections': submissions_data,
         })
+
+def record_key(block_def: dict, data: dict) -> str:
+    """
+    Identity of one record within its block.
+
+    Only a block that declares a `rowKey` (e.g. faculty by employee ID) has a
+    natural key. For every other block the first field is *not* unique - IIT
+    Mandi's 2026 Innovation submission lists 82 grants from DST alone - so the
+    key is a digest of the record's content: distinct records stay distinct,
+    and only an exact duplicate shares a key (spec 2.7 deduplication).
+    """
+    declared = block_def.get('rowKey')
+    if declared:
+        return str(data.get(declared) or '')
+    material = {
+        k: v for k, v in sorted(data.items())
+        if not str(k).startswith('_') and v not in (None, '', [])
+    }
+    digest = hashlib.sha256(json.dumps(material, sort_keys=True, default=str).encode('utf-8'))
+    return f"h:{digest.hexdigest()[:24]}"
+
+def portal_records(sub, block_id: str) -> list:
+    """
+    Records as the portal form exchanges them: flat field values plus `_id`.
+
+    The form edits fields at the top level of each row; nesting them under
+    `data` (the storage shape) is what made imported rows render blank.
+    """
+    return [
+        {**(rec.data or {}), '_id': rec.id}
+        for rec in sub.records.filter(block_id=block_id).order_by('position', 'created_at')
+    ]
+
+def _record_unit(data: dict, fallback):
+    unit_id = (data or {}).get('unitId')
+    if unit_id:
+        found = OrgUnit.objects.filter(id=unit_id).first()
+        if found:
+            return found
+    return fallback
+
+def replace_block_records(sub, block_def: dict, rows: list, enums: dict, fallback_unit, pii: set) -> list:
+    """
+    Make a block's stored records match `rows` exactly (the form is the source
+    of truth for its own list). Rows carrying an `_id` update that record,
+    rows without one are created, and stored records absent from `rows` are
+    deleted. Returns audit entries with redacted old/new values.
+
+    Values are normalised to canonical form but not rejected: a draft may be
+    incomplete, and the full validation runs at submit time.
+    """
+    fields = {f['id']: f for f in block_def.get('fields', [])}
+    existing = {rec.id: rec for rec in sub.records.filter(block_id=block_def['id'])}
+    key_field = block_def.get('rowKey')
+    kept, entries = set(), []
+
+    for position, row in enumerate(rows or [], start=1):
+        if not isinstance(row, dict):
+            continue
+        data = {}
+        for fid, raw in row.items():
+            if str(fid).startswith('_'):
+                continue
+            if fid in fields:
+                value, other = normalize_import_value(fields[fid], raw, enums)
+                data[fid] = value
+                if other:
+                    data[f'{fid}_other'] = other
+            else:
+                data[fid] = raw  # e.g. `<id>_other` companions
+        rid = row.get('_id')
+        record = existing.get(rid) if rid else None
+        key = record_key(block_def, data)
+        label = '[redacted]' if key_field in pii else (data.get(key_field) if key_field else None)
+
+        if record is not None:
+            before = dict(record.data or {})
+            record.data = data
+            record.position = position
+            record.row_key = key
+            record.unit = _record_unit(data, fallback_unit)
+            record.save(update_fields=['data', 'position', 'row_key', 'unit', 'updated_at'])
+            kept.add(record.id)
+            changes = diff_record(before, data, pii)
+            if changes:
+                entries.append({'rowKey': label, 'created': False, 'changes': changes})
+        else:
+            record = SubmissionRecord.objects.create(
+                submission=sub, block_id=block_def['id'], row_key=key,
+                unit=_record_unit(data, fallback_unit), data=data, position=position,
+            )
+            kept.add(record.id)
+            entries.append({'rowKey': label, 'created': True, 'changes': diff_record(None, data, pii)})
+
+    for rid, record in existing.items():
+        if rid not in kept:
+            entries.append({
+                'rowKey': '[redacted]' if key_field in pii else (
+                    (record.data or {}).get(key_field) if key_field else None),
+                'removed': True,
+                'changes': diff_record(record.data, None, pii),
+            })
+            record.delete()
+    return entries
 
 def build_derive_context(submission, unit_id):
     """
@@ -595,6 +698,23 @@ class PortalFormSaveView(APIView):
         sub.payload = payload
         sub.not_applicable = not_applicable
 
+        # Records typed into the form are persisted here; before, only a
+        # spreadsheet import ever reached the server and typed rows were lost.
+        record_entries = {}
+        incoming_records = request.data.get('records')
+        if isinstance(incoming_records, dict) and audit_sec_def:
+            enums_for_records = audit_schema.content.get('enums', {}) if audit_schema else {}
+            pii = schema_pii_fields(audit_sec_def)
+            for blk in audit_sec_def.get('blocks', []):
+                if blk.get('kind') != 'records' or blk['id'] not in incoming_records:
+                    continue
+                rows = incoming_records.get(blk['id'])
+                if not isinstance(rows, list):
+                    continue
+                entries = replace_block_records(sub, blk, rows, enums_for_records, grant.org_unit, pii)
+                if entries:
+                    record_entries[blk['id']] = entries[:200]
+
         # Refresh schema-derived cells (totals, amounts in words, serial
         # numbers) so the officer sees them on reload instead of blanks.
         schema_obj = FormSchema.objects.filter(framework='NIRF', is_active=True).first()
@@ -628,6 +748,7 @@ class PortalFormSaveView(APIView):
                 'notApplicableChanged': previous_not_applicable != sub.not_applicable,
                 'blockKeys': list(payload.keys()) if isinstance(payload, dict) else [],
                 **diff_payload(previous_payload, sub.payload, schema_pii_fields(audit_sec_def)),
+                'records': record_entries,
             }
         )
 
@@ -637,7 +758,14 @@ class PortalFormSaveView(APIView):
             target.status = TargetStatus.PARTIAL
             target.save(update_fields=['status'])
 
-        return Response(SectionSubmissionSerializer(sub).data)
+        data = SectionSubmissionSerializer(sub).data
+        # Hand back the stored records so newly created rows get their `_id`.
+        data['records'] = {
+            blk['id']: portal_records(sub, blk['id'])
+            for blk in (audit_sec_def or {}).get('blocks', [])
+            if blk.get('kind') == 'records'
+        }
+        return Response(data)
 
 class PortalFormSubmitView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -815,7 +943,13 @@ class PortalRecordsImportView(APIView):
 
         target_block = next((b for b in records_blocks if b['id'] == block_id), records_blocks[0])
         b_id = target_block['id']
-        row_key_field = target_block.get('rowKey') or target_block.get('fields', [])[0]['id']
+        # Only a declared rowKey is a natural key (merge by it); every other
+        # block is a list the sheet replaces, de-duplicated by content.
+        row_key_field = target_block.get('rowKey')
+        mode = (request.data.get('mode') or ('merge' if row_key_field else 'replace')).lower()
+        if mode not in ('merge', 'replace', 'append'):
+            return Response({'error': "mode must be 'merge', 'replace' or 'append'."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Parse file
         filename = file_obj.name.lower()
@@ -878,8 +1012,11 @@ class PortalRecordsImportView(APIView):
         created_count = 0
         updated_count = 0
         skipped_empty = 0
+        duplicates_skipped = 0
         errors = []
         record_changes = []
+        accepted = []
+        seen_keys = set()
 
         for idx, r in enumerate(rows, start=1):
             # Spreadsheet row numbers, counting the header row.
@@ -898,11 +1035,12 @@ class PortalRecordsImportView(APIView):
                 if other_text:
                     normalized[f'{target_id}_other'] = other_text
 
-            row_key_val = normalized.get(row_key_field)
-            if row_key_val in (None, ''):
-                errors.append({'row': sheet_row, 'field': row_key_field,
-                               'error': f"Missing unique key '{row_key_field}'."})
-                continue
+            if row_key_field:
+                row_key_val = normalized.get(row_key_field)
+                if row_key_val in (None, ''):
+                    errors.append({'row': sheet_row, 'field': row_key_field,
+                                   'error': f"Missing unique key '{row_key_field}'."})
+                    continue
 
             # Spec 2.8: corrupted or out-of-range cells are flagged against the
             # sheet row and the row is not written, so bad data never lands.
@@ -922,45 +1060,73 @@ class PortalRecordsImportView(APIView):
                 errors.extend(row_errors)
                 continue
 
-            # Check unit assignment for faculty or records with unitId
             unit_val = normalized.get('unitId')
-            unit_obj = None
-            if unit_val:
-                unit_obj = OrgUnit.objects.filter(id=unit_val).first()
-                if unit_obj is None:
-                    errors.append({'row': sheet_row, 'field': 'unitId',
-                                   'error': f"Unknown school / centre '{unit_val}'."})
-                    continue
+            if unit_val and not OrgUnit.objects.filter(id=unit_val).exists():
+                errors.append({'row': sheet_row, 'field': 'unitId',
+                               'error': f"Unknown school / centre '{unit_val}'."})
+                continue
 
-            existing = SubmissionRecord.objects.filter(
-                submission=sub, block_id=b_id, row_key=str(row_key_val)
-            ).first()
+            key = record_key(target_block, normalized)
+            if key in seen_keys:
+                # The same record twice in one sheet: keep one (spec 2.7).
+                duplicates_skipped += 1
+                continue
+            seen_keys.add(key)
+            accepted.append((idx, key, normalized))
+
+        existing_by_key = {}
+        for rec in SubmissionRecord.objects.filter(submission=sub, block_id=b_id):
+            existing_by_key.setdefault(rec.row_key, rec)
+
+        removed_count = 0
+        if mode == 'replace':
+            if not accepted and any(True for _ in rows):
+                # Never let a sheet with no usable rows wipe the stored list.
+                return Response({
+                    'error': 'No valid rows found; the existing records were left unchanged.',
+                    'errors': errors,
+                    'skippedEmptyRows': skipped_empty,
+                }, status=status.HTTP_400_BAD_REQUEST)
+            incoming_keys = {key for _, key, _ in accepted}
+            for key, rec in list(existing_by_key.items()):
+                if key not in incoming_keys:
+                    record_changes.append({
+                        'rowKey': '[redacted]' if row_key_field in pii else (
+                            (rec.data or {}).get(row_key_field) if row_key_field else None),
+                        'removed': True,
+                        'changes': diff_record(rec.data, None, pii),
+                    })
+                    rec.delete()
+                    removed_count += 1
+                    existing_by_key.pop(key)
+
+        for idx, key, normalized in accepted:
+            existing = existing_by_key.get(key)
             previous_data = dict(existing.data) if existing and isinstance(existing.data, dict) else None
-
-            rec, created = SubmissionRecord.objects.update_or_create(
-                submission=sub,
-                block_id=b_id,
-                row_key=str(row_key_val),
-                defaults={
-                    'unit': unit_obj or grant.org_unit,
-                    'data': normalized,
-                    'position': idx,
-                }
-            )
-            if created:
-                created_count += 1
-            else:
+            unit_obj = _record_unit(normalized, grant.org_unit)
+            if existing is not None:
+                existing.data = normalized
+                existing.position = idx
+                existing.unit = unit_obj
+                existing.save(update_fields=['data', 'position', 'unit', 'updated_at'])
+                created = False
                 updated_count += 1
+            else:
+                existing = SubmissionRecord.objects.create(
+                    submission=sub, block_id=b_id, row_key=key,
+                    unit=unit_obj, data=normalized, position=idx,
+                )
+                existing_by_key[key] = existing
+                created = True
+                created_count += 1
 
             # Row keys are often personal (employee IDs), so redact them too.
-            key_label = '[redacted]' if row_key_field in pii else str(row_key_val)
+            label = None
+            if row_key_field:
+                label = '[redacted]' if row_key_field in pii else str(normalized.get(row_key_field))
             changes = diff_record(previous_data, normalized, pii)
             if changes and len(record_changes) < 200:
-                record_changes.append({
-                    'rowKey': key_label,
-                    'created': created,
-                    'changes': changes,
-                })
+                record_changes.append({'rowKey': label, 'created': created, 'changes': changes})
 
         SubmissionAuditLog.objects.create(
             submission=sub,
@@ -969,8 +1135,11 @@ class PortalRecordsImportView(APIView):
             action='IMPORT',
             delta={
                 'blockId': b_id,
+                'mode': mode,
                 'createdCount': created_count,
                 'updatedCount': updated_count,
+                'removedCount': removed_count,
+                'duplicatesSkipped': duplicates_skipped,
                 'errorCount': len(errors),
                 'skippedEmptyRows': skipped_empty,
                 'records': record_changes,
@@ -978,11 +1147,17 @@ class PortalRecordsImportView(APIView):
         )
 
         return Response({
+            'mode': mode,
             'created': created_count,
             'updated': updated_count,
+            'removed': removed_count,
+            'importedCount': created_count + updated_count,
+            'duplicatesSkipped': duplicates_skipped,
             'errors': errors,
             'skippedEmptyRows': skipped_empty,
             'totalProcessed': len(rows),
+            # The block's full list after import, in the form's flat shape.
+            'records': portal_records(sub, b_id),
         })
 
 class PortalRecordConfirmView(APIView):

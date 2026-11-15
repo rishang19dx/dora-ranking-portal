@@ -4,6 +4,8 @@ import io
 import copy
 import hashlib
 import openpyxl
+from django.db.models import Q
+from django.utils.dateparse import parse_date
 from datetime import datetime
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -1354,6 +1356,168 @@ def audit_export(request, kind: str, payload: bytes, **details):
             **details,
         },
     )
+
+
+class AuditLogView(APIView):
+    """
+    The auditor's interface onto the audit trail (spec 2.11, 2.18).
+
+    Read-only for Admin, Director and Auditor. Supports filtering by action,
+    actor, section, unit, request, cycle and date range, free-text search
+    across the recorded changes, and CSV export of the filtered set
+    (`?export=csv`).
+    """
+    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    MAX_PAGE_SIZE = 200
+    CSV_LIMIT = 20000
+
+    def _filtered(self, params):
+        from django.db.models import TextField
+        from django.db.models.functions import Cast
+
+        qs = SubmissionAuditLog.objects.select_related(
+            'submission', 'submission__org_unit', 'submission__request'
+        )
+
+        def csv_param(name):
+            raw = params.get(name)
+            return [v.strip() for v in raw.split(',') if v.strip()] if raw else []
+
+        if csv_param('action'):
+            qs = qs.filter(action__in=[a.upper() for a in csv_param('action')])
+        if params.get('actorType'):
+            qs = qs.filter(actor_type=params['actorType'].upper())
+        if params.get('actorId'):
+            qs = qs.filter(actor_id=params['actorId'])
+        if params.get('submissionId'):
+            qs = qs.filter(submission_id=params['submissionId'])
+        if params.get('sectionId'):
+            qs = qs.filter(submission__section_id=params['sectionId'])
+        if params.get('unitId'):
+            qs = qs.filter(submission__org_unit_id=params['unitId'])
+        if params.get('requestId'):
+            qs = qs.filter(submission__request_id=params['requestId'])
+        if params.get('cycleYear'):
+            try:
+                qs = qs.filter(submission__request__cycle_year=int(params['cycleYear']))
+            except (TypeError, ValueError):
+                raise ValueError("'cycleYear' must be a year.")
+
+        for bound, lookup in (('from', 'timestamp__date__gte'), ('to', 'timestamp__date__lte')):
+            raw = params.get(bound)
+            if raw:
+                parsed = parse_date(raw)
+                if parsed is None:
+                    raise ValueError(f"'{bound}' must be a date (YYYY-MM-DD).")
+                qs = qs.filter(**{lookup: parsed})
+
+        q = (params.get('q') or '').strip()
+        if q:
+            qs = qs.annotate(delta_text=Cast('delta', TextField())).filter(
+                Q(delta_text__icontains=q)
+                | Q(action__icontains=q)
+                | Q(actor_id__icontains=q)
+                | Q(submission__section_id__icontains=q)
+                | Q(submission__org_unit__name__icontains=q)
+            )
+        return qs.order_by('-timestamp')
+
+    @staticmethod
+    def _actor_names(logs):
+        from django.contrib.auth import get_user_model
+        officer_ids = {log.actor_id for log in logs if log.actor_type == 'OFFICER'}
+        user_ids = {log.actor_id for log in logs if log.actor_type == 'ADMIN' and str(log.actor_id).isdigit()}
+        names = {
+            ('OFFICER', o.id): o.name
+            for o in NodalOfficer.objects.filter(id__in=officer_ids)
+        }
+        for u in get_user_model().objects.filter(id__in=user_ids):
+            names[('ADMIN', str(u.id))] = u.get_full_name() or u.username
+        return names
+
+    @staticmethod
+    def _row(log, names):
+        sub = log.submission
+        delta = log.delta or {}
+        return {
+            'id': log.id,
+            'timestamp': log.timestamp.isoformat(),
+            'action': log.action,
+            'actorType': log.actor_type,
+            'actorId': log.actor_id,
+            'actorName': names.get((log.actor_type, str(log.actor_id))),
+            'submissionId': sub.id if sub else None,
+            'sectionId': sub.section_id if sub else None,
+            'unitId': sub.org_unit_id if sub else None,
+            'unitName': sub.org_unit.name if sub else None,
+            'requestId': sub.request_id if sub else None,
+            'requestReference': sub.request.reference if sub else None,
+            'cycleYear': sub.request.cycle_year if sub else delta.get('cycleYear'),
+            'changeCount': delta.get('changeCount', len(delta.get('changes', []) or [])),
+            'delta': delta,
+        }
+
+    def get(self, request):
+        try:
+            qs = self._filtered(request.query_params)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # `export`, not `format`: DRF reserves ?format= for renderer selection
+        # and answers an unknown value with a 404.
+        if request.query_params.get('export') == 'csv':
+            return self._csv(request, qs)
+
+        try:
+            page = max(int(request.query_params.get('page', 1)), 1)
+            page_size = min(max(int(request.query_params.get('pageSize', 50)), 1), self.MAX_PAGE_SIZE)
+        except (TypeError, ValueError):
+            return Response({'error': 'page and pageSize must be integers.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        total = qs.count()
+        logs = list(qs[(page - 1) * page_size: page * page_size])
+        names = self._actor_names(logs)
+        return Response({
+            'count': total,
+            'page': page,
+            'pageSize': page_size,
+            'results': [self._row(log, names) for log in logs],
+            'actions': sorted(
+                SubmissionAuditLog.objects.values_list('action', flat=True).distinct()
+            ),
+        })
+
+    def _csv(self, request, qs):
+        logs = list(qs[: self.CSV_LIMIT])
+        names = self._actor_names(logs)
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow([
+            'timestamp', 'action', 'actor_type', 'actor_id', 'actor_name',
+            'request', 'cycle_year', 'section', 'unit', 'submission_id',
+            'change_count', 'comment', 'from_status', 'to_status', 'changes_json',
+        ])
+        for log in logs:
+            row = self._row(log, names)
+            delta = row['delta']
+            writer.writerow([
+                row['timestamp'], row['action'], row['actorType'], row['actorId'],
+                row['actorName'] or '', row['requestReference'] or '', row['cycleYear'] or '',
+                row['sectionId'] or '', row['unitName'] or '', row['submissionId'] or '',
+                row['changeCount'], delta.get('comment', ''), delta.get('fromStatus', ''),
+                delta.get('toStatus', ''), json.dumps(delta.get('changes') or delta.get('records') or [], default=str),
+            ])
+        payload = buffer.getvalue().encode('utf-8')
+
+        # Exporting the audit trail is itself an auditable export.
+        audit_export(request, 'audit-log-csv', payload, rows=len(logs),
+                     filters={k: v for k, v in request.query_params.items() if k != 'export'})
+
+        response = HttpResponse(payload, content_type='text/csv; charset=utf-8')
+        stamp = timezone.now().strftime('%Y%m%d_%H%M')
+        response['Content-Disposition'] = f'attachment; filename="DORA_Audit_Log_{stamp}.csv"'
+        return response
 
 class NirfExportView(APIView):
     permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]

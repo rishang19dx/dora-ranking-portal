@@ -14,6 +14,7 @@ from .views import (
     NirfExportView,
     DepartmentAnalyticsView,
     BoardroomBriefingView,
+    AuditLogView,
 )
 
 urlpatterns = [
@@ -42,6 +43,10 @@ urlpatterns = [
     path('submissions/<str:pk>', AdminSubmissionDetailView.as_view()),
     path('submissions/<str:pk>/actions/', AdminSubmissionActionView.as_view(), name='admin_submission_action'),
     path('submissions/<str:pk>/actions', AdminSubmissionActionView.as_view()),
+
+    # Audit trail (auditor interface, spec 2.11)
+    path('audit-log/', AuditLogView.as_view(), name='audit_log'),
+    path('audit-log', AuditLogView.as_view()),
 
     # Category Rollup & Export
     path('nirf/cycles/<str:year>/rollup/', NirfRollupView.as_view(), name='nirf_rollup'),

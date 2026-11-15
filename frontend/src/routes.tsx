@@ -9,6 +9,7 @@ import AdminDataCollection from './views/admin/AdminDataCollection';
 import AdminDataRequestComposer from './views/admin/AdminDataRequestComposer';
 import AdminDataRequestDetail from './views/admin/AdminDataRequestDetail';
 import AdminProgrammes from './views/admin/AdminProgrammes';
+import AdminAuditLog from './views/admin/AdminAuditLog';
 import NodalOfficerPortal from './views/nodal-officer/NodalOfficerPortal';
 import NodalOfficerSubmission from './views/nodal-officer/NodalOfficerSubmission';
 import RestrictedPortalPage from './views/portal/RestrictedPortalPage';
@@ -31,6 +32,7 @@ export default function AppRoutes() {
         <Route path="nodal-officers" element={<AdminNodalOfficers />} />
         <Route path="data-collection" element={<AdminDataCollection />} />
         <Route path="programmes" element={<AdminProgrammes />} />
+        <Route path="audit-log" element={<AdminAuditLog />} />
         <Route path="data-requests/new" element={<AdminDataRequestComposer />} />
         <Route path="data-requests/:id" element={<AdminDataRequestDetail />} />
         <Route path="rankings" element={<div className="max-w-[1400px] mx-auto"><RankingsView /></div>} />

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type {
+  AuditLogResponse,
   DepartmentAnalyticsResponse,
   GapAnalysisResponse,
   ParameterTrendsResponse,
@@ -251,6 +252,51 @@ export const analyticsService = {
     const link = document.createElement('a');
     link.href = url;
     link.download = `DORA_Boardroom_Briefing_NIRF_${cycleYear}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  },
+};
+
+export interface AuditLogFilters {
+  action?: string;
+  actorType?: string;
+  sectionId?: string;
+  unitId?: string;
+  requestId?: string;
+  cycleYear?: number;
+  from?: string;
+  to?: string;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+function compact(filters: AuditLogFilters): Record<string, string | number> {
+  return Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== '' && v !== null),
+  ) as Record<string, string | number>;
+}
+
+export const auditService = {
+  /** Filterable, searchable audit trail (Admin, Director, Auditor). */
+  async list(filters: AuditLogFilters = {}): Promise<AuditLogResponse> {
+    const res = await api.get('/api/audit-log/', { params: compact(filters) });
+    return res.data;
+  },
+
+  /** Downloads the filtered trail as CSV. The download is itself audited. */
+  async exportCsv(filters: AuditLogFilters = {}): Promise<void> {
+    const { page: _page, pageSize: _size, ...rest } = filters;
+    const res = await api.get('/api/audit-log/', {
+      params: { ...compact(rest), export: 'csv' },
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(res.data as Blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `DORA_Audit_Log_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();

@@ -286,3 +286,77 @@ def test_export_is_audited(admin):
     assert log.delta['category'] == 'OVERALL'
     import hashlib
     assert log.delta['sha256'] == hashlib.sha256(res.content).hexdigest()
+
+
+# -----------------------------------------------------------------------------
+# 2.11 Auditor interface onto the audit log
+# -----------------------------------------------------------------------------
+
+def _role_client(role, username):
+    user = User.objects.create_user(username=username, email=f'{username}@iitmandi.ac.in',
+                                    password='pw', role=role)
+    c = APIClient()
+    c.force_authenticate(user=user)
+    return c
+
+
+@pytest.fixture
+def audited_history(admin):
+    """A small but realistic trail: an edit, a rejection and an approval."""
+    token, c = _portal('sponsored-research', ['sponsored-projects'], 'sric_trail@iitmandi.ac.in')
+    _save(c, token, 'sponsored-research', {'sponsored': {'projects': {'2025-26': 180}}})
+    _save(c, token, 'sponsored-research', {'sponsored': {'projects': {'2025-26': 184}}})
+    sub = SectionSubmission.objects.get(section_id='sponsored-research')
+    sub.status = SubmissionStatus.SUBMITTED
+    sub.save(update_fields=['status'])
+    admin.post(f'/api/submissions/{sub.id}/actions/',
+               {'action': 'reject', 'comment': 'Agency count looks low'}, format='json')
+    return sub
+
+
+def test_auditor_can_read_and_filter_the_trail(audited_history):
+    auditor = _role_client('AUDITOR', 'trail_auditor')
+    everything = auditor.get('/api/audit-log/').json()
+    assert everything['count'] >= 3
+    assert {'UPDATE', 'REJECT'} <= set(everything['actions'])
+
+    rejects = auditor.get('/api/audit-log/?action=REJECT').json()
+    assert rejects['count'] == 1
+    row = rejects['results'][0]
+    assert row['sectionId'] == 'sponsored-research'
+    assert row['actorType'] == 'ADMIN' and row['actorName'] == 'p1admin'
+    assert row['delta']['toStatus'] == SubmissionStatus.CORRECTION_REQUESTED
+
+    officer_rows = auditor.get('/api/audit-log/?actorType=OFFICER').json()['results']
+    assert officer_rows and all(r['actorType'] == 'OFFICER' for r in officer_rows)
+    assert officer_rows[0]['actorName'] == 'sponsored-research officer'
+
+
+def test_auditor_search_reaches_into_recorded_changes(audited_history):
+    auditor = _role_client('AUDITOR', 'search_auditor')
+    hits = auditor.get('/api/audit-log/?q=Agency count looks low').json()
+    assert hits['count'] == 1 and hits['results'][0]['action'] == 'REJECT'
+
+    edits = auditor.get('/api/audit-log/?q=184').json()
+    assert any(r['action'] == 'UPDATE' for r in edits['results'])
+
+
+def test_audit_log_rejects_bad_filters_and_unprivileged_users(audited_history):
+    auditor = _role_client('AUDITOR', 'strict_auditor')
+    assert auditor.get('/api/audit-log/?from=yesterday').status_code == 400
+    assert _role_client('NODAL_OFFICER', 'nosy_officer').get('/api/audit-log/').status_code == 403
+    assert APIClient().get('/api/audit-log/').status_code in (401, 403)
+
+
+def test_audit_log_csv_export_is_itself_audited(audited_history):
+    auditor = _role_client('AUDITOR', 'csv_auditor')
+    res = auditor.get('/api/audit-log/?export=csv&action=REJECT')
+    assert res.status_code == 200
+    assert res['Content-Type'].startswith('text/csv')
+    lines = res.content.decode().strip().splitlines()
+    assert lines[0].startswith('timestamp,action,actor_type')
+    assert len(lines) == 2 and ',REJECT,' in lines[1]
+
+    log = SubmissionAuditLog.objects.filter(action='EXPORT').latest('timestamp')
+    assert log.delta['kind'] == 'audit-log-csv'
+    assert log.delta['filters'] == {'action': 'REJECT'}

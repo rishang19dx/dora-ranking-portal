@@ -550,3 +550,51 @@ export interface DepartmentAnalyticsResponse {
     leaderboard?: Record<string, DepartmentPerformance[]>;
   };
 }
+
+// ---------------------------------------------------------------------------
+// Audit trail (spec 2.11)
+// ---------------------------------------------------------------------------
+
+export interface AuditChange {
+  block?: string;
+  row?: string | null;
+  field: string;
+  old: unknown;
+  new: unknown;
+  pii?: boolean;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  action: string;
+  actorType: string;
+  actorId: string;
+  actorName: string | null;
+  submissionId: string | null;
+  sectionId: string | null;
+  unitId: string | null;
+  unitName: string | null;
+  requestId: string | null;
+  requestReference: string | null;
+  cycleYear: number | null;
+  changeCount: number;
+  delta: Record<string, any> & {
+    comment?: string;
+    fromStatus?: string;
+    toStatus?: string;
+    changes?: AuditChange[];
+    records?: Array<{ rowKey: string; created: boolean; changes: AuditChange[] }>;
+    kind?: string;
+    sha256?: string;
+  };
+}
+
+export interface AuditLogResponse {
+  count: number;
+  page: number;
+  pageSize: number;
+  results: AuditLogEntry[];
+  actions: string[];
+}
+

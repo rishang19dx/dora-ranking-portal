@@ -27,8 +27,9 @@ import {
   BarChart,
   Bar,
   Cell,
+  ComposedChart,
 } from "recharts";
-import { RankingItem, RankingAgency, TrendsApiResponse, PeerInstituteTrend, MandiYearlyTrend } from "../types";
+import { RankingItem, RankingAgency, TrendsApiResponse, PeerInstituteTrend, MandiYearlyTrend, ParameterTrendsResponse } from "../types";
 import { calculateRankChange } from "../utils/helpers";
 import { rankingsService } from "../services/api";
 import { useToast } from "../components/ToastProvider";
@@ -50,8 +51,18 @@ const PEER_COLORS: Record<string, string> = {
   "IIT Patna": "#64748b",        // Slate Gray
 };
 
+const PARAM_COLOURS: Record<string, string> = {
+  tlr: "#5a7359",
+  rpc: "#003366",
+  go: "#0284c7",
+  oi: "#b98a6b",
+  pr: "#8b5cf6",
+};
+
 export const TrendsView: React.FC<TrendsViewProps> = () => {
-  const [activeTab, setActiveTab] = useState<"individual" | "peer_comparison">("individual");
+  const [activeTab, setActiveTab] = useState<"individual" | "peer_comparison" | "parameters">("individual");
+  const [paramTrends, setParamTrends] = useState<ParameterTrendsResponse | null>(null);
+  const [paramRange, setParamRange] = useState<number>(5);
   const [selectedCategory, setSelectedCategory] = useState<string>("Engineering");
   const [trendsData, setTrendsData] = useState<TrendsApiResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -85,6 +96,26 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
   useEffect(() => {
     fetchTrends();
   }, []);
+
+  // Parameter sub-scores are published only for Engineering and Overall, so
+  // this is fetched separately from the rank trends and may legitimately be
+  // empty for Innovation.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await rankingsService.getParameterTrends(selectedCategory, {
+          last: paramRange,
+        });
+        if (!cancelled) setParamTrends(res);
+      } catch {
+        if (!cancelled) setParamTrends(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory, paramRange]);
 
   const handleRefreshScraper = async () => {
     try {
@@ -173,6 +204,24 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
       }))
       .sort((a, b) => (Number(a.rank) || 999) - (Number(b.rank) || 999));
   }, [peerList]);
+
+  // Parameter-wise series: value per year plus its weighted contribution.
+  const paramSeries = paramTrends?.trends?.[selectedCategory]?.series ?? [];
+  const paramOrder = paramTrends?.parameterOrder ?? [];
+  const paramLabels = paramTrends?.labels ?? {};
+  const paramWeights = paramTrends?.weights ?? {};
+
+  const paramChartData = useMemo(() => {
+    return paramSeries.map((p) => {
+      const row: Record<string, any> = { year: String(p.year), score: p.score };
+      paramOrder.forEach((k) => {
+        row[k] = p.parameters?.[k]?.value ?? null;
+      });
+      return row;
+    });
+  }, [paramSeries, paramOrder]);
+
+  const paramNetMovement = paramTrends?.trends?.[selectedCategory]?.netMovement ?? null;
 
   const togglePeer = (name: string) => {
     setSelectedPeers((prev) => ({
@@ -308,6 +357,17 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
             IIT Mandi Trajectory
           </button>
           <button
+            onClick={() => setActiveTab("parameters")}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition ${
+              activeTab === "parameters"
+                ? "bg-white text-[#003366] shadow-sm ring-1 ring-black/5"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 text-[#F58220]" />
+            Parameter Breakdown
+          </button>
+          <button
             onClick={() => setActiveTab("peer_comparison")}
             className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition ${
               activeTab === "peer_comparison"
@@ -345,6 +405,163 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
         <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-3">
           <RefreshCw className="w-8 h-8 text-[#003366] animate-spin" />
           <p className="text-sm font-semibold text-slate-700">Loading 5-year NIRF longitudinal analytics...</p>
+        </div>
+      ) : activeTab === "parameters" ? (
+        /* ==================== TAB: PARAMETER BREAKDOWN ==================== */
+        <div className="space-y-6">
+          {!paramSeries.length ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm">
+              <BarChart3 className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-slate-700">
+                NIRF publishes parameter sub-scores for Engineering and Overall only.
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                The {selectedCategory} category is released as ranks and bands.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-[#003366] font-serif">
+                    Parameter-wise Performance — {selectedCategory}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Each sub-score is out of 100. Weights: {paramOrder
+                      .map((k) => `${k.toUpperCase()} ${Math.round((paramWeights[k] ?? 0) * 100)}%`)
+                      .join(" · ")}.
+                  </p>
+                </div>
+                <div className="flex items-center p-1 bg-slate-100/80 rounded-xl">
+                  {[3, 5].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setParamRange(n)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        paramRange === n
+                          ? "bg-white text-[#003366] shadow-sm ring-1 ring-black/5"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Last {n}y
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                <div className="h-[380px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={paramChartData} margin={{ top: 10, right: 16, left: -16, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} dy={8} />
+                      <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: 12, border: "1px solid rgba(226,232,240,0.9)" }}
+                        formatter={(v: any, k: any) => [v ?? "—", paramLabels[k] ?? k]}
+                      />
+                      <Legend iconType="circle" wrapperStyle={{ paddingTop: 12, fontSize: 12 }} formatter={(k) => paramLabels[k] ?? k} />
+                      {paramOrder.map((k) => (
+                        <Line
+                          key={k}
+                          type="monotone"
+                          dataKey={k}
+                          stroke={PARAM_COLOURS[k] ?? "#94a3b8"}
+                          strokeWidth={2.5}
+                          dot={{ r: 3 }}
+                          connectNulls
+                        />
+                      ))}
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {paramNetMovement && (
+                <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                  <h3 className="text-base font-bold text-[#003366] font-serif mb-1">
+                    Net movement, {paramNetMovement.fromYear} → {paramNetMovement.toYear}
+                  </h3>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Where the institute gained and lost points over the selected range.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {paramOrder.map((k) => {
+                      const delta = paramNetMovement.parameters?.[k];
+                      const up = (delta ?? 0) > 0;
+                      return (
+                        <div key={k} className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/60">
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                            {k.toUpperCase()}
+                          </div>
+                          <div className="text-xs text-slate-600 truncate" title={paramLabels[k] ?? k}>
+                            {(paramLabels[k] ?? k).split(/[,&]/)[0].trim()}
+                          </div>
+                          <div className={`mt-2 text-xl font-black flex items-center gap-1 ${
+                            delta === null || delta === undefined
+                              ? "text-slate-400"
+                              : up ? "text-emerald-700" : "text-rose-700"
+                          }`}>
+                            {delta === null || delta === undefined ? (
+                              "—"
+                            ) : (
+                              <>
+                                {up ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                                {up ? `+${delta.toFixed(2)}` : delta.toFixed(2)}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                <h3 className="text-base font-bold text-[#003366] font-serif mb-3">
+                  Weighted contribution to the total score
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[#003366] text-white font-semibold">
+                        <th className="p-3">Parameter (weight)</th>
+                        {paramSeries.map((p) => (
+                          <th key={p.year} className="p-3 text-center">{p.year}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {paramOrder.map((k) => (
+                        <tr key={k} className="hover:bg-slate-50">
+                          <td className="p-3 font-semibold text-gray-900">
+                            {paramLabels[k] ?? k}{" "}
+                            <span className="text-slate-400 font-normal">
+                              ({Math.round((paramWeights[k] ?? 0) * 100)}%)
+                            </span>
+                          </td>
+                          {paramSeries.map((p) => (
+                            <td key={p.year} className="p-3 text-center">
+                              {p.parameters?.[k]?.weightedContribution?.toFixed(2) ?? "—"}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                      <tr className="bg-amber-50 font-bold">
+                        <td className="p-3">Total score</td>
+                        {paramSeries.map((p) => (
+                          <td key={p.year} className="p-3 text-center text-[#003366]">
+                            {p.score ?? "—"}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       ) : activeTab === "individual" ? (
         /* ==================== TAB 1: INDIVIDUAL IIT MANDI TRAJECTORY ==================== */

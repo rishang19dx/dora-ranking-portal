@@ -314,3 +314,239 @@ export interface PortalContext {
   allowedDataItems: string[];
   uploads: any[];
 }
+
+// ---------------------------------------------------------------------------
+// Phase 2 analytics (proposal Part D: 2.15 - 2.17)
+// ---------------------------------------------------------------------------
+
+export interface ParameterCell {
+  key: string;
+  label: string;
+  value: number | null;
+  weight: number;
+  weightedContribution: number | null;
+}
+
+export interface ParameterTrendPoint {
+  year: number;
+  rank: number | string | null;
+  score: number | null;
+  parameters: Record<string, ParameterCell>;
+  parameterDeltas: Record<string, number | null>;
+  recomposedScore: number | null;
+  hasParameters: boolean;
+}
+
+export interface ParameterTrendSeries {
+  category: string;
+  targetInstitute: string;
+  weights: Record<string, number>;
+  labels: Record<string, string>;
+  series: ParameterTrendPoint[];
+  netMovement: {
+    fromYear: number;
+    toYear: number;
+    parameters: Record<string, number | null>;
+  } | null;
+}
+
+export interface ParameterTrendsResponse {
+  years: number[];
+  availableYears: number[];
+  categories: string[];
+  parameterOrder: string[];
+  labels: Record<string, string>;
+  weights: Record<string, number>;
+  trends: Record<string, ParameterTrendSeries>;
+}
+
+export interface PeerGapRow {
+  key: string;
+  label: string;
+  weight: number;
+  own: number | null;
+  peerBest: number | null;
+  peerBestInstitute: string | null;
+  peerMedian: number | null;
+  gapToBest: number | null;
+  gapToMedian: number | null;
+  weightedUpsideToBest: number | null;
+  percentileAmongPeers: number | null;
+  leadsPeers?: boolean;
+}
+
+export interface PeerStanding {
+  institute: string;
+  rank: number | string | null;
+  score: number | null;
+  isTarget: boolean;
+  parameters: Record<string, number | null>;
+}
+
+export interface OwnHistoryRow {
+  key: string;
+  label: string;
+  weight: number;
+  own: number | null;
+  historicalMean: number | null;
+  historicalBest: number | null;
+  historicalBestYear: number | null;
+  deltaVsMean: number | null;
+  deltaVsBest: number | null;
+  weightedUpsideToOwnBest: number | null;
+  belowOwnAverage: boolean | null;
+}
+
+export interface GapAnalysisEntry {
+  vsPeers: {
+    available: boolean;
+    reason?: string;
+    targetRank?: number | string | null;
+    targetScore?: number | null;
+    recomposedScore?: number | null;
+    parameters: PeerGapRow[];
+    priorities: Array<{
+      key: string;
+      label: string;
+      gapToBest: number | null;
+      weightedUpsideToBest: number | null;
+      peerBestInstitute: string | null;
+    }>;
+    totalWeightedUpside?: number;
+    peers: PeerStanding[];
+  };
+  vsOwnHistory: {
+    available: boolean;
+    reason?: string;
+    comparedAgainstYears?: number[];
+    parameters: OwnHistoryRow[];
+    belowOwnAverage?: string[];
+    regressions?: Array<{
+      key: string;
+      label: string;
+      deltaVsBest: number | null;
+      historicalBestYear: number | null;
+      weightedUpsideToOwnBest: number | null;
+    }>;
+    totalWeightedUpsideToOwnBest?: number;
+  };
+  projections?: {
+    available: boolean;
+    reason?: string;
+    baseScore?: number;
+    disclaimer: string;
+    scenarios: Array<{
+      id: string;
+      label: string;
+      scoreDelta: number;
+      projectedScore: number;
+      wouldHaveRanked: number | null;
+    }>;
+  };
+}
+
+export interface GapAnalysisResponse {
+  year: number;
+  categories: string[];
+  parameterOrder: string[];
+  labels: Record<string, string>;
+  weights: Record<string, number>;
+  analysis: Record<string, GapAnalysisEntry>;
+}
+
+export interface DepartmentContribution {
+  unitId: string;
+  unitName: string;
+  shortName: string | null;
+  kind: string;
+  researchFundingInr: number;
+  sanctionedResearchInr: number;
+  researchProjects: number;
+  fundingAgencies: number;
+  graduated: number;
+  placed: number;
+  higherStudies: number;
+  phdGraduated: number;
+  studentStrength: number;
+  sanctionedIntake: number;
+  placementRatePct: number | null;
+  higherStudiesRatePct: number | null;
+  outcomeRatePct: number | null;
+  femaleSharePct: number | null;
+  fundingPerStudentInr: number | null;
+  fundingSharePct: number | null;
+  sections: string[];
+}
+
+export interface DepartmentPerformance {
+  unitId: string;
+  unitName: string;
+  shortName: string | null;
+  kind: string;
+  isAcademicUnit: boolean;
+  expectedSections: number;
+  sectionsTouched: number;
+  submissions: number;
+  approved: number;
+  submittedAwaitingReview: number;
+  draft: number;
+  correctionRequested: number;
+  notApplicable: number;
+  completionPct: number;
+  missingSections: string[];
+  recordsContributed: number;
+  correctionCycles: number;
+  firstPassApprovalPct: number;
+  avgReviewTurnaroundHours: number | null;
+  remindersSent: number;
+}
+
+export interface DepartmentAnalyticsResponse {
+  cycleYear: number;
+  scopedToUnits: string[] | null;
+  contribution: {
+    departments: DepartmentContribution[];
+    institute: {
+      departmentsReporting: number;
+      totalResearchFundingInr: number;
+      totalResearchProjects: number;
+      totalGraduated: number;
+      totalPlaced: number;
+      totalHigherStudies: number;
+      totalPhdGraduated: number;
+      totalStudentStrength: number;
+      institutePlacementRatePct: number | null;
+    };
+    leaders?: Record<string, { unitId: string; unitName: string; shortName: string | null; value: number } | null>;
+  };
+  performance: {
+    institute: {
+      eligibleUnits: number;
+      unitOwnedSections: number;
+      expectedUnitSubmissions: number;
+      totalSubmissions: number;
+      approved: number;
+      awaitingReview: number;
+      inCorrection: number;
+      draft: number;
+      notApplicable: number;
+      overallCompletionPct: number;
+      avgReviewTurnaroundHours: number | null;
+      unitsFullyComplete: number;
+      unitsNotStarted: number;
+    };
+    departments: DepartmentPerformance[];
+    sections: Array<{
+      sectionId: string;
+      title: string;
+      submitBy: string;
+      expected: number;
+      received: number;
+      settled: number;
+      awaitingReview: number;
+      inCorrection: number;
+      completionPct: number;
+    }>;
+    leaderboard?: Record<string, DepartmentPerformance[]>;
+  };
+}

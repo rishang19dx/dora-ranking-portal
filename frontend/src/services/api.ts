@@ -1,5 +1,8 @@
 import axios from 'axios';
 import type {
+  DepartmentAnalyticsResponse,
+  GapAnalysisResponse,
+  ParameterTrendsResponse,
   OrgUnit,
   NodalOfficer,
   DataRequest,
@@ -194,8 +197,63 @@ export const rankingsService = {
     return res.data;
   },
 
+  /** Parameter-wise history (TLR/RPC/GO/OI/PR) over a selectable range. */
+  async getParameterTrends(
+    category?: string,
+    range?: { last?: number; from?: number; to?: number },
+  ): Promise<ParameterTrendsResponse> {
+    const res = await api.get('/api/v1/rankings/parameters/trends/', {
+      params: { ...(category ? { category } : {}), ...(range || {}) },
+    });
+    return res.data;
+  },
+
+  /** Gap analysis against peer IITs and against the institute's own history. */
+  async getGapAnalysis(category?: string, year?: number): Promise<GapAnalysisResponse> {
+    const res = await api.get('/api/v1/rankings/gap-analysis/', {
+      params: { ...(category ? { category } : {}), ...(year ? { year } : {}) },
+    });
+    return res.data;
+  },
+
   async updateScraper(): Promise<{ message: string }> {
     const res = await api.post('/api/v1/scraper/update/');
     return res.data;
+  },
+};
+
+
+export const analyticsService = {
+  /**
+   * Department-wise contribution and performance for a cycle. The backend
+   * scopes the result by role, so a department head receives only their own.
+   */
+  async getDepartmentAnalytics(
+    cycleYear: number,
+    params?: { requestId?: string; category?: string; unitId?: string },
+  ): Promise<DepartmentAnalyticsResponse> {
+    const res = await api.get(`/api/nirf/cycles/${cycleYear}/department-analytics/`, {
+      params: params || {},
+    });
+    return res.data;
+  },
+
+  /** Downloads the boardroom briefing PDF. */
+  async downloadBriefing(
+    cycleYear: number,
+    params?: { requestId?: string; category?: string; rankingYear?: number },
+  ): Promise<void> {
+    const res = await api.get(`/api/nirf/cycles/${cycleYear}/briefing/`, {
+      params: params || {},
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(res.data as Blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `DORA_Boardroom_Briefing_NIRF_${cycleYear}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   },
 };

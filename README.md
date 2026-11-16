@@ -180,7 +180,7 @@ Sections that have not submitted are reminded on a schedule relative to each req
 
 ## 🧪 Testing & Continuous Integration
 
-The project includes an enterprise-grade automated test suite with **161 backend tests** and **163 frontend tests** (100% passing), statement coverage reporting across all Django apps, and a 5-stage GitHub Actions CI pipeline.
+The project includes an enterprise-grade automated test suite with **650 backend tests** and **200 frontend tests** (100% passing), statement coverage reporting across all Django apps, and a 5-stage GitHub Actions CI pipeline.
 
 For in-depth details, architecture diagrams, and scenario matrices, see [**TESTING.md**](./TESTING.md).
 

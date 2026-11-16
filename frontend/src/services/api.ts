@@ -351,8 +351,61 @@ export const proofService = {
   },
 };
 
-/** Whether the signed-in user may trigger staff-only actions such as a fetch. */
+/**
+ * Whether the signed-in user may trigger staff-only actions such as a fetch.
+ * Admin only: Director is read-only (spec 2.18).
+ */
 export function isStaffUser(): boolean {
-  const role = authService.getCurrentUser()?.role;
-  return role === 'ADMIN' || role === 'DIRECTOR';
+  return authService.getCurrentUser()?.role === 'ADMIN';
 }
+
+export interface AssignedTask {
+  requestId: string;
+  reference: string;
+  requestTitle: string;
+  framework: string;
+  cycleYear: number;
+  deadline: string;
+  requestStatus: string;
+  unitId: string;
+  unitName: string;
+  status: string;
+  overdue: boolean;
+}
+
+export const assignmentService = {
+  /** The signed-in nodal officer's own tasks; never other departments'. */
+  async mine(): Promise<{ unitIds: string[]; tasks: AssignedTask[] }> {
+    const res = await api.get('/api/me/assignments/');
+    return res.data;
+  },
+};
+
+export interface ManagedUser {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string | null;
+  role: 'ADMIN' | 'DIRECTOR' | 'AUDITOR' | 'NODAL_OFFICER';
+  isActive: boolean;
+  isSuperuser: boolean;
+  lastLogin: string | null;
+  dateJoined: string;
+}
+
+export const userService = {
+  async list(): Promise<ManagedUser[]> {
+    const res = await api.get('/api/auth/users/');
+    return res.data;
+  },
+  async create(payload: Partial<ManagedUser> & { password: string }): Promise<ManagedUser> {
+    const res = await api.post('/api/auth/users/', payload);
+    return res.data;
+  },
+  async update(id: number, payload: Partial<ManagedUser> & { password?: string }): Promise<ManagedUser> {
+    const res = await api.patch(`/api/auth/users/${id}/`, payload);
+    return res.data;
+  },
+};

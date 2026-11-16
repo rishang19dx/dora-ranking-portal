@@ -27,6 +27,8 @@ import { useToast } from '../../components/ToastProvider';
 import { dataItemLabel } from '../../lib/data-catalogue';
 import { getUnit, unitLabel, ORG_UNITS } from '../../lib/organogram';
 import type { DataRequest, NodalOfficer, ProofUpload, TargetStatus } from '../../lib/types';
+import { authFetch } from '../../lib/authFetch';
+import { canWriteNow } from '../../lib/rbac';
 
 const spring = { type: 'spring' as const, stiffness: 100, damping: 20 };
 
@@ -84,9 +86,9 @@ export default function DataRequestDetailPage() {
     if (!id) return;
     try {
       const [response, officersRes, subsRes] = await Promise.all([
-        fetch(`/api/data-requests/${id}/`),
-        fetch('/api/nodal-officers/'),
-        fetch(`/api/submissions/?request=${id}`),
+        authFetch(`/api/data-requests/${id}/`),
+        authFetch('/api/nodal-officers/'),
+        authFetch(`/api/submissions/?request=${id}`),
       ]);
       if (!response.ok) throw new Error('This data request could not be loaded.');
       const reqData = await response.json();
@@ -120,7 +122,7 @@ export default function DataRequestDetailPage() {
     if (!data?.request?.cycleYear) return;
     setLoadingRollup(true);
     try {
-      const res = await fetch(`/api/nirf/cycles/${data.request.cycleYear}/rollup/?category=${cat}`);
+      const res = await authFetch(`/api/nirf/cycles/${data.request.cycleYear}/rollup/?category=${cat}`);
       if (res.ok) {
         const d = await res.json();
         setRollupData(d);
@@ -158,7 +160,7 @@ export default function DataRequestDetailPage() {
   const act = async (body: Record<string, unknown>, key: string) => {
     setBusy(key);
     try {
-      const response = await fetch(`/api/data-requests/${id}/actions/`, {
+      const response = await authFetch(`/api/data-requests/${id}/actions/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -177,7 +179,7 @@ export default function DataRequestDetailPage() {
   const handleSubmissionAction = async (subId: string, action: 'approve' | 'reject' | 'requestCorrection' | 'reopen', comment?: string) => {
     setPerformingAction(true);
     try {
-      const res = await fetch(`/api/submissions/${subId}/actions/`, {
+      const res = await authFetch(`/api/submissions/${subId}/actions/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -208,7 +210,7 @@ export default function DataRequestDetailPage() {
 
   const handleViewSubmissionDetail = async (subId: string) => {
     try {
-      const res = await fetch(`/api/submissions/${subId}/`, {
+      const res = await authFetch(`/api/submissions/${subId}/`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('dora_access_token') || ''}`,
         },
@@ -290,25 +292,27 @@ export default function DataRequestDetailPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {request.status === 'CLOSED' ? (
-            <button
-              onClick={() => act({ action: 'REOPEN' }, 'reopen')}
-              disabled={busy !== null}
-              className="px-4 py-2.5 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors flex items-center gap-2"
-            >
-              <LockOpen weight="bold" className="w-4 h-4" /> Reopen Request
-            </button>
-          ) : (
-            <button
-              onClick={() => act({ action: 'CLOSE' }, 'close')}
-              disabled={busy !== null}
-              className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-black text-white text-sm font-semibold disabled:opacity-50 transition-colors flex items-center gap-2"
-            >
-              <Lock weight="bold" className="w-4 h-4" /> Close & Revoke Links
-            </button>
-          )}
-        </div>
+        {canWriteNow() && (
+          <div className="flex items-center gap-2">
+            {request.status === 'CLOSED' ? (
+              <button
+                onClick={() => act({ action: 'REOPEN' }, 'reopen')}
+                disabled={busy !== null}
+                className="px-4 py-2.5 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                <LockOpen weight="bold" className="w-4 h-4" /> Reopen Request
+              </button>
+            ) : (
+              <button
+                onClick={() => act({ action: 'CLOSE' }, 'close')}
+                disabled={busy !== null}
+                className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-black text-white text-sm font-semibold disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                <Lock weight="bold" className="w-4 h-4" /> Close & Revoke Links
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Metric Cards */}
@@ -446,13 +450,15 @@ export default function DataRequestDetailPage() {
 
                     <div className="flex flex-wrap items-center gap-2 shrink-0">
                       {officerIds.length > 0 && (
-                        <button
-                          onClick={() => act({ action: 'REISSUE', unitId, officerId: officerIds[0] }, `reissue-${unitId}`)}
-                          disabled={busy !== null || request.status === 'CLOSED'}
-                          className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 transition-colors flex items-center gap-1.5"
-                        >
-                          <Copy weight="bold" className="w-3.5 h-3.5" /> Copy link
-                        </button>
+                        canWriteNow() && (
+                          <button
+                            onClick={() => act({ action: 'REISSUE', unitId, officerId: officerIds[0] }, `reissue-${unitId}`)}
+                            disabled={busy !== null || request.status === 'CLOSED'}
+                            className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                          >
+                            <Copy weight="bold" className="w-3.5 h-3.5" /> Copy link
+                          </button>
+                        )
                       )}
                     </div>
                   </div>
@@ -547,48 +553,56 @@ export default function DataRequestDetailPage() {
 
                           {sub.status === 'SUBMITTED' && (
                             <>
-                              <button
-                                type="button"
-                                disabled={performingAction}
-                                onClick={() => handleSubmissionAction(sub.id, 'approve')}
-                                className="px-2.5 py-1 text-xs font-semibold text-white bg-sage-600 hover:bg-sage-700 rounded-lg shadow-sm"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                type="button"
-                                disabled={performingAction}
-                                onClick={() => {
-                                  setCorrectionModalAction('reject');
-                                  setCorrectionModalSubId(sub.id);
-                                }}
-                                className="px-2.5 py-1 text-xs font-semibold text-white bg-dusty-rose-700 hover:bg-dusty-rose-800 rounded-lg"
-                              >
-                                Reject
-                              </button>
-                              <button
-                                type="button"
-                                disabled={performingAction}
-                                onClick={() => {
-                                  setCorrectionModalAction('requestCorrection');
-                                  setCorrectionModalSubId(sub.id);
-                                }}
-                                className="px-2.5 py-1 text-xs font-semibold text-dusty-rose-700 bg-dusty-rose-50 hover:bg-dusty-rose-100 rounded-lg"
-                              >
-                                Request Fix
-                              </button>
+                              {canWriteNow() && (
+                                <button
+                                  type="button"
+                                  disabled={performingAction}
+                                  onClick={() => handleSubmissionAction(sub.id, 'approve')}
+                                  className="px-2.5 py-1 text-xs font-semibold text-white bg-sage-600 hover:bg-sage-700 rounded-lg shadow-sm"
+                                >
+                                  Approve
+                                </button>
+                              )}
+                              {canWriteNow() && (
+                                <button
+                                  type="button"
+                                  disabled={performingAction}
+                                  onClick={() => {
+                                    setCorrectionModalAction('reject');
+                                    setCorrectionModalSubId(sub.id);
+                                  }}
+                                  className="px-2.5 py-1 text-xs font-semibold text-white bg-dusty-rose-700 hover:bg-dusty-rose-800 rounded-lg"
+                                >
+                                  Reject
+                                </button>
+                              )}
+                              {canWriteNow() && (
+                                <button
+                                  type="button"
+                                  disabled={performingAction}
+                                  onClick={() => {
+                                    setCorrectionModalAction('requestCorrection');
+                                    setCorrectionModalSubId(sub.id);
+                                  }}
+                                  className="px-2.5 py-1 text-xs font-semibold text-dusty-rose-700 bg-dusty-rose-50 hover:bg-dusty-rose-100 rounded-lg"
+                                >
+                                  Request Fix
+                                </button>
+                              )}
                             </>
                           )}
 
                           {sub.status === 'APPROVED' && (
-                            <button
-                              type="button"
-                              disabled={performingAction}
-                              onClick={() => handleSubmissionAction(sub.id, 'reopen')}
-                              className="px-2.5 py-1 text-xs font-semibold text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg"
-                            >
-                              Reopen
-                            </button>
+                            canWriteNow() && (
+                              <button
+                                type="button"
+                                disabled={performingAction}
+                                onClick={() => handleSubmissionAction(sub.id, 'reopen')}
+                                className="px-2.5 py-1 text-xs font-semibold text-zinc-600 bg-zinc-100 hover:bg-zinc-200 rounded-lg"
+                              >
+                                Reopen
+                              </button>
+                            )
                           )}
                         </div>
                       </td>

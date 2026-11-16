@@ -167,42 +167,42 @@ class TestOrganogramAPI:
         assert 'catalogue' in data
         assert 'groups' in data
 
-    def test_nodal_officer_list_returns_200(self, api_client):
-        response = api_client.get('/api/nodal-officers/')
+    def test_nodal_officer_list_returns_200(self, admin_client):
+        response = admin_client.get('/api/nodal-officers/')
         assert response.status_code == 200
         assert isinstance(response.data, list)
 
-    def test_create_nodal_officer(self, api_client, sample_org_unit):
+    def test_create_nodal_officer(self, admin_client, sample_org_unit):
         payload = {
             'name': 'New Officer',
             'email': 'newofficer@iitmandi.ac.in',
             'designation': 'Associate Professor',
             'unitIds': [sample_org_unit.id],
         }
-        response = api_client.post('/api/nodal-officers/', data=payload, format='json')
+        response = admin_client.post('/api/nodal-officers/', data=payload, format='json')
         assert response.status_code == 201
         assert response.data['email'] == 'newofficer@iitmandi.ac.in'
         assert sample_org_unit.id in response.data['unitIds']
 
-    def test_create_nodal_officer_duplicate_email(self, api_client, sample_officer):
+    def test_create_nodal_officer_duplicate_email(self, admin_client, sample_officer):
         payload = {
             'name': 'Another Officer',
             'email': sample_officer.email,  # duplicate
         }
-        response = api_client.post('/api/nodal-officers/', data=payload, format='json')
+        response = admin_client.post('/api/nodal-officers/', data=payload, format='json')
         assert response.status_code == 400
 
-    def test_get_nodal_officer_detail(self, api_client, sample_officer):
-        response = api_client.get(f'/api/nodal-officers/{sample_officer.id}/')
+    def test_get_nodal_officer_detail(self, admin_client, sample_officer):
+        response = admin_client.get(f'/api/nodal-officers/{sample_officer.id}/')
         assert response.status_code == 200
         assert response.data['id'] == sample_officer.id
 
-    def test_get_nodal_officer_not_found(self, api_client):
-        response = api_client.get('/api/nodal-officers/no_nonexistent1234/')
+    def test_get_nodal_officer_not_found(self, admin_client):
+        response = admin_client.get('/api/nodal-officers/no_nonexistent1234/')
         assert response.status_code == 404
 
-    def test_patch_nodal_officer(self, api_client, sample_officer):
-        response = api_client.patch(
+    def test_patch_nodal_officer(self, admin_client, sample_officer):
+        response = admin_client.patch(
             f'/api/nodal-officers/{sample_officer.id}/',
             data={'status': 'ACTIVE'},
             format='json',
@@ -210,15 +210,15 @@ class TestOrganogramAPI:
         assert response.status_code == 200
         assert response.data['status'] == 'ACTIVE'
 
-    def test_delete_nodal_officer(self, api_client, sample_officer):
-        response = api_client.delete(f'/api/nodal-officers/{sample_officer.id}/')
+    def test_delete_nodal_officer(self, admin_client, sample_officer):
+        response = admin_client.delete(f'/api/nodal-officers/{sample_officer.id}/')
         assert response.status_code == 204
         # Verify it's gone
-        get_response = api_client.get(f'/api/nodal-officers/{sample_officer.id}/')
+        get_response = admin_client.get(f'/api/nodal-officers/{sample_officer.id}/')
         assert get_response.status_code == 404
 
-    def test_officer_access_grants_list(self, api_client, sample_officer, sample_grant):
-        response = api_client.get(f'/api/nodal-officers/{sample_officer.id}/access/')
+    def test_officer_access_grants_list(self, admin_client, sample_officer, sample_grant):
+        response = admin_client.get(f'/api/nodal-officers/{sample_officer.id}/access/')
         assert response.status_code == 200
         assert isinstance(response.data, list)
         assert len(response.data) >= 1

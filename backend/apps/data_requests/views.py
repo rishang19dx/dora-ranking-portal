@@ -1,5 +1,6 @@
 import os
 from django.utils import timezone
+from rest_framework.permissions import AllowAny
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -28,11 +29,18 @@ from .services import (
     calculate_checksum,
 )
 from apps.organogram.serializers import OrgUnitSerializer, NodalOfficerSerializer
+from apps.accounts.permissions import IsAdmin, IsAdminOrOversightReadOnly
 
 ALLOWED_EXTENSIONS = {'.pdf', '.xlsx', '.csv', '.docx'}
 MAX_UPLOAD_SIZE = 25 * 1024 * 1024  # 25 MB
 
 class DataRequestListCreateView(APIView):
+    """
+    Data requests are the submission trail (what was asked of whom, by when),
+    so Director and Auditor may read them; only Admin dispatches.
+    """
+    permission_classes = [IsAdminOrOversightReadOnly]
+
     def get(self, request):
         requests = DataRequest.objects.prefetch_related('targets', 'uploads', 'deliveries').all()
         serializer = DataRequestSerializer(requests, many=True)
@@ -105,6 +113,8 @@ class DataRequestListCreateView(APIView):
         return Response(res_data, status=status.HTTP_201_CREATED)
 
 class DataRequestDetailView(APIView):
+    permission_classes = [IsAdminOrOversightReadOnly]
+
     def get(self, request, pk):
         data_req = get_object_or_404(
             DataRequest.objects.prefetch_related('targets__org_unit', 'uploads', 'deliveries'),
@@ -113,6 +123,8 @@ class DataRequestDetailView(APIView):
         return Response(DataRequestSerializer(data_req).data)
 
 class DataRequestActionsView(APIView):
+    permission_classes = [IsAdmin]
+
     def post(self, request, pk):
         from django.conf import settings
         from .services import (
@@ -291,6 +303,8 @@ class DataRequestActionsView(APIView):
         return Response({'error': f'Unsupported action: {action}'}, status=status.HTTP_400_BAD_REQUEST)
 
 class PortalGrantContextView(APIView):
+    permission_classes = [AllowAny]  # authorised by the single-purpose link token
+
     def get(self, request, token):
         digest = hash_token(token)
         grant = PortalAccessGrant.objects.select_related('officer', 'request', 'org_unit').filter(token_hash=digest).first()
@@ -323,6 +337,8 @@ class PortalGrantContextView(APIView):
         })
 
 class PortalUploadView(APIView):
+    permission_classes = [AllowAny]  # authorised by the single-purpose link token
+
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, token):
@@ -401,3 +417,58 @@ class PortalUploadView(APIView):
             target.save()
 
         return Response(ProofUploadSerializer(upload).data, status=status.HTTP_201_CREATED)
+
+
+class MyAssignmentsView(APIView):
+    """
+    A signed-in nodal officer's own collection tasks (spec 2.18).
+
+    The officer dashboard used to read the full `/api/data-requests/` list,
+    which showed every department's requests to anyone. This returns only the
+    targets for units the officer is assigned to on the roster, matched by
+    institutional email. Upload links are not returned: they are emailed, and
+    stay single-purpose.
+    """
+    from rest_framework.permissions import IsAuthenticated
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.organogram.models import NodalOfficer
+
+        officer = NodalOfficer.objects.filter(
+            email__iexact=(request.user.email or '')
+        ).first() if request.user.email else None
+        unit_ids = list(officer.assigned_units.values_list('id', flat=True)) if officer else []
+
+        targets = (
+            DataRequestTarget.objects
+            .filter(org_unit_id__in=unit_ids)
+            .select_related('request', 'org_unit')
+            .order_by('request__deadline')
+        )
+        now = timezone.now()
+        tasks = []
+        for t in targets:
+            req = t.request
+            tasks.append({
+                'requestId': req.id,
+                'reference': req.reference,
+                'requestTitle': req.title,
+                'framework': req.framework,
+                'cycleYear': req.cycle_year,
+                'deadline': req.deadline,
+                'requestStatus': req.status,
+                'unitId': t.org_unit_id,
+                'unitName': t.org_unit.short_name or t.org_unit.name,
+                'status': t.status,
+                'overdue': (
+                    req.status == DataRequestStatus.DISPATCHED
+                    and t.status != TargetStatus.SUBMITTED
+                    and req.deadline < now
+                ),
+            })
+        return Response({
+            'officer': NodalOfficerSerializer(officer).data if officer else None,
+            'unitIds': unit_ids,
+            'tasks': tasks,
+        })

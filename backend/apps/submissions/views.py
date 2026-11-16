@@ -18,7 +18,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from apps.organogram.models import NodalOfficer, OrgUnit, Programme
 from apps.data_requests.models import DataRequest, DataRequestTarget, PortalAccessGrant, ProofUpload, TargetStatus
 from apps.data_requests.services import hash_token
-from apps.accounts.permissions import IsAdminOrDirector, IsAdminOrDirectorOrAuditorReadOnly
+from apps.accounts.permissions import IsAdmin, IsAdminOrOversightReadOnly, effective_role, has_oversight
 
 from .models import (
     FormSchema,
@@ -1211,7 +1211,7 @@ class PortalRecordConfirmView(APIView):
 # -----------------------------------------------------------------------------
 
 class AdminSubmissionsListView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request):
         qs = SectionSubmission.objects.select_related('request', 'org_unit', 'submitted_by').all()
@@ -1232,7 +1232,7 @@ class AdminSubmissionsListView(APIView):
         return Response(serializer.data)
 
 class AdminSubmissionDetailView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, pk):
         sub = get_object_or_404(
@@ -1243,7 +1243,7 @@ class AdminSubmissionDetailView(APIView):
 
         # Records
         pii_fields = {'name', 'gender', 'employeeId', 'email', 'alumniName', 'coordinator', 'coordinatorContact'}
-        is_elevated = getattr(request.user, 'role', '') in ('ADMIN', 'DIRECTOR') or request.user.is_superuser
+        is_elevated = effective_role(request.user) in ('ADMIN', 'DIRECTOR')
 
         recs = []
         for r in sub.records.all():
@@ -1295,7 +1295,7 @@ class AdminSubmissionActionView(APIView):
     - `reopen`             APPROVED / CORRECTION_REQUESTED -> DRAFT. An
                            audited override to unlock a settled submission.
     """
-    permission_classes = [IsAdminOrDirector]
+    permission_classes = [IsAdmin]
 
     TRANSITIONS = {
         'approve': ({SubmissionStatus.SUBMITTED}, SubmissionStatus.APPROVED, 'APPROVE', False),
@@ -1377,7 +1377,7 @@ class AdminSubmissionActionView(APIView):
         return Response(SectionSubmissionSerializer(sub).data)
 
 class NirfRollupView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, year):
         category = request.query_params.get('category', 'OVERALL').upper()
@@ -1402,14 +1402,7 @@ def resolve_visible_units(user, requested_unit_id=None):
 
     Returns (unit_ids or None for all, error_response or None).
     """
-    role = getattr(user, 'role', None)
-    privileged = (
-        role in ('ADMIN', 'DIRECTOR', 'AUDITOR')
-        or user.is_staff
-        or user.is_superuser
-    )
-
-    if privileged:
+    if has_oversight(user):
         return ([requested_unit_id] if requested_unit_id else None), None
 
     officer = NodalOfficer.objects.filter(email__iexact=(user.email or '')).first()
@@ -1531,7 +1524,7 @@ class BoardroomBriefingView(APIView):
     Carries the cycle's submission statistics, the discrepancies cross-checks
     flagged, and scenario-based score projections.
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, year):
         from apps.rankings.views import load_ranking_data
@@ -1602,7 +1595,7 @@ class AuditLogView(APIView):
     across the recorded changes, and CSV export of the filtered set
     (`?export=csv`).
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
     MAX_PAGE_SIZE = 200
     CSV_LIMIT = 20000
 
@@ -1763,7 +1756,7 @@ class ProofRepositoryView(APIView):
     the schema sections it supports. Read-only for Admin, Director and
     Auditor (spec 2.18: the auditor has read access to raw proofs).
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
     MAX_PAGE_SIZE = 200
 
     def get(self, request):
@@ -1839,7 +1832,7 @@ class ProofDownloadView(APIView):
     production not at all. This serves them to Admin, Director and Auditor
     only, and re-verifies the stored SHA-256 so a tampered file is refused.
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, pk):
         from django.http import FileResponse
@@ -1903,7 +1896,7 @@ class RecordsTemplateView(APIView):
         return response
 
 class NirfExportView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, year):
         category = request.query_params.get('category', 'OVERALL').upper()

@@ -15,6 +15,8 @@ import {
 import { FileSpreadsheet } from 'lucide-react';
 import { useToast } from '../../components/ToastProvider';
 import { ORG_UNITS, getUnit, unitLabel } from '../../lib/organogram';
+import { authFetch } from '../../lib/authFetch';
+import { canWriteNow } from '../../lib/rbac';
 
 const spring = { type: 'spring' as const, stiffness: 100, damping: 20 };
 
@@ -67,7 +69,7 @@ export default function AdminProgrammes() {
 
   const loadProgrammes = useCallback(async () => {
     try {
-      const res = await fetch('/api/programmes/');
+      const res = await authFetch('/api/programmes/');
       if (!res.ok) throw new Error('Failed to load programmes');
       const data = await res.json();
       setProgrammes(Array.isArray(data) ? data : data.results || []);
@@ -132,7 +134,7 @@ export default function AdminProgrammes() {
       const url = editingProg ? `/api/programmes/${editingProg.id}/` : '/api/programmes/';
       const method = editingProg ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await authFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -160,7 +162,7 @@ export default function AdminProgrammes() {
     if (!window.confirm(`Are you sure you want to delete programme "${name}"?`)) return;
 
     try {
-      const res = await fetch(`/api/programmes/${id}/`, {
+      const res = await authFetch(`/api/programmes/${id}/`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('dora_access_token') || ''}`,
@@ -182,7 +184,7 @@ export default function AdminProgrammes() {
       const fd = new FormData();
       fd.append('file', file);
 
-      const res = await fetch('/api/programmes/import/', {
+      const res = await authFetch('/api/programmes/import/', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('dora_access_token') || ''}`,
@@ -228,22 +230,26 @@ export default function AdminProgrammes() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-sm font-semibold rounded-xl transition-all shadow-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            Bulk Import
-          </button>
-          <button
-            type="button"
-            onClick={handleOpenAdd}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-sage-600 hover:bg-sage-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Add Programme
-          </button>
+          {canWriteNow() && (
+            <button
+              type="button"
+              onClick={() => setIsImportModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-sm font-semibold rounded-xl transition-all shadow-sm"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              Bulk Import
+            </button>
+          )}
+          {canWriteNow() && (
+            <button
+              type="button"
+              onClick={handleOpenAdd}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-sage-600 hover:bg-sage-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Add Programme
+            </button>
+          )}
         </div>
       </div>
 
@@ -359,22 +365,26 @@ export default function AdminProgrammes() {
                       </td>
                       <td className="py-3.5 px-5 text-right">
                         <div className="inline-flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(prog)}
-                            className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
-                            title="Edit Programme"
-                          >
-                            <PencilSimple className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(prog.id, prog.name)}
-                            className="p-1.5 text-zinc-400 hover:text-dusty-rose-600 hover:bg-dusty-rose-50 rounded-lg transition-colors"
-                            title="Delete Programme"
-                          >
-                            <TrashSimple className="w-4 h-4" />
-                          </button>
+                          {canWriteNow() && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(prog)}
+                              className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
+                              title="Edit Programme"
+                            >
+                              <PencilSimple className="w-4 h-4" />
+                            </button>
+                          )}
+                          {canWriteNow() && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(prog.id, prog.name)}
+                              className="p-1.5 text-zinc-400 hover:text-dusty-rose-600 hover:bg-dusty-rose-50 rounded-lg transition-colors"
+                              title="Delete Programme"
+                            >
+                              <TrashSimple className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ChartLineUp,
   ShieldCheck,
@@ -24,32 +24,34 @@ import { DocumentsView } from './DocumentsView';
 import { AboutView } from './AboutView';
 import { authService } from '../services/api';
 import { useToast } from '../components/ToastProvider';
+import { homeFor, roleOf, ROLE_LABELS } from '../lib/rbac';
+import type { User } from '../types';
+
+/** Only same-site paths are honoured as a post-login destination. */
+function safeNext(next: string | null): string | null {
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : null;
+}
 
 export default function PublicLanding() {
   const [activeTab, setActiveTab] = useState<'overview' | 'rankings' | 'trends' | 'agencies' | 'comparative' | 'documents' | 'about'>('overview');
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showLoginModal, setShowLoginModal] = useState(searchParams.get('login') === '1');
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const currentUser = authService.getCurrentUser();
+  const signedIn = Boolean(currentUser && localStorage.getItem('dora_access_token'));
 
-  const handleLoginSuccess = async (userData: any) => {
+  const closeLogin = () => {
     setShowLoginModal(false);
-    try {
-      // Attempt real JWT token login with backend using admin credentials
-      await authService.login('admin', 'admin123');
-      showToast('Authenticated successfully with Django DRF.', 'success');
-      navigate('/admin');
-    } catch {
-      // Fallback local state if offline
-      localStorage.setItem('dora_user', JSON.stringify({
-        id: userData.id,
-        username: userData.name,
-        email: userData.email,
-        role: userData.role === 'Super Admin' ? 'ADMIN' : 'NODAL_OFFICER',
-      }));
-      showToast(`Logged in as ${userData.role}`, 'success');
-      navigate(userData.role === 'Super Admin' ? '/admin' : '/nodal-officer');
-    }
+    if (searchParams.has('login') || searchParams.has('next')) setSearchParams({}, { replace: true });
+  };
+
+  const handleLoginSuccess = (user: User) => {
+    setShowLoginModal(false);
+    const role = roleOf(user);
+    showToast(`Signed in${role ? ` as ${ROLE_LABELS[role]}` : ''}.`, 'success');
+    navigate(safeNext(searchParams.get('next')) ?? homeFor(user), { replace: true });
   };
 
   return (
@@ -97,19 +99,24 @@ export default function PublicLanding() {
           </div>
 
           <div className="flex items-center gap-2 pl-4 shrink-0">
-            <Link
-              to="/nodal-officer"
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
-            >
-              Nodal Officer Portal
-            </Link>
-            <Link
-              to="/admin"
-              className="flex items-center gap-1.5 bg-zinc-900 hover:bg-black text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm"
-            >
-              <Lock className="w-3.5 h-3.5" />
-              <span>Admin Portal</span>
-            </Link>
+            {signedIn ? (
+              <Link
+                to={homeFor(currentUser)}
+                className="flex items-center gap-1.5 bg-zinc-900 hover:bg-black text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>My Dashboard</span>
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowLoginModal(true)}
+                className="flex items-center gap-1.5 bg-zinc-900 hover:bg-black text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Staff Sign In</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -161,12 +168,12 @@ export default function PublicLanding() {
                     <span>Explore Rankings</span>
                     <ArrowRight weight="bold" className="w-4 h-4" />
                   </button>
-                  <Link
-                    to="/admin/organogram"
+                  <button
+                    onClick={() => setActiveTab('comparative')}
                     className="flex items-center gap-2 bg-white/90 hover:bg-white border border-slate-200 text-zinc-800 font-semibold text-sm px-6 py-3 rounded-xl shadow-sm transition-all"
                   >
-                    <span>Institute Organogram</span>
-                  </Link>
+                    <span>Peer Benchmarking</span>
+                  </button>
                 </div>
               </div>
             </section>
@@ -194,7 +201,7 @@ export default function PublicLanding() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
                 className="bg-white border border-slate-200/50 rounded-3xl p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] text-center cursor-pointer hover:-translate-y-1 transition-all"
-                onClick={() => navigate('/admin/organogram')}
+                onClick={() => setActiveTab('about')}
               >
                 <div className="w-16 h-16 bg-dusty-rose-50 text-dusty-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <ShieldCheck weight="duotone" className="w-8 h-8" />
@@ -306,7 +313,7 @@ export default function PublicLanding() {
       {/* Login Modal */}
       {showLoginModal && (
         <LoginModal
-          onClose={() => setShowLoginModal(false)}
+          onClose={closeLogin}
           onLoginSuccess={handleLoginSuccess}
         />
       )}

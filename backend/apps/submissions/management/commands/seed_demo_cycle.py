@@ -19,6 +19,7 @@ from django.core.management.base import BaseCommand, CommandError
 from rest_framework.test import APIClient
 
 from apps.submissions.demo_cycle import run_demo_cycle
+from apps.accounts.permissions import effective_role
 
 
 class Command(BaseCommand):
@@ -43,8 +44,8 @@ class Command(BaseCommand):
         checker = get_user_model().objects.filter(username=opts['checker']).first()
         if checker is None:
             raise CommandError(f"No user '{opts['checker']}'. Pass --checker <admin username>.")
-        if getattr(checker, 'role', None) not in ('ADMIN', 'DIRECTOR') and not checker.is_superuser:
-            raise CommandError(f"'{checker.username}' is not an ADMIN or DIRECTOR and cannot approve.")
+        if effective_role(checker) != 'ADMIN':
+            raise CommandError(f"'{checker.username}' is not an ADMIN and cannot approve.")
 
         admin = APIClient()
         admin.force_authenticate(user=checker)

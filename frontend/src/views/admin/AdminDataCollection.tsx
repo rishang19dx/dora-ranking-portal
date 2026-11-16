@@ -16,6 +16,8 @@ import {
 import { useToast } from '../../components/ToastProvider';
 import { unitLabel } from '../../lib/organogram';
 import type { DataRequest, ProofUpload } from '../../lib/types';
+import { authFetch } from '../../lib/authFetch';
+import { canWriteNow } from '../../lib/rbac';
 
 const spring = { type: 'spring' as const, stiffness: 100, damping: 20 };
 
@@ -32,7 +34,7 @@ export default function DataCollectionPage() {
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch('/api/data-requests/');
+      const response = await authFetch('/api/data-requests/');
       if (!response.ok) throw new Error('Unable to load data requests.');
       const raw = await response.json();
       const requests = Array.isArray(raw) ? raw : (raw.requests || []);
@@ -77,12 +79,14 @@ export default function DataCollectionPage() {
             every section.
           </p>
         </div>
-        <Link
-          to="/admin/data-requests/new"
-          className="bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(90,115,89,0.3)] flex items-center gap-2 shrink-0"
-        >
-          <PaperPlaneTilt weight="bold" className="w-4 h-4" /> New Data Request
-        </Link>
+        {canWriteNow() && (
+          <Link
+            to="/admin/data-requests/new"
+            className="bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(90,115,89,0.3)] flex items-center gap-2 shrink-0"
+          >
+            <PaperPlaneTilt weight="bold" className="w-4 h-4" /> New Data Request
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -126,12 +130,14 @@ export default function DataCollectionPage() {
               Pick the sections that hold the evidence from the institute organogram, choose the
               data you need, and the portal will email each nodal officer a restricted upload link.
             </p>
-            <Link
-              to="/admin/data-requests/new"
-              className="inline-flex items-center gap-2 mt-6 bg-sage-600 hover:bg-sage-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-            >
-              Compose the first request <ArrowRight weight="bold" className="w-4 h-4" />
-            </Link>
+            {canWriteNow() && (
+              <Link
+                to="/admin/data-requests/new"
+                className="inline-flex items-center gap-2 mt-6 bg-sage-600 hover:bg-sage-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+              >
+                Compose the first request <ArrowRight weight="bold" className="w-4 h-4" />
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-4">

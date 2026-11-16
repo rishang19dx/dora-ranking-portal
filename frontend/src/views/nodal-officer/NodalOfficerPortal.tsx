@@ -1,22 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Clock, CheckCircle, FileText, ArrowRight, ShieldCheck, Warning } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
-import { authService } from '../../services/api';
-import { unitLabel } from '../../lib/organogram';
-
-interface AssignedTask {
-  requestId: string;
-  requestTitle: string;
-  reference: string;
-  framework: string;
-  cycleYear: number;
-  deadline: string;
-  unitId: string;
-  unitName: string;
-  status: string;
-  portalUrl?: string;
-  token?: string;
-}
+import { authService, assignmentService, type AssignedTask } from '../../services/api';
 
 export default function NodalOfficerPortal() {
   const [tasks, setTasks] = useState<AssignedTask[]>([]);
@@ -24,37 +9,12 @@ export default function NodalOfficerPortal() {
   const currentUser = authService.getCurrentUser();
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/data-requests/');
-        if (!res.ok) throw new Error('Could not load data requests');
-        const raw = await res.json();
-        const requests = Array.isArray(raw) ? raw : (raw.requests || []);
-
-        const pendingList: AssignedTask[] = [];
-        requests.forEach((req: any) => {
-          (req.targets || []).forEach((tgt: any) => {
-            const uId = tgt.unitId || tgt.orgUnitId || tgt.orgUnit?.id || '';
-            pendingList.push({
-              requestId: req.id,
-              requestTitle: req.title,
-              reference: req.reference || `DORA/${req.cycleYear}/${req.framework}`,
-              framework: req.framework,
-              cycleYear: req.cycleYear,
-              deadline: req.deadline,
-              unitId: uId,
-              unitName: tgt.unitName || unitLabel(uId) || uId,
-              status: tgt.status,
-            });
-          });
-        });
-        setTasks(pendingList);
-      } catch {
-        // Fallback or empty
-      } finally {
-        setLoading(false);
-      }
-    })();
+    // Only this officer's own units (spec 2.18); the institute-wide request
+    // list is not theirs to see.
+    assignmentService.mine()
+      .then((body) => setTasks(body.tasks ?? []))
+      .catch(() => setTasks([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const activeTasks = tasks.filter((t) => t.status !== 'SUBMITTED');

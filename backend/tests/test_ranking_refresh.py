@@ -157,6 +157,8 @@ def test_fetch_button_is_staff_only(db, data_dir):
         assert _client().post('/api/v1/scraper/update/').status_code in (401, 403)
         assert _client('NODAL_OFFICER', 'officer').post('/api/v1/scraper/update/').status_code == 403
         assert _client('AUDITOR', 'auditor').post('/api/v1/scraper/update/').status_code == 403
+        # Director is read-only (spec 2.18), so cannot trigger ingestion either.
+        assert _client('DIRECTOR', 'director').post('/api/v1/scraper/update/').status_code == 403
 
 
 def test_fetch_button_reports_what_it_found(db, data_dir):

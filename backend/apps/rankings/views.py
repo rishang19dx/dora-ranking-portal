@@ -1,7 +1,8 @@
+from rest_framework.permissions import AllowAny
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from apps.accounts.permissions import IsAdminOrDirector
+from apps.accounts.permissions import IsAdmin
 from .scraper import (  # noqa: F401 - DATA_DIR is re-exported for test fixtures that patch it
     fetch_lock,
     refresh_new_publications,
@@ -73,6 +74,8 @@ def resolve_year_range(params, category: str):
     return years, None
 
 class RootRankingWelcomeView(APIView):
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     def get(self, request):
         return Response({
             "message": "Welcome to the NIRF Rankings API (Django DRF).",
@@ -88,6 +91,8 @@ class RootRankingWelcomeView(APIView):
         })
 
 class GetRankingsView(APIView):
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     def get(self, request, year, category):
         try:
             year_int = int(year)
@@ -119,6 +124,8 @@ class GetRankingsView(APIView):
         })
 
 class GetSecondGenIITsView(APIView):
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     TARGET_IITS = TARGET_IITS
 
     def get(self, request, year, category):
@@ -148,6 +155,8 @@ class GetSecondGenIITsView(APIView):
         })
 
 class GetRankingByRankView(APIView):
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     def get(self, request, year, category, rank):
         try:
             year_int = int(year)
@@ -176,6 +185,8 @@ class TrendsAnalyticsView(APIView):
     Returns 5-year longitudinal trend data for 2nd Gen IITs
     across Engineering, Innovation, and Overall categories.
     """
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     WINDOW = 5  # most recent published cycles shown
     CATEGORIES = ['Engineering', 'Innovation', 'Overall']
 
@@ -284,6 +295,8 @@ class ParameterTrendsView(APIView):
     scored parameters moved it, and what each one contributed to the total.
     Published NIRF results, so no authentication - same as the rank endpoints.
     """
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     def get(self, request):
         requested = request.query_params.get('category')
         if requested:
@@ -333,6 +346,8 @@ class GapAnalysisView(APIView):
     acts on - the weighted points the total score would gain by closing it,
     so the rows are directly comparable rather than five raw deltas.
     """
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     def get(self, request):
         requested_year = request.query_params.get('year')
         if requested_year in (None, ''):
@@ -399,7 +414,7 @@ class TriggerScraperUpdateView(APIView):
     Staff only: this was previously open to anyone, and the button sat on
     the public trends page.
     """
-    permission_classes = [IsAdminOrDirector]
+    permission_classes = [IsAdmin]
 
     def post(self, request):
         full = str(request.data.get('full', request.query_params.get('full', ''))).lower() in ('1', 'true', 'yes')

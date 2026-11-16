@@ -24,6 +24,8 @@ import {
   type OrgUnitType,
 } from '../../lib/organogram';
 import type { NodalOfficer, UnitCoverage } from '../../lib/types';
+import { authFetch } from '../../lib/authFetch';
+import { canWriteNow } from '../../lib/rbac';
 
 const spring = { type: 'spring' as const, stiffness: 100, damping: 20 };
 
@@ -52,14 +54,14 @@ export default function AdminOrganogram() {
     let cancelled = false;
     (async () => {
       try {
-        const response = await fetch('/api/organogram/');
+        const response = await authFetch('/api/organogram/');
         if (!response.ok) throw new Error('Unable to load the organogram.');
         const payload = (await response.json()) as Partial<OrganogramPayload>;
 
         let officers = payload.officers;
         if (!officers) {
           try {
-            const officersRes = await fetch('/api/nodal-officers/');
+            const officersRes = await authFetch('/api/nodal-officers/');
             if (officersRes.ok) {
               const rawOfficers = await officersRes.json();
               officers = Array.isArray(rawOfficers) ? rawOfficers : (rawOfficers.officers ?? []);
@@ -357,12 +359,14 @@ export default function AdminOrganogram() {
                 >
                   <UserPlus weight="bold" className="w-4 h-4" /> Assign nodal officer
                 </Link>
-                <Link
-                  to={`/admin/data-requests/new?units=${encodeURIComponent(activeUnit.id)}`}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-sm font-semibold transition-colors"
-                >
-                  <PaperPlaneTilt weight="bold" className="w-4 h-4" /> Request data
-                </Link>
+                {canWriteNow() && (
+                  <Link
+                    to={`/admin/data-requests/new?units=${encodeURIComponent(activeUnit.id)}`}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl bg-sage-600 hover:bg-sage-700 text-white text-sm font-semibold transition-colors"
+                  >
+                    <PaperPlaneTilt weight="bold" className="w-4 h-4" /> Request data
+                  </Link>
+                )}
               </div>
             </div>
           ) : (

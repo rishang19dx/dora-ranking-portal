@@ -117,3 +117,26 @@ export function renderWithProviders(
 
   return render(ui, { wrapper: Wrapper, ...renderOptions });
 }
+
+// ---------------------------------------------------------------------------
+// signInAs: put a session for the given portal role into localStorage, the
+// way authService.login leaves it, so guarded routes render.
+// ---------------------------------------------------------------------------
+export function signInAs(
+  role: 'ADMIN' | 'DIRECTOR' | 'AUDITOR' | 'NODAL_OFFICER',
+  extra: Record<string, unknown> = {},
+) {
+  const user = {
+    id: 1,
+    username: role.toLowerCase(),
+    email: `${role.toLowerCase()}@iitmandi.ac.in`,
+    first_name: '',
+    last_name: '',
+    role,
+    ...extra,
+  };
+  localStorage.setItem('dora_access_token', 'test-access');
+  localStorage.setItem('dora_refresh_token', 'test-refresh');
+  localStorage.setItem('dora_user', JSON.stringify(user));
+  return user;
+}

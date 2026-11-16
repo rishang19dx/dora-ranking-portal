@@ -24,6 +24,25 @@ The system is architected as a decoupled monorepo featuring a **React 19 Single 
 
 ---
 
+## 🔐 Roles & Access Control
+
+Access follows proposal §2.18 and is enforced by the API on every request; the UI only hides what a role cannot use.
+
+| Role | Can see | Can change |
+|---|---|---|
+| **Admin / Data Officer** | Everything | Everything: dispatch, review/approve, correct, export, users |
+| **Director (Leadership)** | Dashboards, analytics, briefing, exports, submission trails | Nothing (read-only) |
+| **Auditor** | Proofs, audit log, submission trails, exports | Nothing (read-only) |
+| **Nodal Officer** | Their own department's tasks and analytics | Their department's returns, via the emailed upload link |
+| **Public** | Published rankings, trends, peer benchmarks, institute structure (no contacts) | — |
+
+- Sign in with username **or** institutional email. Failed logins are throttled (`LOGIN_THROTTLE_RATE`).
+- The DRF default is **deny**: an endpoint is public only if it declares `AllowAny`, and `tests/test_rbac_matrix.py` fails if any public view is not on its allowlist.
+- A Django superuser is treated as Admin; `is_staff` alone grants nothing in the portal.
+- Accounts are deactivated, never deleted, so audit entries keep their actor.
+
+---
+
 ## 🛠 Tech Stack
 
 ### Frontend (`frontend/`)
@@ -58,6 +77,7 @@ The system is architected as a decoupled monorepo featuring a **React 19 Single 
    source venv/bin/activate
    pip install -r requirements.txt
    python manage.py migrate
+   python manage.py ensure_admin      # admin / admin123 in development; set DORA_ADMIN_PASSWORD otherwise
    python manage.py seed_organogram
    python manage.py load_form_schema
    cd ..
@@ -74,7 +94,7 @@ The system is architected as a decoupled monorepo featuring a **React 19 Single 
    ```
    - **Frontend UI**: [http://localhost:5173](http://localhost:5173)
    - **Django REST API**: [http://127.0.0.1:8000/api/](http://127.0.0.1:8000/api/)
-   - **Default Admin Account**: `admin` / `admin123`
+   - **Development Admin Account**: `admin` / `admin123` (created by `ensure_admin`; refused with `DJANGO_DEBUG=False`). Further accounts and roles: **Users & Roles** in the admin sidebar.
 
 ---
 

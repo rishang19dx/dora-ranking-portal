@@ -8,9 +8,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Add apps to sys.path so 'apps.<app_name>' can also be imported if needed
 sys.path.insert(0, str(BASE_DIR))
 
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-dora-ranking-portal-secret-key-2026')
-DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1')
-ALLOWED_HOSTS = ['*']
+def _env_list(name, default=''):
+    return [v.strip() for v in os.getenv(name, default).split(',') if v.strip()]
+
+
+def _env_flag(name, default='False'):
+    return os.getenv(name, default).lower() in ('true', '1', 'yes')
+
+
+DEBUG = _env_flag('DJANGO_DEBUG', 'True')
+_DEV_SECRET_KEY = 'django-insecure-dora-ranking-portal-secret-key-2026'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', _DEV_SECRET_KEY)
+if not DEBUG and SECRET_KEY == _DEV_SECRET_KEY:
+    # Every JWT is signed with this key; the public default would let anyone
+    # mint an Admin token for a production install.
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured('Set DJANGO_SECRET_KEY when DJANGO_DEBUG is off.')
+
+# Explicit host list in production; anything goes for local development.
+ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS') or (['*'] if DEBUG else ['localhost', '127.0.0.1'])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -115,9 +131,15 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+    # Deny by default (spec 2.18): a view is public only if it says so with
+    # AllowAny, so a newly added endpoint can never be open by omission.
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_RATES': {
+        # Password guessing against /api/auth/token/.
+        'login': os.getenv('LOGIN_THROTTLE_RATE', '10/min'),
+    },
 }
 
 SIMPLE_JWT = {
@@ -130,9 +152,27 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS Configuration. The SPA is served from the same origin behind Nginx in
+# production, so cross-origin access is limited to the listed origins.
+CORS_ALLOWED_ORIGINS = _env_list('CORS_ALLOWED_ORIGINS')
+CORS_ALLOW_ALL_ORIGINS = DEBUG and not CORS_ALLOWED_ORIGINS
 CORS_ALLOW_CREDENTIALS = True
+
+# Transport security. Opt in once HTTPS terminates in front of the app
+# (`manage.py check --deploy` lists these); left off by default so a plain
+# HTTP install behind a TLS proxy is not sent into a redirect loop.
+if _env_flag('DJANGO_SECURE_HTTPS'):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = _env_flag('DJANGO_HSTS_PRELOAD')
+CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = 'same-origin'
+X_FRAME_OPTIONS = 'DENY'
 
 # Portal-specific settings
 PORTAL_ACCESS_TTL_DAYS = int(os.getenv('PORTAL_ACCESS_TTL_DAYS', '45'))

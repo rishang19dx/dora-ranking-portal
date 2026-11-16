@@ -20,6 +20,9 @@ fi
 echo "Running Django migrations..."
 ./venv/bin/python manage.py migrate --noinput
 
+echo "Ensuring the bootstrap admin account (DORA_ADMIN_* env)..."
+./venv/bin/python manage.py ensure_admin
+
 echo "Seeding Organogram & Nodal Officers..."
 ./venv/bin/python manage.py seed_organogram
 

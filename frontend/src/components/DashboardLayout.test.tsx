@@ -3,7 +3,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import DashboardLayout from './DashboardLayout';
-import { renderWithProviders } from '../test/test-utils';
+import { renderWithProviders, signInAs } from '../test/test-utils';
 
 function renderAt(path: string) {
   return renderWithProviders(
@@ -21,7 +21,10 @@ function renderAt(path: string) {
   );
 }
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  signInAs('ADMIN');
+});
 afterEach(() => localStorage.clear());
 
 describe('DashboardLayout', () => {
@@ -56,23 +59,28 @@ describe('DashboardLayout', () => {
     expect(await screen.findByText('Public Landing')).toBeInTheDocument();
   });
 
-  it('shows default admin identity when nobody is logged in', async () => {
-    renderAt('/admin');
-    await userEvent.click(screen.getByText('AD'));
-    expect(screen.getByText('DORA Admin')).toBeInTheDocument();
-    expect(screen.getByText('admin@iitmandi.ac.in')).toBeInTheDocument();
-  });
-
-  it('shows the logged-in user from localStorage', async () => {
+  it('shows the signed-in identity and role label', async () => {
     localStorage.setItem(
       'dora_user',
-      JSON.stringify({ username: 'jdoe', first_name: 'Jane', last_name: 'Doe', email: 'jane@iitmandi.ac.in', role: 'OFFICER' }),
+      JSON.stringify({ username: 'jdoe', first_name: 'Jane', last_name: 'Doe', email: 'jane@iitmandi.ac.in', role: 'AUDITOR' }),
     );
     renderAt('/admin');
     await userEvent.click(screen.getByText('JD'));
     expect(screen.getByText('jdoe')).toBeInTheDocument();
     expect(screen.getByText('jane@iitmandi.ac.in')).toBeInTheDocument();
-    expect(screen.getByText('OFFICER')).toBeInTheDocument();
+    expect(screen.getByText('Auditor')).toBeInTheDocument();
+  });
+
+  it('only lists the pages a role may open', () => {
+    signInAs('DIRECTOR');
+    renderAt('/admin');
+    expect(screen.getAllByText('Audit Log').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Users & Roles')).not.toBeInTheDocument();
+  });
+
+  it('lists Users & Roles for an admin', () => {
+    renderAt('/admin');
+    expect(screen.getAllByText('Users & Roles').length).toBeGreaterThan(0);
   });
 
   it('opens the notifications dropdown', async () => {
@@ -86,7 +94,7 @@ describe('DashboardLayout', () => {
   it('sign out clears the session and returns to the public landing page', async () => {
     localStorage.setItem('dora_access_token', 'a');
     localStorage.setItem('dora_refresh_token', 'r');
-    localStorage.setItem('dora_user', JSON.stringify({ username: 'x' }));
+    localStorage.setItem('dora_user', JSON.stringify({ username: 'x', first_name: 'Ada', last_name: 'Dee', role: 'ADMIN' }));
     renderAt('/admin');
     await userEvent.click(screen.getByText('AD'));
     await userEvent.click(screen.getByRole('button', { name: /sign out/i }));

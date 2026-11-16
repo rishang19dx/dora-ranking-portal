@@ -21,6 +21,7 @@ import {
   getResolvedGridAxes,
 } from '../../lib/nirfUtils';
 import { useToast } from '../ToastProvider';
+import { HistoryHint, type SectionHistory } from './HistoryHint';
 
 export interface FormRendererProps {
   token: string;
@@ -41,6 +42,8 @@ export interface FormRendererProps {
   onSubmitSuccess?: () => void;
   readOnly?: boolean;
   onClose?: () => void;
+  /** Previously approved figures for this unit and section (spec 2.6). */
+  history?: SectionHistory | null;
 }
 
 type SaveState = 'saved' | 'saving' | 'dirty' | 'error';
@@ -55,6 +58,7 @@ export default function FormRenderer({
   onSubmitSuccess,
   readOnly: forceReadOnly = false,
   onClose,
+  history = null,
 }: FormRendererProps) {
   const { showToast } = useToast();
 
@@ -449,6 +453,12 @@ export default function FormRenderer({
           {section.description && (
             <p className="text-sm text-zinc-500 mt-1 max-w-3xl leading-relaxed">{section.description}</p>
           )}
+          {history && (
+            <p className="text-xs text-slate-blue-700 bg-slate-blue-50/70 border border-slate-blue-500/15 rounded-lg px-3 py-1.5 mt-3 inline-block" data-testid="history-banner">
+              Figures are shown beside the values approved in NIRF {history.previousCycle} ({history.previousReference}).
+              Orange marks a changed figure for a year already reported, or a move of 25% or more.
+            </p>
+          )}
         </div>
 
         {/* Right controls: save status & Not Applicable toggle */}
@@ -682,18 +692,22 @@ export default function FormRenderer({
                                               {amountInWordsInr(val)}
                                             </div>
                                           ) : null}
+                                          <HistoryHint cell={history?.cells?.[block.id]?.[rowKey]?.[col.id]} current={val} />
                                         </div>
-                                      ) : cellType === 'integer' || cellType === 'decimal' ? (
-                                        <input
-                                          type="number"
-                                          disabled={isLocked}
-                                          value={val}
-                                          onChange={(e) =>
-                                            handleGridCellChange(block.id, rowKey, col.id, e.target.value)
-                                          }
-                                          placeholder="0"
-                                          className="w-full px-2.5 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-sage-500 font-mono"
-                                        />
+                                      ) : cellType === 'integer' || cellType === 'decimal' || cellType === 'percent' ? (
+                                        <div>
+                                          <input
+                                            type="number"
+                                            disabled={isLocked}
+                                            value={val}
+                                            onChange={(e) =>
+                                              handleGridCellChange(block.id, rowKey, col.id, e.target.value)
+                                            }
+                                            placeholder="0"
+                                            className="w-full px-2.5 py-1.5 text-xs border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-sage-500 font-mono"
+                                          />
+                                          <HistoryHint cell={history?.cells?.[block.id]?.[rowKey]?.[col.id]} current={val} />
+                                        </div>
                                       ) : (
                                         <input
                                           type="text"
@@ -846,6 +860,9 @@ export default function FormRenderer({
                             )}
                           </div>
                         )}
+                        {(q.type === 'integer' || q.type === 'decimal' || q.type === 'percent') && (
+                          <HistoryHint cell={history?.questions?.[block.id]?.[q.id]} current={val} />
+                        )}
 
                         {/* Long text / textarea */}
                         {q.type === 'longText' && (
@@ -866,6 +883,13 @@ export default function FormRenderer({
               {/* RENDER KIND: RECORDS */}
               {block.kind === 'records' && (
                 <div className="space-y-4">
+                  {history?.records?.[block.id] && (
+                    <p className="text-[11px] text-zinc-500" data-testid="records-history">
+                      NIRF {history.records[block.id].previousCycle} approved return listed{' '}
+                      <strong>{history.records[block.id].previous}</strong> row(s); this return has{' '}
+                      <strong>{(records[block.id] || []).length}</strong>.
+                    </p>
+                  )}
                   {(records[block.id] || []).length === 0 ? (
                     <div className="text-center py-8 bg-zinc-50/80 border border-dashed border-zinc-200 rounded-2xl">
                       <p className="text-xs text-zinc-500">No records recorded yet.</p>

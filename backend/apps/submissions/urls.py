@@ -18,6 +18,7 @@ from .views import (
     ProofRepositoryView,
     ProofDownloadView,
     RecordsTemplateView,
+    SubmissionHistoryView,
 )
 
 urlpatterns = [
@@ -58,6 +59,10 @@ urlpatterns = [
     # Audit trail (auditor interface, spec 2.11)
     path('audit-log/', AuditLogView.as_view(), name='audit_log'),
     path('audit-log', AuditLogView.as_view()),
+
+    # Historical approved values (spec 2.6)
+    path('nirf/history/', SubmissionHistoryView.as_view(), name='nirf_history'),
+    path('nirf/history', SubmissionHistoryView.as_view()),
 
     # Category Rollup & Export
     path('nirf/cycles/<str:year>/rollup/', NirfRollupView.as_view(), name='nirf_rollup'),

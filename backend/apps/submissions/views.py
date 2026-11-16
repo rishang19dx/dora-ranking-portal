@@ -18,6 +18,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from apps.organogram.models import NodalOfficer, OrgUnit, Programme
 from apps.data_requests.models import DataRequest, DataRequestTarget, PortalAccessGrant, ProofUpload, TargetStatus
 from apps.data_requests.services import hash_token
+from .history import section_history, notable_changes, unit_history
 from apps.accounts.permissions import IsAdmin, IsAdminOrOversightReadOnly, effective_role, has_oversight
 
 from .models import (
@@ -445,6 +446,8 @@ class PortalFormsView(APIView):
                 'section': sec,
                 'submission': SectionSubmissionSerializer(sub).data,
                 'records': records_by_block,
+                # Previously approved figures for this unit and section (2.6).
+                'history': section_history(sub, current_records=records_by_block, resolved_section=sec),
                 'proofUploadsCount': proofs.count(),
                 'proofRequired': sec.get('proof', {}).get('required', False),
             })
@@ -1276,6 +1279,16 @@ class AdminSubmissionDetailView(APIView):
         # Cross checks
         data['crossChecks'] = run_cross_checks(sub.request_id, sub.request.cycle_year)
 
+        # Previous approved cycle, side by side (spec 2.6): the reviewer sees
+        # the same "Previous / New / Change" the officer saw while typing.
+        resolved = resolve_section_schema(
+            prov_sec, sub.request.cycle_year, unit=sub.org_unit,
+            enums=prov_schema.content.get('enums', {}) if prov_schema else {},
+        ) if prov_sec else None
+        history = section_history(sub, resolved_section=resolved)
+        data['history'] = history
+        data['notableChanges'] = notable_changes(history)
+
         return Response(data)
 
 class AdminSubmissionActionView(APIView):
@@ -1919,3 +1932,33 @@ class NirfExportView(APIView):
             return response
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SubmissionHistoryView(APIView):
+    """
+    Approved returns of one unit and section across past cycles (spec 2.6:
+    "storage and easy backend querying of at least the previous three years").
+
+    GET /api/nirf/history/?unitId=scee&sectionId=sanctioned-intake[&cycles=3][&before=2027]
+
+    Raw departmental figures, so oversight roles only; a nodal officer sees
+    their own history beside the form through their upload link instead.
+    """
+    permission_classes = [IsAdminOrOversightReadOnly]
+
+    def get(self, request):
+        unit_id = request.query_params.get('unitId')
+        section_id = request.query_params.get('sectionId')
+        if not unit_id or not section_id:
+            return Response({'error': 'unitId and sectionId are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            cycles = max(1, min(10, int(request.query_params.get('cycles', 3))))
+            before = request.query_params.get('before')
+            before = int(before) if before else None
+        except (TypeError, ValueError):
+            return Response({'error': 'cycles and before must be integers.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            'unitId': unit_id,
+            'sectionId': section_id,
+            'cycles': unit_history(unit_id, section_id, before_cycle=before, cycles=cycles),
+        })

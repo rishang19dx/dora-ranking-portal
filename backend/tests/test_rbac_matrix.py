@@ -94,6 +94,7 @@ MATRIX = [
     ('get', '/api/nirf/cycles/2026/rollup/', OVERSIGHT),
     ('get', '/api/nirf/cycles/2026/export/?category=OVERALL', OVERSIGHT),
     ('get', '/api/nirf/cycles/2026/briefing/', OVERSIGHT),
+    ('get', '/api/nirf/history/?unitId=scee&sectionId=x', OVERSIGHT),
     # Ingestion of published results.
     ('post', '/api/v1/scraper/update/', ADMIN_ONLY),
     # Accounts.

@@ -19,9 +19,11 @@ import { getDataItem } from '../../lib/data-catalogue';
 import { unitBreadcrumb, unitLabel } from '../../lib/organogram';
 import type { PortalContext, ProofUpload } from '../../types';
 import FormRenderer from '../../components/forms/FormRenderer';
+import type { SectionHistory } from '../../components/forms/HistoryHint';
 
 interface FormSectionItem {
   section: any;
+  history?: SectionHistory | null;
   submission: {
     id: string;
     sectionId: string;
@@ -264,6 +266,7 @@ export default function RestrictedPortalPage() {
                   records: activeSectionItem.records,
                 }}
                 cycleYear={formsData?.request?.cycleYear ?? 2027}
+                history={activeSectionItem.history ?? null}
                 onClose={() => setActiveSectionId(null)}
                 onSave={() => loadData()}
                 onSubmitSuccess={() => {

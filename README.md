@@ -125,6 +125,17 @@ Fetches are serialised by a lock and written atomically, and every web worker se
 
 ---
 
+## 🕰 Historical Value Comparison
+
+Every input in a nodal officer's form shows the figure the same unit had **approved** in the latest earlier cycle, and the change is recomputed as they type (spec 2.6). Because NIRF year columns overlap between cycles, each cell is compared on one of two bases:
+
+- **Same period**: the year was already reported last cycle. A different figure is flagged as a *restatement*.
+- **Prior period**: the year is new. It is compared with last cycle's figure for the year before, i.e. the year-on-year change. Moves of 25% or more are highlighted.
+
+Reviewers see the same comparison, plus a list of restatements and large moves, on the submission detail. `GET /api/nirf/history/?unitId=&sectionId=&cycles=3` returns a unit's approved returns over past cycles (oversight roles). To see it with demo data, run `seed_demo_cycle --cycle-year 2026` and then `--cycle-year 2027`.
+
+---
+
 ## ⏰ Automated Deadline Reminders
 
 Sections that have not submitted are reminded on a schedule relative to each request's deadline: **7, 3 and 1 days before**, then **every 3 days after, up to 3 times** (all configurable via `REMINDER_*`, see `.env.example`).

@@ -840,6 +840,46 @@ export default function DataRequestDetailPage() {
               </div>
             )}
 
+            {/* Previous approved cycle, side by side (spec 2.6) */}
+            <div data-testid="history-review">
+              <span className="text-xs font-semibold text-zinc-700 block mb-1">
+                {selectedSubmission.history
+                  ? `Compared with NIRF ${selectedSubmission.history.previousCycle} (${selectedSubmission.history.previousReference})`
+                  : 'Compared with previous cycle'}
+              </span>
+              {!selectedSubmission.history ? (
+                <p className="text-xs text-zinc-500">No approved return from an earlier cycle to compare with.</p>
+              ) : (selectedSubmission.notableChanges ?? []).length === 0 ? (
+                <p className="text-xs text-zinc-500">No restated periods and no year-on-year move of 25% or more.</p>
+              ) : (
+                <table className="w-full text-xs border border-slate-200 rounded-lg overflow-hidden">
+                  <thead className="bg-zinc-50 text-zinc-500 text-left">
+                    <tr>
+                      <th className="px-2 py-1.5">Field</th>
+                      <th className="px-2 py-1.5">Previous</th>
+                      <th className="px-2 py-1.5">Change</th>
+                      <th className="px-2 py-1.5">Why it is listed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(selectedSubmission.notableChanges as any[]).map((n, i) => (
+                      <tr key={i} className="border-t border-slate-100">
+                        <td className="px-2 py-1.5 font-mono">{[n.blockId, n.rowKey, n.colKey].filter(Boolean).join(' / ')}</td>
+                        <td className="px-2 py-1.5">{String(n.previous)}{n.period ? ` (${n.period})` : ''}</td>
+                        <td className={`px-2 py-1.5 font-semibold ${n.direction === 'down' ? 'text-dusty-rose-700' : 'text-sage-700'}`}>
+                          {n.direction === 'up' ? '▲' : n.direction === 'down' ? '▼' : ''}{' '}
+                          {n.changePct !== null && n.changePct !== undefined ? `${Math.abs(n.changePct)}%` : n.change}
+                        </td>
+                        <td className="px-2 py-1.5 text-zinc-500">
+                          {n.restated ? 'Different figure for a year already reported' : 'Large year-on-year move'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
             {/* Provenance: the proofs these figures rest on (spec 2.4) */}
             <div>
               <span className="text-xs font-semibold text-zinc-700 block mb-1">

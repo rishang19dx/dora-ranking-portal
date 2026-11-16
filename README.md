@@ -91,6 +91,20 @@ docker compose up --build -d
 
 ---
 
+## 🔄 NIRF Ranking Data Refresh
+
+Published NIRF results are cached as JSON under `backend/apps/rankings/data/`. No year is hardcoded: whichever cycles are on disk drive every dashboard, and the newest becomes the "latest" automatically.
+
+- **Scheduled:** `python manage.py refresh_rankings` fetches any cycle NIRF has published since the last run. Cached years are never re-fetched; an unpublished cycle is reported as pending, not as a failure.
+  - *Docker:* the `scheduler` service runs it daily (`REFRESH_INTERVAL_SECONDS`, default 86400), sharing the `rankings_data` volume with the backend.
+  - *Bare metal:* `scripts/deploy.sh` installs a daily 06:30 cron entry (idempotent; existing crontab lines are kept). Set `DORA_SKIP_CRON=1` to skip.
+- **On demand:** Admin and Director users see **Fetch NIRF results** on the Executive Dashboard and the trends page (`POST /api/v1/scraper/update/`), for when results are announced between scheduled runs.
+- **Rewriting cached cycles** (e.g. after a scraper change): `python manage.py refresh_rankings --full`.
+
+Fetches are serialised by a lock and written atomically, and every web worker sees a new file on its next read without a restart.
+
+---
+
 ## 🧪 Testing & Continuous Integration
 
 The project includes an enterprise-grade automated test suite with **161 backend tests** and **163 frontend tests** (100% passing), statement coverage reporting across all Django apps, and a 5-stage GitHub Actions CI pipeline.

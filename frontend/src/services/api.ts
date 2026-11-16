@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type {
+  RankingFetchReport,
   AuditLogResponse,
   ProofRepositoryResponse,
   DepartmentAnalyticsResponse,
@@ -218,8 +219,12 @@ export const rankingsService = {
     return res.data;
   },
 
-  async updateScraper(): Promise<{ message: string }> {
-    const res = await api.post('/api/v1/scraper/update/');
+  /**
+   * Explicitly fetch newly published NIRF cycles (staff only). By default
+   * only cycles not yet cached are requested; `full` re-fetches every year.
+   */
+  async updateScraper(full = false): Promise<RankingFetchReport> {
+    const res = await api.post('/api/v1/scraper/update/', full ? { full: true } : {});
     return res.data;
   },
 };
@@ -345,3 +350,9 @@ export const proofService = {
     URL.revokeObjectURL(url);
   },
 };
+
+/** Whether the signed-in user may trigger staff-only actions such as a fetch. */
+export function isStaffUser(): boolean {
+  const role = authService.getCurrentUser()?.role;
+  return role === 'ADMIN' || role === 'DIRECTOR';
+}

@@ -1,6 +1,10 @@
 import os
+import contextlib
 import json
 import re
+import tempfile
+from datetime import date
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -8,6 +12,63 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 CUSTOM_API_DATA_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "custom_api_nirf", "data")
 )
+
+# NIRF's first year in the cached series. Later years are discovered rather
+# than listed, so a newly published cycle is picked up without a code change.
+NIRF_FIRST_YEAR = int(os.environ.get('NIRF_FIRST_YEAR', '2021'))
+CATEGORIES = ['Overall', 'Engineering', 'Innovation']
+
+# The Innovation peer rows below were hand-entered for these cycles only. They
+# are never applied to any other year, so a newly published cycle can only
+# ever contain what NIRF itself published.
+ENRICHED_INNOVATION_YEARS = {2023, 2024, 2025}
+
+
+def default_years(today=None):
+    """Every year from the first cached cycle up to the current one."""
+    today = today or date.today()
+    return list(range(NIRF_FIRST_YEAR, today.year + 1))
+
+
+def _atomic_write_json(path, data):
+    """
+    Write then rename, so a web worker reading concurrently sees either the
+    old file or the complete new one - never a half-written table.
+    """
+    directory = os.path.dirname(path)
+    fd, tmp = tempfile.mkstemp(dir=directory, prefix='.tmp-', suffix='.json')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4)
+        os.replace(tmp, path)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
+@contextlib.contextmanager
+def fetch_lock():
+    """
+    Non-blocking exclusive lock around a fetch, shared by the web trigger,
+    the scheduler and the management command, so two fetches never write
+    the same files at once. Yields True if acquired, False if one is
+    already running.
+    """
+    os.makedirs(DATA_DIR, exist_ok=True)
+    handle = open(os.path.join(DATA_DIR, '.fetch.lock'), 'w')
+    try:
+        try:
+            import fcntl
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except ImportError:  # non-POSIX dev machines: no cross-process lock
+            pass
+        except OSError:
+            yield False
+            return
+        yield True
+    finally:
+        handle.close()
 
 # 2nd Generation IITs Canonical Mapping
 TARGET_IITS = [
@@ -152,12 +213,24 @@ def get_fallback_innovation_data(year: int):
         ]
     return []
 
-def scrape_nirf_data(target_years=None):
+def scrape_nirf_data(target_years=None, categories=None, report=None):
     """
-    Scrapes NIRF ranking tables from official portal for 2021-2025 and saves them as JSON.
+    Scrape NIRF ranking tables and save them as JSON.
+
+    By default every year from NIRF_FIRST_YEAR to the current year is tried, so
+    a newly published cycle is included automatically. A year NIRF has not
+    published yet (404, or no results table) is recorded as unpublished, not
+    as a failure. Pass a dict as `report` to receive per-table outcomes:
+    {'fetched': [(year, category, rows)], 'unpublished': [...], 'failed': [...]}.
+
+    Returns True when nothing failed.
     """
-    years = target_years or [2021, 2022, 2023, 2024, 2025]
-    categories = ['Overall', 'Engineering', 'Innovation']
+    years = list(target_years) if target_years else default_years()
+    categories = list(categories) if categories else list(CATEGORIES)
+    if report is None:
+        report = {}
+    for key in ('fetched', 'unpublished', 'failed'):
+        report.setdefault(key, [])
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -176,6 +249,7 @@ def scrape_nirf_data(target_years=None):
             print(f"Fetching NIRF data: {year} {category} from {url}...")
 
             data = []
+            outcome = 'unpublished'
             try:
                 response = requests.get(url, headers=headers, timeout=25)
                 if response.status_code == 200:
@@ -239,7 +313,8 @@ def scrape_nirf_data(target_years=None):
                                 data.append(item_record)
 
                         # If Innovation has only top 10 on page (e.g. 2023), enrich with known 2nd-gen band standings
-                        if category.lower() == 'innovation' and len(data) <= 10:
+                        if (category.lower() == 'innovation' and len(data) <= 10
+                                and year in ENRICHED_INNOVATION_YEARS):
                             existing_names = {d['name'].lower() for d in data}
                             additional_peers = [
                                 {"institute_id": "ARI-U-0184", "name": "Indian Institute of Technology Mandi", "city": "Mandi", "state": "Himachal Pradesh", "score": 68.5, "rank": 12 if year == 2023 else (8 if year == 2024 else 10)},
@@ -260,6 +335,7 @@ def scrape_nirf_data(target_years=None):
                     print(f"URL returned {response.status_code} for {year} {category}")
 
             except Exception as e:
+                outcome = 'failed'
                 print(f"Error scraping {url}: {e}")
 
             # If no data scraped (e.g. 2021/2022 Innovation), use official fallback
@@ -270,21 +346,49 @@ def scrape_nirf_data(target_years=None):
                 file_name = f"nirf_{year}_{category.lower()}.json"
                 # Save to backend data directory
                 cache_file = os.path.join(DATA_DIR, file_name)
-                with open(cache_file, 'w', encoding='utf-8') as f:
-                    json.dump(data, f, indent=4)
+                _atomic_write_json(cache_file, data)
 
                 # Also save to custom_api_nirf/data directory if it exists
                 if os.path.exists(CUSTOM_API_DATA_DIR):
                     custom_file = os.path.join(CUSTOM_API_DATA_DIR, file_name)
-                    with open(custom_file, 'w', encoding='utf-8') as f:
-                        json.dump(data, f, indent=4)
+                    _atomic_write_json(custom_file, data)
 
+                report['fetched'].append((year, category, len(data)))
                 print(f"Saved {len(data)} items to {file_name}")
-            else:
+            elif outcome == 'failed':
                 all_success = False
+                report['failed'].append((year, category))
                 print(f"Failed to obtain data for {year} {category}")
+            else:
+                report['unpublished'].append((year, category))
+                print(f"Not published yet: {year} {category}")
 
     return all_success
+
+
+
+def refresh_new_publications(today=None, report=None):
+    """
+    Fetch only the cycles not yet cached - what the scheduled job runs.
+
+    Published NIRF results do not change once out, so a cached year is never
+    re-fetched. Each run costs at most a request per category for the years
+    still missing, which before a new cycle is out means three requests.
+    """
+    if report is None:
+        report = {}
+    missing = {}
+    for year in default_years(today):
+        for category in CATEGORIES:
+            path = os.path.join(DATA_DIR, f"nirf_{year}_{category.lower()}.json")
+            if not os.path.exists(path):
+                missing.setdefault(year, []).append(category)
+
+    ok = True
+    for year, categories in sorted(missing.items()):
+        ok = scrape_nirf_data([year], categories, report) and ok
+    report['checked'] = sorted(missing.items())
+    return ok
 
 if __name__ == '__main__':
     scrape_nirf_data()

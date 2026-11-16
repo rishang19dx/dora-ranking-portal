@@ -30,3 +30,7 @@ work_logs/*
 .coverage*
 coverage.xml
 htmlcov/
+
+# Ranking fetch lock and interrupted atomic-write temp files
+backend/apps/rankings/data/.fetch.lock
+backend/apps/rankings/data/.tmp-*.json

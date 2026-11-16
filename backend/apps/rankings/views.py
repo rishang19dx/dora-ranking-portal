@@ -1,15 +1,22 @@
-import os
-import json
-from functools import lru_cache
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .scraper import (
+from apps.accounts.permissions import IsAdminOrDirector
+from .scraper import (  # noqa: F401 - DATA_DIR is re-exported for test fixtures that patch it
+    fetch_lock,
+    refresh_new_publications,
     scrape_nirf_data,
     DATA_DIR,
     TARGET_IITS,
     clean_institute_name,
     canonical_iit_name
+)
+from .store import (
+    available_years,
+    get_cache_file,
+    latest_year,
+    load_ranking_data,
+    trend_window,
 )
 from .analytics import (
     PARAMETER_LABELS,
@@ -21,21 +28,6 @@ from .analytics import (
     compute_parameter_trends,
     project_scenarios,
 )
-
-def get_cache_file(year: int, category: str):
-    return os.path.join(DATA_DIR, f"nirf_{year}_{category.lower()}.json")
-
-@lru_cache(maxsize=64)
-def load_ranking_data(year: int, category: str):
-    cache_file = get_cache_file(year, category)
-    if not os.path.exists(cache_file):
-        return None
-    with open(cache_file, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-def available_years(category: str, span=range(2016, 2036)):
-    """Years we actually hold a cached dataset for, newest last."""
-    return [y for y in span if os.path.exists(get_cache_file(y, category))]
 
 def resolve_year_range(params, category: str):
     """
@@ -184,7 +176,7 @@ class TrendsAnalyticsView(APIView):
     Returns 5-year longitudinal trend data for 2nd Gen IITs
     across Engineering, Innovation, and Overall categories.
     """
-    YEARS = [2021, 2022, 2023, 2024, 2025]
+    WINDOW = 5  # most recent published cycles shown
     CATEGORIES = ['Engineering', 'Innovation', 'Overall']
 
     SHORT_NAMES = {
@@ -199,6 +191,9 @@ class TrendsAnalyticsView(APIView):
     }
 
     def get(self, request):
+        # The window follows whatever NIRF has published and the refresh job
+        # has cached - no year is assumed to be the latest.
+        years = trend_window(self.CATEGORIES, self.WINDOW)
         category_param = request.query_params.get('category')
         active_cats = [category_param.capitalize()] if category_param and category_param.capitalize() in self.CATEGORIES else self.CATEGORIES
 
@@ -223,7 +218,8 @@ class TrendsAnalyticsView(APIView):
                 for t_name in TARGET_IITS
             }
 
-            for y in self.YEARS:
+            cat_latest = latest_year(cat)
+            for y in years:
                 data = load_ranking_data(y, cat_lower) or []
                 for item in data:
                     c_name = canonical_iit_name(item.get('name', ''))
@@ -232,7 +228,7 @@ class TrendsAnalyticsView(APIView):
                         sc = item.get('score')
                         peers_map[c_name]["ranks"][str(y)] = rk
                         peers_map[c_name]["scores"][str(y)] = sc
-                        if y == 2025:
+                        if y == cat_latest:
                             peers_map[c_name]["latest_rank"] = rk
                             peers_map[c_name]["latest_score"] = sc
 
@@ -262,7 +258,7 @@ class TrendsAnalyticsView(APIView):
 
             iit_mandi_trends[cat] = mandi_yearly
 
-            # Convert peers_map to sorted list (Target first, then by 2025 rank ascending)
+            # Convert peers_map to sorted list (target first, then by latest rank ascending)
             peer_list = list(peers_map.values())
             peer_list.sort(key=lambda p: (
                 0 if p['is_target'] else 1,
@@ -271,7 +267,8 @@ class TrendsAnalyticsView(APIView):
             peer_comparison[cat] = peer_list
 
         return Response({
-            "years": self.YEARS,
+            "years": years,
+            "latestYear": years[-1] if years else None,
             "categories": self.CATEGORIES,
             "target_institute": "Indian Institute of Technology Mandi",
             "iit_mandi_trends": iit_mandi_trends,
@@ -336,15 +333,21 @@ class GapAnalysisView(APIView):
     acts on - the weighted points the total score would gain by closing it,
     so the rows are directly comparable rather than five raw deltas.
     """
-    DEFAULT_YEAR = 2025
-
     def get(self, request):
-        try:
-            year = int(request.query_params.get('year', self.DEFAULT_YEAR))
-        except (TypeError, ValueError):
-            return Response(
-                {'error': 'Invalid year.'}, status=status.HTTP_400_BAD_REQUEST
-            )
+        requested_year = request.query_params.get('year')
+        if requested_year in (None, ''):
+            # Default to the newest published cycle on disk.
+            year = latest_year('Engineering')
+            if year is None:
+                return Response({'error': 'No ranking data has been fetched yet.'},
+                                status=status.HTTP_404_NOT_FOUND)
+        else:
+            try:
+                year = int(requested_year)
+            except (TypeError, ValueError):
+                return Response(
+                    {'error': 'Invalid year.'}, status=status.HTTP_400_BAD_REQUEST
+                )
 
         requested = request.query_params.get('category')
         if requested:
@@ -385,12 +388,49 @@ class GapAnalysisView(APIView):
         })
 
 class TriggerScraperUpdateView(APIView):
+    """
+    Explicit "fetch now" for DORA staff, alongside the daily schedule.
+
+    By default only cycles not yet cached are requested - at most a request
+    per category, so it answers quickly even inside a web worker's timeout.
+    `full=true` re-fetches every year (slow; the management command
+    `refresh_rankings --full` is the better tool for that).
+
+    Staff only: this was previously open to anyone, and the button sat on
+    the public trends page.
+    """
+    permission_classes = [IsAdminOrDirector]
+
     def post(self, request):
-        success = scrape_nirf_data()
-        if success:
-            load_ranking_data.cache_clear()
-            return Response({"message": "Ranking data scraped and cache invalidated successfully."})
-        return Response(
-            {"error": "Failed to scrape some or all data from NIRF website."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        full = str(request.data.get('full', request.query_params.get('full', ''))).lower() in ('1', 'true', 'yes')
+        report = {}
+        with fetch_lock() as acquired:
+            if not acquired:
+                return Response(
+                    {'error': 'A ranking fetch is already running. Try again in a minute.'},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            ok = scrape_nirf_data(report=report) if full else refresh_new_publications(report=report)
+
+        fetched = [{'year': y, 'category': c, 'institutions': n} for y, c, n in report.get('fetched', [])]
+        pending = [{'year': y, 'category': c} for y, c in report.get('unpublished', [])]
+        failed = [{'year': y, 'category': c} for y, c in report.get('failed', [])]
+
+        if fetched:
+            cycles = sorted({f['year'] for f in fetched})
+            message = f"Fetched NIRF {', '.join(map(str, cycles))}."
+        elif failed:
+            message = 'Could not reach the NIRF site; nothing new was fetched.'
+        else:
+            message = 'Already up to date: no new NIRF cycle has been published.'
+
+        body = {
+            'message': message,
+            'mode': 'full' if full else 'new-only',
+            'fetched': fetched,
+            'notPublishedYet': pending,
+            'failed': failed,
+            'latestYear': latest_year('Engineering'),
+        }
+        code = status.HTTP_502_BAD_GATEWAY if (failed and not fetched and not ok) else status.HTTP_200_OK
+        return Response(body, status=code)

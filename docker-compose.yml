@@ -30,6 +30,35 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/media:/app/media
+      # Shared with the scheduler, which saves newly published NIRF cycles
+      # here. Docker seeds an empty named volume from the image's files, so
+      # the cycles bundled with the code carry over on first start. After
+      # that the volume is authoritative: to rewrite cycles already in it
+      # (e.g. after a scraper change), run `manage.py refresh_rankings --full`.
+      - rankings_data:/app/apps/rankings/data
+
+  # Checks NIRF once a day and fetches any cycle published since the last
+  # run; the web workers pick the new year up on their next read.
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dora_scheduler
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DJANGO_SECRET_KEY: "django-insecure-production-secret-key-change-me-dora-portal"
+      DJANGO_DEBUG: "False"
+      DATABASE_URL: "postgres://dora_user:dora_password@db:5432/dora_db"
+      REFRESH_INTERVAL_SECONDS: "86400"
+    command: >
+      sh -c "while true; do
+               python manage.py refresh_rankings || echo 'refresh_rankings failed; retrying next cycle';
+               sleep $${REFRESH_INTERVAL_SECONDS};
+             done"
+    volumes:
+      - rankings_data:/app/apps/rankings/data
 
   frontend:
     build:
@@ -44,3 +73,4 @@ services:
 
 volumes:
   postgres_data:
+  rankings_data:

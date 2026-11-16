@@ -15,7 +15,7 @@ const SHORT = (name: string) => name.replace('Indian Institute of Technology ', 
 
 export const ComparativeView: React.FC<ComparativeViewProps> = ({
   categories = DEFAULT_CATEGORIES,
-  year = 2025,
+  year,
 }) => {
   const { showToast } = useToast();
   const [category, setCategory] = useState<string>(categories[0]);
@@ -40,6 +40,8 @@ export const ComparativeView: React.FC<ComparativeViewProps> = ({
   }, [category, year]);
 
   const entry = data?.analysis?.[category];
+  // The cycle actually shown: the requested one, or the newest published.
+  const shownYear = data?.year ?? year;
   const peers: PeerStanding[] = entry?.vsPeers?.peers ?? [];
   const labels = data?.labels ?? {};
   const order = data?.parameterOrder ?? [];
@@ -69,7 +71,7 @@ export const ComparativeView: React.FC<ComparativeViewProps> = ({
         </h1>
         <p className="text-xs sm:text-sm text-gray-600 mt-1">
           Benchmarking IIT Mandi against the 2nd-generation IITs on the five scored NIRF
-          parameters, from the published {year} results.
+          parameters, from the published {shownYear ?? 'latest'} results.
         </p>
       </div>
 
@@ -109,7 +111,7 @@ export const ComparativeView: React.FC<ComparativeViewProps> = ({
           </div>
         </div>
         <div className="bg-amber-50 border border-amber-200 p-2.5 rounded-xl text-[11px] text-amber-800 font-medium">
-          Figures are the sub-scores published by NIRF for {year}.
+          Figures are the sub-scores published by NIRF for {shownYear ?? 'the latest cycle'}.
         </div>
       </div>
 
@@ -215,7 +217,7 @@ export const ComparativeView: React.FC<ComparativeViewProps> = ({
       {!loading && peers.length > 0 && (
         <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm">
           <h3 className="text-lg font-bold text-[#003366] font-serif mb-3">
-            Peer IIT Benchmarking Table ({year} NIRF {category})
+            Peer IIT Benchmarking Table ({shownYear} NIRF {category})
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">

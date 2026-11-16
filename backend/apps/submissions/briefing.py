@@ -48,7 +48,7 @@ SLATE = colors.HexColor('#475569')
 LIGHT = colors.HexColor('#F1F5F9')
 BORDER = colors.HexColor('#CBD5E1')
 
-TREND_YEARS = [2021, 2022, 2023, 2024, 2025]
+TREND_WINDOW = 5  # most recent published cycles in the trend tables
 
 
 def _styles():
@@ -138,8 +138,16 @@ def generate_briefing_pdf(
     peer_names: List[str],
     request_id: Optional[str] = None,
     category_id: Optional[str] = None,
-    ranking_year: int = 2025,
+    ranking_year: Optional[int] = None,
 ) -> io.BytesIO:
+    from apps.rankings.store import latest_year, trend_window
+
+    trend_years = trend_window(('Engineering', 'Overall', 'Innovation'), TREND_WINDOW)
+    if ranking_year is None:
+        ranking_year = latest_year('Engineering')
+    if ranking_year is None:
+        raise ValueError('No ranking data has been fetched yet.')
+
     st = _styles()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -178,7 +186,7 @@ def generate_briefing_pdf(
                       'Net rank movement', 'Trend']]
     trends_cache: Dict[str, Dict[str, Any]] = {}
     for cat in ['Engineering', 'Overall', 'Innovation']:
-        tr = compute_parameter_trends(load_ranking_data, cat, TREND_YEARS)
+        tr = compute_parameter_trends(load_ranking_data, cat, trend_years)
         trends_cache[cat] = tr
         series = tr['series']
         if not series:
@@ -205,7 +213,7 @@ def generate_briefing_pdf(
 
     # Parameter history for the parametric categories.
     for cat in PARAMETRIC_CATEGORIES:
-        tr = trends_cache.get(cat) or compute_parameter_trends(load_ranking_data, cat, TREND_YEARS)
+        tr = trends_cache.get(cat) or compute_parameter_trends(load_ranking_data, cat, trend_years)
         series = [e for e in tr['series'] if e['hasParameters']]
         if not series:
             continue
@@ -474,7 +482,7 @@ def generate_briefing_pdf(
         peer_gap = compute_gap_analysis(
             load_ranking_data, canonical_name, peer_names, cat, ranking_year)
         own_gap = compute_own_history_gap(
-            load_ranking_data, cat, ranking_year, TREND_YEARS)
+            load_ranking_data, cat, ranking_year, trend_years)
         proj = project_scenarios(
             peer_gap, own_gap, load_ranking_data(ranking_year, cat.lower()) or [])
 

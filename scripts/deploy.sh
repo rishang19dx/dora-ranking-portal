@@ -29,6 +29,41 @@ echo "Loading NIRF Form Schema..."
 echo "Collecting Django static files..."
 ./venv/bin/python manage.py collectstatic --noinput
 
+echo "Fetching any newly published NIRF ranking cycles..."
+./venv/bin/python manage.py refresh_rankings || echo "Ranking refresh failed; the daily job will retry."
+
+# Daily check for newly published NIRF cycles (Docker deployments use the
+# compose 'scheduler' service instead). Idempotent: an existing entry is
+# replaced, every other crontab line is kept. Set DORA_SKIP_CRON=1 to skip.
+CRON_TAG="# dora-refresh-rankings"
+CRON_LINE="30 6 * * * cd $ROOT_DIR/backend && ./venv/bin/python manage.py refresh_rankings >> $ROOT_DIR/backend/refresh_rankings.log 2>&1 $CRON_TAG"
+if [ "${DORA_SKIP_CRON:-0}" = "1" ]; then
+  echo "DORA_SKIP_CRON=1: not scheduling the daily ranking refresh."
+elif ! command -v crontab >/dev/null 2>&1; then
+  echo "crontab not found: schedule 'manage.py refresh_rankings' daily with your service manager."
+else
+  # Read the current crontab first. "no crontab" just means it is empty;
+  # any other read error leaves the crontab untouched rather than risk
+  # replacing it with only our line.
+  if CURRENT_CRON="$(crontab -l 2>&1)"; then
+    CRON_OK=1
+  elif printf '%s' "$CURRENT_CRON" | grep -qi "no crontab"; then
+    CURRENT_CRON=""
+    CRON_OK=1
+  else
+    CRON_OK=0
+  fi
+  if [ "$CRON_OK" = "1" ]; then
+    {
+      printf '%s\n' "$CURRENT_CRON" | grep -v -- "$CRON_TAG" | sed '/^$/d' || true
+      echo "$CRON_LINE"
+    } | crontab -
+    echo "Daily ranking refresh scheduled for 06:30 (log: backend/refresh_rankings.log)."
+  else
+    echo "Could not read the existing crontab; schedule 'manage.py refresh_rankings' manually."
+  fi
+fi
+
 # 2. Frontend Build
 echo "[2/4] Building Frontend Production Assets..."
 cd "$ROOT_DIR/frontend"

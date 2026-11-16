@@ -31,7 +31,7 @@ import {
 } from "recharts";
 import { RankingItem, RankingAgency, TrendsApiResponse, PeerInstituteTrend, MandiYearlyTrend, ParameterTrendsResponse } from "../types";
 import { calculateRankChange } from "../utils/helpers";
-import { rankingsService } from "../services/api";
+import { rankingsService, isStaffUser } from "../services/api";
 import { useToast } from "../components/ToastProvider";
 
 interface TrendsViewProps {
@@ -117,14 +117,23 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
     };
   }, [selectedCategory, paramRange]);
 
+  // Fetching is a staff action; public visitors only see the data.
+  const canFetch = isStaffUser();
+
   const handleRefreshScraper = async () => {
     try {
       setRefreshing(true);
-      await rankingsService.updateScraper();
-      await fetchTrends();
-      showToast("NIRF rankings cache updated from official portal.", "success");
-    } catch {
-      showToast("Failed to trigger scraper update.", "error");
+      const report = await rankingsService.updateScraper();
+      if (report.fetched.length) await fetchTrends();
+      showToast(report.message, report.fetched.length ? "success" : "info");
+    } catch (err: any) {
+      const status = err?.response?.status;
+      showToast(
+        status === 409 ? "A fetch is already running. Try again in a minute."
+          : status === 401 || status === 403 ? "Only DORA staff can fetch new NIRF results."
+          : err?.response?.data?.message ?? "Could not reach the NIRF site.",
+        "error",
+      );
     } finally {
       setRefreshing(false);
     }
@@ -192,7 +201,15 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
     });
   }, [trendsData, peerList]);
 
-  // 2025 Current Standing Bar Chart Data (sorted by 2025 rank ascending)
+  // The window follows whichever cycles the backend has fetched - a newly
+  // published NIRF year appears here without a code change.
+  const trendYears: number[] = trendsData?.years ?? [];
+  const firstYear = trendYears[0];
+  const lastYear = trendYears[trendYears.length - 1];
+  const priorYears = trendYears.slice(0, -1);
+  const yearSpan = firstYear && lastYear ? `${firstYear} – ${lastYear}` : '';
+
+  // Latest-cycle standing bar chart data (sorted by latest rank ascending)
   const peerStanding2025Data = useMemo(() => {
     return peerList
       .filter((p) => p.latest_rank !== null && typeof p.latest_rank === "number")
@@ -316,7 +333,7 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
               5-Year Longitudinal NIRF Analytics
             </span>
             <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
-              2021 – 2025 Cycle
+              {yearSpan} Cycle
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#003366] font-serif tracking-tight">
@@ -327,18 +344,20 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
           </p>
         </div>
 
-        {/* Live Refresh and Action Buttons */}
+        {/* Explicit fetch: staff only */}
+        {canFetch && (
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefreshScraper}
             disabled={refreshing}
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl shadow-xs transition"
-            title="Re-scrape latest ranking data from official NIRF website"
+            title="Fetch any NIRF cycle published since the last check"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "Scraping..." : "Sync NIRF Data"}
+            {refreshing ? "Checking NIRF..." : "Fetch new NIRF results"}
           </button>
         </div>
+        )}
       </div>
 
       {/* Main Mode Tabs & Category Filter Bar */}
@@ -572,7 +591,7 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
               {/* Latest Rank */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                  Latest 2025 Standing
+                  Latest {lastYear} Standing
                 </span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-black text-[#003366]">#{mandiProgression.endRank}</span>
@@ -593,7 +612,7 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
                   <span className="text-xs font-bold text-slate-500">Peak Standing</span>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2">
-                  Highest institutional rank secured during the 2021–2025 cycle.
+                  Highest institutional rank secured during the {yearSpan} cycle.
                 </p>
               </div>
 
@@ -622,7 +641,7 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
               {/* Latest Score & Metrics */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                  2025 Evaluated Score
+                  {lastYear} Evaluated Score
                 </span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-black text-slate-800">
@@ -818,7 +837,7 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
                   2nd Generation IITs 5-Year Trajectory ({selectedCategory})
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Comparative longitudinal rank positions (2021 – 2025). Inverted axis: Top line indicates premier rank.
+                  Comparative longitudinal rank positions ({yearSpan}). Inverted axis: Top line indicates premier rank.
                 </p>
               </div>
               <span className="self-start sm:self-auto bg-blue-50 text-[#003366] text-xs font-bold px-3 py-1 rounded-full border border-blue-100">
@@ -865,14 +884,14 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
             </div>
           </div>
 
-          {/* 2025 Current Standing Peer Rank Distribution */}
+          {/* Latest-cycle peer rank distribution */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
             <h3 className="text-lg font-bold text-[#003366] font-serif mb-2 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-[#003366]" />
-              2025 Standing Among 2nd Generation IITs ({selectedCategory})
+              {lastYear} Standing Among 2nd Generation IITs ({selectedCategory})
             </h3>
             <p className="text-xs text-slate-500 mb-6">
-              Official national rank standing in the 2025 evaluation cycle (shorter bar represents superior national rank).
+              Official national rank standing in the {lastYear} evaluation cycle (shorter bar represents superior national rank).
             </p>
 
             <div className="h-64 w-full">
@@ -900,11 +919,11 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
             </div>
           </div>
 
-          {/* 5-Year Comparative Matrix Table */}
+          {/* Multi-year comparative matrix table */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
             <h3 className="text-lg font-bold text-[#003366] font-serif mb-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-slate-600" />
-              5-Year Peer Comparison Matrix (2021 – 2025)
+              {trendYears.length}-Year Peer Comparison Matrix ({yearSpan})
             </h3>
 
             <div className="overflow-x-auto">
@@ -912,20 +931,19 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
                 <thead>
                   <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                     <th className="p-3.5">Institution</th>
-                    <th className="p-3.5 text-center">2021</th>
-                    <th className="p-3.5 text-center">2022</th>
-                    <th className="p-3.5 text-center">2023</th>
-                    <th className="p-3.5 text-center">2024</th>
-                    <th className="p-3.5 text-center">2025 Rank</th>
-                    <th className="p-3.5 text-center">2025 Score</th>
-                    <th className="p-3.5 text-center">5-Yr Net Trend</th>
+                    {priorYears.map((y) => (
+                      <th key={y} className="p-3.5 text-center">{y}</th>
+                    ))}
+                    <th className="p-3.5 text-center">{lastYear} Rank</th>
+                    <th className="p-3.5 text-center">{lastYear} Score</th>
+                    <th className="p-3.5 text-center">{trendYears.length}-Yr Net Trend</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {peerList.map((peer) => {
                     const isTarget = peer.is_target;
-                    const r21 = peer.ranks["2021"];
-                    const r25 = peer.ranks["2025"];
+                    const r21 = peer.ranks[String(firstYear)];
+                    const r25 = peer.ranks[String(lastYear)];
                     const diff =
                       typeof r21 === "number" && typeof r25 === "number"
                         ? r21 - r25
@@ -954,23 +972,16 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
                             )}
                           </div>
                         </td>
-                        <td className="p-3.5 text-center font-medium text-slate-600">
-                          {peer.ranks["2021"] ? `#${peer.ranks["2021"]}` : "—"}
-                        </td>
-                        <td className="p-3.5 text-center font-medium text-slate-600">
-                          {peer.ranks["2022"] ? `#${peer.ranks["2022"]}` : "—"}
-                        </td>
-                        <td className="p-3.5 text-center font-medium text-slate-600">
-                          {peer.ranks["2023"] ? `#${peer.ranks["2023"]}` : "—"}
-                        </td>
-                        <td className="p-3.5 text-center font-medium text-slate-600">
-                          {peer.ranks["2024"] ? `#${peer.ranks["2024"]}` : "—"}
-                        </td>
+                        {priorYears.map((y) => (
+                          <td key={y} className="p-3.5 text-center font-medium text-slate-600">
+                            {peer.ranks[String(y)] ? `#${peer.ranks[String(y)]}` : "—"}
+                          </td>
+                        ))}
                         <td className="p-3.5 text-center font-extrabold text-[#003366] text-sm">
-                          {peer.ranks["2025"] ? `#${peer.ranks["2025"]}` : "—"}
+                          {peer.ranks[String(lastYear)] ? `#${peer.ranks[String(lastYear)]}` : "—"}
                         </td>
                         <td className="p-3.5 text-center font-semibold text-emerald-800">
-                          {peer.scores["2025"] ? `${peer.scores["2025"]}` : "—"}
+                          {peer.scores[String(lastYear)] ? `${peer.scores[String(lastYear)]}` : "—"}
                         </td>
                         <td className="p-3.5 text-center">
                           {diff !== null ? (

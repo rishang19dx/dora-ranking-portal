@@ -1542,8 +1542,10 @@ class BoardroomBriefingView(APIView):
         except (TypeError, ValueError):
             return Response({'error': 'Invalid cycle year.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        raw_year = request.query_params.get('rankingYear')
         try:
-            ranking_year = int(request.query_params.get('rankingYear', 2025))
+            # Default: the newest published NIRF cycle on disk.
+            ranking_year = int(raw_year) if raw_year not in (None, '') else None
         except (TypeError, ValueError):
             return Response({'error': 'Invalid rankingYear.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1563,7 +1565,7 @@ class BoardroomBriefingView(APIView):
         filename = f"DORA_Boardroom_Briefing_NIRF_{cycle_year}.pdf"
         audit_export(
             request, 'boardroom-briefing', pdf.getvalue(),
-            cycleYear=cycle_year, rankingYear=ranking_year,
+            cycleYear=cycle_year, rankingYear=ranking_year or 'latest',
             requestId=request.query_params.get('requestId'), filename=filename,
         )
         response = HttpResponse(pdf.getvalue(), content_type='application/pdf')

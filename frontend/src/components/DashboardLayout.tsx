@@ -16,7 +16,8 @@ import {
   ArrowSquareOut,
   GraduationCap,
   ShieldCheck,
-  Files
+  Files,
+  Warning
 } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'motion/react';
 import { authService, reminderService, type ReminderScheduleResponse } from '../services/api';
@@ -267,6 +268,7 @@ function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile, user 
             {can('rankings') && <NavItem to="/admin/rankings" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Rankings (NIRF)" active={pathname.includes("/rankings")} open={sidebarOpen} />}
             {can('documents') && <NavItem to="/admin/documents" icon={<BookOpen weight="duotone" className="w-5 h-5" />} label="Documents" active={pathname.includes("/documents")} open={sidebarOpen} />}
             {can('proofs') && <NavItem to="/admin/proofs" icon={<Files weight="duotone" className="w-5 h-5" />} label="Proof Repository" active={pathname.includes("/proofs")} open={sidebarOpen} />}
+            {can('discrepancies') && <NavItem to="/admin/discrepancies" icon={<Warning weight="duotone" className="w-5 h-5" />} label="Discrepancies" active={pathname.includes("/discrepancies")} open={sidebarOpen} />}
             {can('reminders') && <NavItem to="/admin/reminders" icon={<Bell weight="duotone" className="w-5 h-5" />} label="Reminders" active={pathname.includes("/reminders")} open={sidebarOpen} />}
             {can('audit-log') && <NavItem to="/admin/audit-log" icon={<ShieldCheck weight="duotone" className="w-5 h-5" />} label="Audit Log" active={pathname.includes("/audit-log")} open={sidebarOpen} />}
             {can('users') && <NavItem to="/admin/users" icon={<Gear weight="duotone" className="w-5 h-5" />} label="Users & Roles" active={pathname.includes("/admin/users")} open={sidebarOpen} />}

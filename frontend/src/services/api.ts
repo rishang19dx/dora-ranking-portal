@@ -467,3 +467,78 @@ export const reminderService = {
     return res.data;
   },
 };
+
+export interface DiscrepancyFlagView {
+  id: string;
+  requestId: string;
+  submissionId: string | null;
+  submissionStatus: string | null;
+  unitId: string | null;
+  unitName: string | null;
+  sectionId: string;
+  kind: 'YOY_CHANGE' | 'RESTATEMENT' | 'RECORD_COUNT' | 'CROSS_CHECK';
+  label: string;
+  severity: 'CRITICAL' | 'WARNING' | 'INFO';
+  message: string;
+  previous: string;
+  current: string;
+  changePct: number | null;
+  details: Record<string, unknown>;
+  ai: { severity: string; rationale: string; question: string; model: string | null; logId: string | null } | null;
+  status: 'OPEN' | 'DISMISSED' | 'ESCALATED' | 'RESOLVED';
+  resolutionNote: string;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  firstSeen: string;
+  lastSeen: string;
+}
+
+export interface DiscrepancyListResponse {
+  requestId: string | null;
+  requests: { id: string; reference: string; title: string; cycleYear: number }[];
+  summary: { open: number; openCritical: number; openWarning: number; escalated: number; dismissed: number; resolved: number };
+  thresholds: Record<string, number>;
+  ai: { configured: boolean; provider?: string; model?: string; reason?: string };
+  flags: DiscrepancyFlagView[];
+}
+
+export interface AIRequestLogEntry {
+  id: string;
+  createdAt: string;
+  provider: string;
+  model: string;
+  purpose: string;
+  requestReference: string | null;
+  triggeredBy: string | null;
+  status: 'OK' | 'ERROR' | 'INVALID';
+  error: string;
+  latencyMs: number;
+  flagsSent: number;
+  flagsAnnotated: number;
+  itemsRejected: number;
+  promptSha256: string;
+  prompt: unknown;
+  response: string;
+}
+
+export const discrepancyService = {
+  async list(requestId?: string): Promise<DiscrepancyListResponse> {
+    const res = await api.get('/api/nirf/discrepancies/', { params: requestId ? { requestId } : {} });
+    return res.data;
+  },
+  async scan(requestId: string, useAi: boolean) {
+    const res = await api.post('/api/nirf/discrepancies/scan/', { requestId, useAi });
+    return res.data as {
+      scan: { opened: number; reopened: number; resolved: number; candidates: number };
+      ai?: { configured: boolean; sent?: number; annotated?: number; rejected?: number; message?: string; error?: string };
+    };
+  },
+  async act(flagId: string, action: 'dismiss' | 'escalate' | 'reopen', note = ''): Promise<DiscrepancyFlagView> {
+    const res = await api.post(`/api/nirf/discrepancies/${flagId}/`, { action, note });
+    return res.data;
+  },
+  async aiLog(): Promise<AIRequestLogEntry[]> {
+    const res = await api.get('/api/ai/requests/');
+    return res.data;
+  },
+};

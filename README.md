@@ -136,6 +136,25 @@ Reviewers see the same comparison, plus a list of restatements and large moves, 
 
 ---
 
+## 🚩 Discrepancy Flagging (Rules + Optional AI)
+
+Every submitted or approved return is checked against the department's previously approved figures (spec 2.9). Flags are raised by **deterministic rules** and graded **Critical / Warning / Info**:
+
+| Rule | Severity |
+|---|---|
+| Year-on-year drop ≥ 80%, or to zero | Critical |
+| Year-on-year rise ≥ 300% | Critical |
+| Year-on-year move ≥ 40% | Warning |
+| Restated year ≥ 50% / ≥ 5% different | Critical / Warning |
+| Record count to zero / moves ≥ 50% | Critical / Warning |
+| Failed cross-check | its own severity |
+
+Scans run automatically after each portal submission and on demand. In **Admin → Discrepancies** each flag can be **dismissed** (with a note for the auditor) or sent back as a **correction request** (the maker-checker route). A flag whose figure is corrected resolves itself.
+
+**AI review is optional and provider-agnostic.** Set `AI_PROVIDER` (`openai`, `openrouter`, `anthropic`, `gemini` or `openai-compatible` with `AI_BASE_URL`) and `AI_API_KEY` in `.env`. "Scan + AI review" then sends the open flags, as aggregated figures with no records, names or contacts, and the model adds its own severity view, a rationale and a question for the department. Replies naming unknown flags, or quoting figures not in the data, are rejected. Rule severities and figures are never overwritten. Every call is stored in the AI request log (Admin and Auditor). If the provider is down or unset, the rule flags still work. Open flags also appear in §5 of the boardroom briefing.
+
+---
+
 ## ⏰ Automated Deadline Reminders
 
 Sections that have not submitted are reminded on a schedule relative to each request's deadline: **7, 3 and 1 days before**, then **every 3 days after, up to 3 times** (all configurable via `REMINDER_*`, see `.env.example`).

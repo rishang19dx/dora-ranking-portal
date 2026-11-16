@@ -73,3 +73,8 @@ class IsAdminOrOversightReadOnly(_RoleGate):
     """Admin writes; Director and Auditor may read (trails, proofs, audit log)."""
     read_roles = OVERSIGHT_ROLES
 
+
+
+class IsAdminOrAuditorReadOnly(_RoleGate):
+    """Admin writes; Auditor may read (raw AI prompts and responses)."""
+    read_roles = (ADMIN, AUDITOR)

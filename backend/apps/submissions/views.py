@@ -19,7 +19,10 @@ from apps.organogram.models import NodalOfficer, OrgUnit, Programme
 from apps.data_requests.models import DataRequest, DataRequestTarget, PortalAccessGrant, ProofUpload, TargetStatus
 from apps.data_requests.services import hash_token
 from .history import section_history, notable_changes, unit_history
-from apps.accounts.permissions import IsAdmin, IsAdminOrOversightReadOnly, effective_role, has_oversight
+from .discrepancies import scan_quietly
+from apps.accounts.permissions import (
+    IsAdmin, IsAdminOrAuditorReadOnly, IsAdminOrOversightReadOnly, effective_role, has_oversight,
+)
 
 from .models import (
     FormSchema,
@@ -902,6 +905,10 @@ class PortalFormSubmitView(APIView):
             else:
                 target.status = TargetStatus.PARTIAL
             target.save()
+
+        # Re-check the cycle for discrepancies now this return is in (2.9).
+        # Advisory only: a failed scan never fails the submission.
+        scan_quietly(grant.request)
 
         return Response(SectionSubmissionSerializer(sub).data)
 
@@ -1962,3 +1969,169 @@ class SubmissionHistoryView(APIView):
             'sectionId': section_id,
             'cycles': unit_history(unit_id, section_id, before_cycle=before, cycles=cycles),
         })
+
+
+# -----------------------------------------------------------------------------
+# Discrepancy flagging (spec 2.9)
+# -----------------------------------------------------------------------------
+
+def serialize_flag(f):
+    return {
+        'id': f.id,
+        'requestId': f.request_id,
+        'submissionId': f.submission_id,
+        'submissionStatus': f.submission.status if f.submission_id else None,
+        'unitId': f.org_unit_id,
+        'unitName': (f.org_unit.short_name or f.org_unit.name) if f.org_unit_id else None,
+        'sectionId': f.section_id,
+        'kind': f.kind,
+        'label': f.label,
+        'severity': f.severity,
+        'message': f.message,
+        'previous': f.previous_value,
+        'current': f.current_value,
+        'changePct': f.change_pct,
+        'details': f.details,
+        'ai': {
+            'severity': f.ai_severity,
+            'rationale': f.ai_rationale,
+            'question': f.ai_question,
+            'model': f.ai_log.model if f.ai_log_id else None,
+            'logId': f.ai_log_id,
+        } if f.ai_rationale else None,
+        'status': f.status,
+        'resolutionNote': f.resolution_note,
+        'resolvedBy': f.resolved_by.username if f.resolved_by_id else None,
+        'resolvedAt': f.resolved_at,
+        'firstSeen': f.first_seen,
+        'lastSeen': f.last_seen,
+    }
+
+
+class DiscrepancyListView(APIView):
+    """
+    GET  /api/nirf/discrepancies/?requestId=&status=&severity=   flags for a request (oversight)
+    """
+    permission_classes = [IsAdminOrOversightReadOnly]
+
+    def get(self, request):
+        from apps.data_requests.models import DataRequest as DR
+        from . import ai_client
+        from .discrepancies import SEVERITY_ORDER, thresholds
+        from .models import DiscrepancyFlag
+
+        request_id = request.query_params.get('requestId')
+        if not request_id:
+            latest = DR.objects.order_by('-cycle_year', '-created_at').first()
+            request_id = latest.id if latest else None
+        flags = (DiscrepancyFlag.objects.filter(request_id=request_id)
+                 .select_related('org_unit', 'submission', 'resolved_by', 'ai_log'))
+        st = request.query_params.get('status')
+        if st:
+            flags = flags.filter(status=st.upper())
+        sev = request.query_params.get('severity')
+        if sev:
+            flags = flags.filter(severity=sev.upper())
+        flags = sorted(flags, key=lambda f: (f.status != 'OPEN', SEVERITY_ORDER.get(f.severity, 9), f.label))
+
+        all_flags = DiscrepancyFlag.objects.filter(request_id=request_id)
+        summary = {
+            'open': all_flags.filter(status='OPEN').count(),
+            'openCritical': all_flags.filter(status='OPEN', severity='CRITICAL').count(),
+            'openWarning': all_flags.filter(status='OPEN', severity='WARNING').count(),
+            'escalated': all_flags.filter(status='ESCALATED').count(),
+            'dismissed': all_flags.filter(status='DISMISSED').count(),
+            'resolved': all_flags.filter(status='RESOLVED').count(),
+        }
+        return Response({
+            'requestId': request_id,
+            'requests': [
+                {'id': r.id, 'reference': r.reference, 'title': r.title, 'cycleYear': r.cycle_year}
+                for r in DR.objects.order_by('-cycle_year', '-created_at')[:50]
+            ],
+            'summary': summary,
+            'thresholds': thresholds(),
+            'ai': ai_client.status(),
+            'flags': [serialize_flag(f) for f in flags],
+        })
+
+
+class DiscrepancyScanView(APIView):
+    """
+    POST /api/nirf/discrepancies/scan/  {"requestId": "...", "useAi": false}   (Admin)
+
+    Re-runs the rules; with useAi and a configured provider, the open flags
+    are then sent for AI review.
+    """
+    permission_classes = [IsAdmin]
+
+    def post(self, request):
+        from apps.data_requests.models import DataRequest as DR
+        from .discrepancies import ai_review, scan_request
+
+        data_req = get_object_or_404(DR, pk=request.data.get('requestId'))
+        report = {'scan': scan_request(data_req)}
+        if str(request.data.get('useAi', '')).lower() in ('1', 'true', 'yes'):
+            report['ai'] = ai_review(data_req, user=request.user)
+        return Response(report)
+
+
+class DiscrepancyActionView(APIView):
+    """
+    POST /api/nirf/discrepancies/<id>/  {"action": "dismiss"|"escalate"|"reopen", "note": "..."}   (Admin)
+    """
+    permission_classes = [IsAdmin]
+
+    def post(self, request, pk):
+        from .discrepancies import FlagActionError, dismiss, escalate, reopen
+        from .models import DiscrepancyFlag
+
+        flag = get_object_or_404(DiscrepancyFlag.objects.select_related('submission', 'org_unit'), pk=pk)
+        action = str(request.data.get('action', '')).lower()
+        note = request.data.get('note', '')
+        try:
+            if action == 'dismiss':
+                dismiss(flag, request.user, note)
+            elif action == 'escalate':
+                escalate(flag, request.user, note)
+            elif action == 'reopen':
+                reopen(flag)
+            else:
+                return Response({'error': f"Unknown action '{action}'."}, status=status.HTTP_400_BAD_REQUEST)
+        except FlagActionError as exc:
+            return Response({'error': str(exc)}, status=exc.status)
+        flag.refresh_from_db()
+        return Response(serialize_flag(flag))
+
+
+class AIRequestLogView(APIView):
+    """
+    GET /api/ai/requests/   every AI call, newest first (spec 9 auditability).
+    Admin and Auditor; Director has no need for the raw prompts.
+    """
+    permission_classes = [IsAdminOrAuditorReadOnly]
+
+    def get(self, request):
+        from .models import AIRequestLog
+        logs = AIRequestLog.objects.select_related('request', 'triggered_by')[:100]
+        return Response([
+            {
+                'id': log.id,
+                'createdAt': log.created_at,
+                'provider': log.provider,
+                'model': log.model,
+                'purpose': log.purpose,
+                'requestReference': log.request.reference if log.request_id else None,
+                'triggeredBy': log.triggered_by.username if log.triggered_by_id else None,
+                'status': log.status,
+                'error': log.error,
+                'latencyMs': log.latency_ms,
+                'flagsSent': log.flags_sent,
+                'flagsAnnotated': log.flags_annotated,
+                'itemsRejected': log.items_rejected,
+                'promptSha256': log.prompt_sha256,
+                'prompt': log.prompt,
+                'response': log.response_text,
+            }
+            for log in logs
+        ])

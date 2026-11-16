@@ -469,6 +469,39 @@ def generate_briefing_pdf(
             f"{len(flagged)} of {len(checks)} cross-check(s) require attention before export.",
             st['body']))
 
+    # Year-on-year anomalies and restatements still being worked (spec 2.9).
+    if request_id:
+        from .models import DiscrepancyFlag
+        live = list(
+            DiscrepancyFlag.objects
+            .filter(request_id=request_id, status__in=['OPEN', 'ESCALATED'])
+            .exclude(kind='CROSS_CHECK')
+            .select_related('org_unit')
+        )
+        live.sort(key=lambda f: ({'CRITICAL': 0, 'WARNING': 1}.get(f.severity, 2), f.label))
+        story.append(Spacer(1, 3 * mm))
+        if live:
+            rows = [['Severity', 'Unit', 'Figure', 'Finding', 'Status']]
+            for f in live[:25]:
+                rows.append([
+                    f.severity,
+                    (f.org_unit.short_name or f.org_unit.name) if f.org_unit else '-',
+                    Paragraph(f.label, st['cell']),
+                    Paragraph(f.message, st['cell']),
+                    'With department' if f.status == 'ESCALATED' else 'Open',
+                ])
+            story.append(_table(rows, col_widths=[22 * mm, 30 * mm, 80 * mm, 104 * mm, 26 * mm]))
+            critical = sum(1 for f in live if f.severity == 'CRITICAL')
+            story.append(Spacer(1, 2 * mm))
+            story.append(Paragraph(
+                f"{len(live)} historical-trend flag(s) outstanding ({critical} critical)"
+                + ("; the first 25 are listed." if len(live) > 25 else '.'),
+                st['body']))
+        else:
+            story.append(Paragraph(
+                'No outstanding year-on-year or restatement flags against previously approved figures.',
+                st['body']))
+
     # ---------------- 6. Scenario projections ----------------
     story.append(Paragraph("6. Projected Ranking Outcomes", st['h2']))
     story.append(Paragraph(

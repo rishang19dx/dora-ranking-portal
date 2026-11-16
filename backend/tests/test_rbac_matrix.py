@@ -95,6 +95,11 @@ MATRIX = [
     ('get', '/api/nirf/cycles/2026/export/?category=OVERALL', OVERSIGHT),
     ('get', '/api/nirf/cycles/2026/briefing/', OVERSIGHT),
     ('get', '/api/nirf/history/?unitId=scee&sectionId=x', OVERSIGHT),
+    # Discrepancy flags (2.9) and the AI request log (9).
+    ('get', '/api/nirf/discrepancies/', OVERSIGHT),
+    ('post', '/api/nirf/discrepancies/scan/', ADMIN_ONLY),
+    ('post', '/api/nirf/discrepancies/flg_missing/', ADMIN_ONLY),
+    ('get', '/api/ai/requests/', {AUDITOR, ADMIN, SUPERUSER}),
     # Ingestion of published results.
     ('post', '/api/v1/scraper/update/', ADMIN_ONLY),
     # Accounts.

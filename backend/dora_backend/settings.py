@@ -187,3 +187,20 @@ REMINDER_DAYS_BEFORE = [int(d) for d in _env_list('REMINDER_DAYS_BEFORE', '7,3,1
 REMINDER_OVERDUE_INTERVAL_DAYS = int(os.getenv('REMINDER_OVERDUE_INTERVAL_DAYS', '3'))
 REMINDER_OVERDUE_MAX = int(os.getenv('REMINDER_OVERDUE_MAX', '3'))
 REMINDER_MANUAL_COOLDOWN_HOURS = int(os.getenv('REMINDER_MANUAL_COOLDOWN_HOURS', '20'))
+
+# AI-assisted discrepancy review (apps/submissions/ai_client.py). Optional:
+# with no provider/key the rule-based flags work on their own.
+AI_PROVIDER = os.getenv('AI_PROVIDER', '')
+AI_API_KEY = os.getenv('AI_API_KEY', '')
+AI_MODEL = os.getenv('AI_MODEL', '')
+AI_BASE_URL = os.getenv('AI_BASE_URL', '')
+AI_TIMEOUT_SECONDS = float(os.getenv('AI_TIMEOUT_SECONDS', '30'))
+AI_MAX_FLAGS = int(os.getenv('AI_MAX_FLAGS', '60'))
+
+# Rule thresholds for discrepancy flags (apps/submissions/discrepancies.py).
+DISCREPANCY_CRITICAL_DROP_PCT = float(os.getenv('DISCREPANCY_CRITICAL_DROP_PCT', '80'))
+DISCREPANCY_CRITICAL_RISE_PCT = float(os.getenv('DISCREPANCY_CRITICAL_RISE_PCT', '300'))
+DISCREPANCY_WARNING_CHANGE_PCT = float(os.getenv('DISCREPANCY_WARNING_CHANGE_PCT', '40'))
+DISCREPANCY_RESTATE_CRITICAL_PCT = float(os.getenv('DISCREPANCY_RESTATE_CRITICAL_PCT', '50'))
+DISCREPANCY_RESTATE_WARNING_PCT = float(os.getenv('DISCREPANCY_RESTATE_WARNING_PCT', '5'))
+DISCREPANCY_RECORD_WARNING_PCT = float(os.getenv('DISCREPANCY_RECORD_WARNING_PCT', '50'))

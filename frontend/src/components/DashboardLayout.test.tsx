@@ -85,10 +85,9 @@ describe('DashboardLayout', () => {
 
   it('opens the notifications dropdown', async () => {
     renderAt('/admin');
-    const bell = screen.getAllByRole('button').find((b) => b.querySelector('span.bg-dusty-rose-500'))!;
-    await userEvent.click(bell);
+    await userEvent.click(screen.getByRole('button', { name: 'Notifications' }));
     expect(screen.getByText('Notifications')).toBeInTheDocument();
-    expect(screen.getByText('Submission Received')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Reminder schedule' })).toBeInTheDocument();
   });
 
   it('sign out clears the session and returns to the public landing page', async () => {

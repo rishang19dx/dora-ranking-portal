@@ -181,3 +181,9 @@ RESEND_API_KEY = os.getenv('RESEND_API_KEY')
 MAIL_FROM = os.getenv('MAIL_FROM', 'DORA IIT Mandi <dora@iitmandi.ac.in>')
 PORTAL_DATA_DIR = Path(os.getenv('PORTAL_DATA_DIR', str(BASE_DIR.parent / '.data')))
 OUTBOX_DIR = PORTAL_DATA_DIR / 'outbox'
+
+# Automated deadline reminders (apps/data_requests/reminders.py).
+REMINDER_DAYS_BEFORE = [int(d) for d in _env_list('REMINDER_DAYS_BEFORE', '7,3,1')]
+REMINDER_OVERDUE_INTERVAL_DAYS = int(os.getenv('REMINDER_OVERDUE_INTERVAL_DAYS', '3'))
+REMINDER_OVERDUE_MAX = int(os.getenv('REMINDER_OVERDUE_MAX', '3'))
+REMINDER_MANUAL_COOLDOWN_HOURS = int(os.getenv('REMINDER_MANUAL_COOLDOWN_HOURS', '20'))

@@ -103,6 +103,9 @@ MATRIX = [
     ('get', '/api/auth/users/999999/', ADMIN_ONLY),
     ('patch', '/api/auth/users/999999/', ADMIN_ONLY),
     ('get', '/api/me/assignments/', SIGNED_IN),
+    # Automated reminders (2.5).
+    ('get', '/api/reminders/', OVERSIGHT),
+    ('post', '/api/reminders/', ADMIN_ONLY),
     # Public portal (spec 2.14).
     ('get', '/api/organogram/', PUBLIC),
     ('get', '/api/v1/rankings/trends/', PUBLIC),

@@ -18,6 +18,7 @@ import RestrictedPortalPage from './views/portal/RestrictedPortalPage';
 import { RankingsView } from './views/RankingsView';
 import { DocumentsView } from './views/DocumentsView';
 import AdminUsers from './views/admin/AdminUsers';
+import AdminReminders from './views/admin/AdminReminders';
 import { RequireRole } from './components/auth/RequireRole';
 import { ADMIN_ROUTE_ROLES, OVERSIGHT, type PortalRole } from './lib/rbac';
 
@@ -46,6 +47,7 @@ export default function AppRoutes() {
         <Route path="audit-log" element={guard('audit-log', <AdminAuditLog />)} />
         <Route path="proofs" element={guard('proofs', <AdminProofRepository />)} />
         <Route path="users" element={guard('users', <AdminUsers />)} />
+        <Route path="reminders" element={guard('reminders', <AdminReminders />)} />
         <Route path="data-requests/new" element={guard('data-requests/new', <AdminDataRequestComposer />)} />
         <Route path="data-requests/:id" element={guard('data-requests/:id', <AdminDataRequestDetail />)} />
         <Route path="rankings" element={guard('rankings', <div className="max-w-[1400px] mx-auto"><RankingsView /></div>)} />

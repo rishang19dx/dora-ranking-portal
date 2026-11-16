@@ -125,6 +125,19 @@ Fetches are serialised by a lock and written atomically, and every web worker se
 
 ---
 
+## ⏰ Automated Deadline Reminders
+
+Sections that have not submitted are reminded on a schedule relative to each request's deadline: **7, 3 and 1 days before**, then **every 3 days after, up to 3 times** (all configurable via `REMINDER_*`, see `.env.example`).
+
+- `python manage.py send_reminders` sends whatever has fallen due; `--dry-run` previews. It is idempotent (one reminder per section per milestone), so run it as often as you like.
+  - *Docker:* the `reminders` service runs it hourly (`REMINDER_INTERVAL_SECONDS`).
+  - *Bare metal:* `scripts/deploy.sh` installs an hourly cron entry next to the ranking refresh.
+- A scheduler that was down sends one catch-up reminder, not a backlog; milestones already past at dispatch are skipped; a manual reminder within `REMINDER_MANUAL_COOLDOWN_HOURS` suppresses the automated one.
+- Every reminder rotates the officer's upload link, exactly like a manual one.
+- **Admin → Reminders** shows each open request's timeline and history; Admin can preview, run now, or pause reminders per request.
+
+---
+
 ## 🧪 Testing & Continuous Integration
 
 The project includes an enterprise-grade automated test suite with **161 backend tests** and **163 frontend tests** (100% passing), statement coverage reporting across all Django apps, and a 5-stage GitHub Actions CI pipeline.

@@ -35,15 +35,20 @@ echo "Collecting Django static files..."
 echo "Fetching any newly published NIRF ranking cycles..."
 ./venv/bin/python manage.py refresh_rankings || echo "Ranking refresh failed; the daily job will retry."
 
-# Daily check for newly published NIRF cycles (Docker deployments use the
-# compose 'scheduler' service instead). Idempotent: an existing entry is
-# replaced, every other crontab line is kept. Set DORA_SKIP_CRON=1 to skip.
+# Scheduled jobs (Docker deployments use the compose 'scheduler' and
+# 'reminders' services instead):
+#   - daily 06:30: fetch newly published NIRF cycles
+#   - hourly :15:  send deadline reminders that have fallen due (idempotent)
+# Existing entries of ours are replaced, every other crontab line is kept.
+# Set DORA_SKIP_CRON=1 to skip.
 CRON_TAG="# dora-refresh-rankings"
 CRON_LINE="30 6 * * * cd $ROOT_DIR/backend && ./venv/bin/python manage.py refresh_rankings >> $ROOT_DIR/backend/refresh_rankings.log 2>&1 $CRON_TAG"
+REMIND_TAG="# dora-send-reminders"
+REMIND_LINE="15 * * * * cd $ROOT_DIR/backend && ./venv/bin/python manage.py send_reminders >> $ROOT_DIR/backend/send_reminders.log 2>&1 $REMIND_TAG"
 if [ "${DORA_SKIP_CRON:-0}" = "1" ]; then
-  echo "DORA_SKIP_CRON=1: not scheduling the daily ranking refresh."
+  echo "DORA_SKIP_CRON=1: not scheduling the ranking refresh or reminders."
 elif ! command -v crontab >/dev/null 2>&1; then
-  echo "crontab not found: schedule 'manage.py refresh_rankings' daily with your service manager."
+  echo "crontab not found: schedule 'manage.py refresh_rankings' daily and 'manage.py send_reminders' hourly with your service manager."
 else
   # Read the current crontab first. "no crontab" just means it is empty;
   # any other read error leaves the crontab untouched rather than risk
@@ -58,12 +63,14 @@ else
   fi
   if [ "$CRON_OK" = "1" ]; then
     {
-      printf '%s\n' "$CURRENT_CRON" | grep -v -- "$CRON_TAG" | sed '/^$/d' || true
+      printf '%s\n' "$CURRENT_CRON" | grep -v -e "$CRON_TAG" -e "$REMIND_TAG" | sed '/^$/d' || true
       echo "$CRON_LINE"
+      echo "$REMIND_LINE"
     } | crontab -
     echo "Daily ranking refresh scheduled for 06:30 (log: backend/refresh_rankings.log)."
+    echo "Hourly deadline reminders scheduled at :15 (log: backend/send_reminders.log)."
   else
-    echo "Could not read the existing crontab; schedule 'manage.py refresh_rankings' manually."
+    echo "Could not read the existing crontab; schedule 'manage.py refresh_rankings' and 'manage.py send_reminders' manually."
   fi
 fi
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { 
   ChartBar, 
@@ -19,7 +19,7 @@ import {
   Files
 } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'motion/react';
-import { authService } from '../services/api';
+import { authService, reminderService, type ReminderScheduleResponse } from '../services/api';
 import { hasRole, roleOf, ROLE_LABELS, ADMIN_ROUTE_ROLES, OVERSIGHT, type PortalRole } from '../lib/rbac';
 import type { User } from '../types';
 
@@ -32,6 +32,21 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const pathname = location.pathname;
   const currentUser = authService.getCurrentUser();
+  const [schedule, setSchedule] = useState<ReminderScheduleResponse | null>(null);
+  const isOversight = hasRole(currentUser, OVERSIGHT);
+
+  // Notifications are live: overdue requests and recent automated reminders.
+  useEffect(() => {
+    if (!isOversight) return;
+    reminderService.schedule().then(setSchedule).catch(() => setSchedule(null));
+  }, [isOversight]);
+
+  const overdueRequests = schedule?.requests.filter((r) => r.overdue) ?? [];
+  const dueSoon = schedule?.requests.filter(
+    (r) => !r.overdue && r.sectionsAwaiting > 0 && new Date(r.deadline).getTime() - Date.now() < 7 * 86400000,
+  ) ?? [];
+  const recentReminders = schedule?.recent.slice(0, 5) ?? [];
+  const attention = overdueRequests.length + dueSoon.length;
 
   const handleSignOut = () => {
     authService.logout();
@@ -108,10 +123,13 @@ export default function DashboardLayout() {
             <div className="relative">
               <button 
                 onClick={() => { setNotificationsOpen(!notificationsOpen); setProfileOpen(false); }}
+                aria-label="Notifications"
                 className="relative p-2 hover:bg-zinc-100 rounded-xl text-zinc-600 transition-colors"
               >
                 <Bell weight="bold" className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-dusty-rose-500 rounded-full ring-2 ring-white"></span>
+                {attention > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-dusty-rose-500 rounded-full ring-2 ring-white"></span>
+                )}
               </button>
               
               <AnimatePresence>
@@ -124,19 +142,37 @@ export default function DashboardLayout() {
                   >
                     <div className="p-4 border-b border-slate-100 bg-zinc-50/50 flex justify-between items-center">
                       <h4 className="font-semibold text-sm text-zinc-900">Notifications</h4>
-                      <span className="text-xs text-sage-600 font-medium cursor-pointer">Mark all as read</span>
+                      {isOversight && (
+                        <Link to="/admin/reminders" onClick={() => setNotificationsOpen(false)} className="text-xs text-sage-600 font-medium">
+                          Reminder schedule
+                        </Link>
+                      )}
                     </div>
-                    <div className="p-2 max-h-64 overflow-y-auto">
-                      <div className="p-3 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer">
-                        <p className="text-sm font-medium text-zinc-900">Submission Received</p>
-                        <p className="text-xs text-zinc-500 mt-1">SCEE has uploaded Student Intake data.</p>
-                        <p className="text-[10px] text-zinc-400 mt-2 uppercase font-semibold">2 hours ago</p>
-                      </div>
-                      <div className="p-3 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer">
-                        <p className="text-sm font-medium text-zinc-900">Deadline Approaching</p>
-                        <p className="text-xs text-zinc-500 mt-1">NIRF 2026 Phase 1 ends in 5 days.</p>
-                        <p className="text-[10px] text-zinc-400 mt-2 uppercase font-semibold">1 day ago</p>
-                      </div>
+                    <div className="p-2 max-h-72 overflow-y-auto">
+                      {overdueRequests.map((r) => (
+                        <Link key={`o-${r.id}`} to={`/admin/data-requests/${r.id}`} onClick={() => setNotificationsOpen(false)} className="block p-3 hover:bg-zinc-50 rounded-xl">
+                          <p className="text-sm font-medium text-dusty-rose-700">Deadline passed</p>
+                          <p className="text-xs text-zinc-500 mt-1">{r.reference}: {r.sectionsAwaiting} section(s) still awaited.</p>
+                        </Link>
+                      ))}
+                      {dueSoon.map((r) => (
+                        <Link key={`d-${r.id}`} to={`/admin/data-requests/${r.id}`} onClick={() => setNotificationsOpen(false)} className="block p-3 hover:bg-zinc-50 rounded-xl">
+                          <p className="text-sm font-medium text-zinc-900">Deadline approaching</p>
+                          <p className="text-xs text-zinc-500 mt-1">
+                            {r.reference} is due {new Date(r.deadline).toLocaleDateString('en-IN')}; {r.sectionsAwaiting} section(s) awaited.
+                          </p>
+                        </Link>
+                      ))}
+                      {recentReminders.map((r) => (
+                        <div key={`r-${r.id}`} className="p-3 rounded-xl">
+                          <p className="text-sm font-medium text-zinc-900">Reminder {r.outcome === 'SENT' ? 'sent' : 'skipped'}</p>
+                          <p className="text-xs text-zinc-500 mt-1">{r.unitName} · {r.reference} · {r.milestone}</p>
+                          <p className="text-[10px] text-zinc-400 mt-1 uppercase font-semibold">{new Date(r.at).toLocaleString('en-IN')}</p>
+                        </div>
+                      ))}
+                      {attention === 0 && recentReminders.length === 0 && (
+                        <p className="p-3 text-xs text-zinc-500">Nothing needs attention.</p>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -231,6 +267,7 @@ function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile, user 
             {can('rankings') && <NavItem to="/admin/rankings" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Rankings (NIRF)" active={pathname.includes("/rankings")} open={sidebarOpen} />}
             {can('documents') && <NavItem to="/admin/documents" icon={<BookOpen weight="duotone" className="w-5 h-5" />} label="Documents" active={pathname.includes("/documents")} open={sidebarOpen} />}
             {can('proofs') && <NavItem to="/admin/proofs" icon={<Files weight="duotone" className="w-5 h-5" />} label="Proof Repository" active={pathname.includes("/proofs")} open={sidebarOpen} />}
+            {can('reminders') && <NavItem to="/admin/reminders" icon={<Bell weight="duotone" className="w-5 h-5" />} label="Reminders" active={pathname.includes("/reminders")} open={sidebarOpen} />}
             {can('audit-log') && <NavItem to="/admin/audit-log" icon={<ShieldCheck weight="duotone" className="w-5 h-5" />} label="Audit Log" active={pathname.includes("/audit-log")} open={sidebarOpen} />}
             {can('users') && <NavItem to="/admin/users" icon={<Gear weight="duotone" className="w-5 h-5" />} label="Users & Roles" active={pathname.includes("/admin/users")} open={sidebarOpen} />}
           </>

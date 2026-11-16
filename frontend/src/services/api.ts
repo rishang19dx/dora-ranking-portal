@@ -409,3 +409,61 @@ export const userService = {
     return res.data;
   },
 };
+
+export interface ReminderTimelineEntry {
+  milestone: string;
+  dueAt: string;
+  overdue: boolean;
+  state: 'SENT' | 'SKIPPED' | 'UPCOMING' | 'DUE';
+  sections: { unitId: string; outcome: string; detail: string; deliveries: number; at: string }[];
+  sectionsAwaiting: number | null;
+}
+
+export interface ReminderScheduleResponse {
+  policy: { daysBefore: number[]; overdueIntervalDays: number; overdueMax: number; manualCooldownHours: number };
+  requests: {
+    id: string;
+    reference: string;
+    title: string;
+    deadline: string;
+    autoRemind: boolean;
+    sections: number;
+    sectionsAwaiting: number;
+    overdue: boolean;
+    timeline: ReminderTimelineEntry[];
+  }[];
+  recent: {
+    id: string;
+    requestId: string;
+    reference: string;
+    unitId: string;
+    unitName: string;
+    milestone: string;
+    outcome: 'SENT' | 'SKIPPED';
+    detail: string;
+    deliveries: number;
+    at: string;
+  }[];
+}
+
+export interface ReminderRunReport {
+  ranAt: string;
+  dryRun: boolean;
+  sent: { requestId: string; reference: string; unitId: string; milestone: string; deliveries?: number }[];
+  skipped: { requestId: string; reference: string; unitId: string; milestone: string; reason: string }[];
+}
+
+export const reminderService = {
+  async schedule(): Promise<ReminderScheduleResponse> {
+    const res = await api.get('/api/reminders/');
+    return res.data;
+  },
+  async run(dryRun: boolean): Promise<ReminderRunReport> {
+    const res = await api.post('/api/reminders/', { dryRun });
+    return res.data;
+  },
+  async setAutoRemind(requestId: string, enabled: boolean): Promise<{ autoRemind: boolean; message: string }> {
+    const res = await api.post(`/api/data-requests/${requestId}/actions/`, { action: 'SET_AUTO_REMIND', enabled });
+    return res.data;
+  },
+};

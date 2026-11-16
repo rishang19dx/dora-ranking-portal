@@ -26,10 +26,13 @@ services:
       DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,backend"
       CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
       DATABASE_URL: "postgres://dora_user:dora_password@db:5432/dora_db"
+      # Mail outbox, shared with the reminders service.
+      PORTAL_DATA_DIR: "/app/.data"
     ports:
       - "8000:8000"
     volumes:
       - ./backend/media:/app/media
+      - portal_data:/app/.data
       # Shared with the scheduler, which saves newly published NIRF cycles
       # here. Docker seeds an empty named volume from the image's files, so
       # the cycles bundled with the code carry over on first start. After
@@ -60,6 +63,34 @@ services:
     volumes:
       - rankings_data:/app/apps/rankings/data
 
+  # Sends the deadline reminders that have fallen due (spec 2.5). Each section
+  # gets each milestone at most once, so the interval only bounds how late a
+  # reminder can be. Uses the same database and mail settings as the backend.
+  reminders:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dora_reminders
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DJANGO_SECRET_KEY: "django-insecure-production-secret-key-change-me-dora-portal"
+      DJANGO_DEBUG: "False"
+      DATABASE_URL: "postgres://dora_user:dora_password@db:5432/dora_db"
+      REMINDER_INTERVAL_SECONDS: "3600"
+      APP_BASE_URL: "http://localhost:3000"
+      PORTAL_DATA_DIR: "/app/.data"
+      # RESEND_API_KEY / MAIL_FROM: set to deliver real mail; without a key
+      # messages are written to the outbox volume and marked SIMULATED.
+    command: >
+      sh -c "while true; do
+               python manage.py send_reminders || echo 'send_reminders failed; retrying next cycle';
+               sleep $${REMINDER_INTERVAL_SECONDS};
+             done"
+    volumes:
+      - portal_data:/app/.data
+
   frontend:
     build:
       context: ./frontend
@@ -74,3 +105,4 @@ services:
 volumes:
   postgres_data:
   rankings_data:
+  portal_data:

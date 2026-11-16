@@ -6,6 +6,7 @@ from .views import (
     PortalGrantContextView,
     PortalUploadView,
     MyAssignmentsView,
+    ReminderScheduleView,
 )
 
 urlpatterns = [
@@ -15,6 +16,8 @@ urlpatterns = [
     path('data-requests/<str:pk>', DataRequestDetailView.as_view()),
     path('data-requests/<str:pk>/actions/', DataRequestActionsView.as_view(), name='data_request_actions'),
     path('data-requests/<str:pk>/actions', DataRequestActionsView.as_view()),
+    path('reminders/', ReminderScheduleView.as_view(), name='reminder_schedule'),
+    path('reminders', ReminderScheduleView.as_view()),
     path('me/assignments/', MyAssignmentsView.as_view(), name='my_assignments'),
     path('me/assignments', MyAssignmentsView.as_view()),
     path('portal/<str:token>/', PortalGrantContextView.as_view(), name='portal_grant_context'),

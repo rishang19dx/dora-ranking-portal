@@ -193,56 +193,10 @@ class DataRequestActionsView(APIView):
             else:
                 targets = targets.filter(status__in=[TargetStatus.PENDING, TargetStatus.PARTIAL])
 
-            from .mailer import send_mail, render_template, DEFAULT_REMINDER_TEMPLATE
-            app_base_url = getattr(settings, 'APP_BASE_URL', 'http://localhost:5173')
+            from .reminders import send_target_reminder
             reminded_count = 0
-
             for target in targets:
-                target.reminders_sent += 1
-                target.last_reminder_at = timezone.now()
-                target.save()
-
-                unit = target.org_unit
-                unit_label = unit.short_name or unit.name
-                officers = eligible_officers_for_unit(unit)
-
-                for officer in officers:
-                    # Rotating here is what makes a reminder safe: the link in
-                    # the earlier mail stops working once the new one is sent.
-                    grant, _token, portal_url = issue_grant(
-                        data_req, unit, officer, target.data_item_ids
-                    )
-                    vars_dict = {
-                        'officer': officer.name,
-                        'email': officer.email,
-                        'section': unit_label,
-                        'sectionFullName': unit.name,
-                        'framework': data_req.framework,
-                        'cycle': str(data_req.cycle_year),
-                        'title': data_req.title,
-                        'reference': data_req.reference,
-                        'deadline': str(data_req.deadline).split('T')[0],
-                        'dataItems': "\n".join([f"  - {item_id}" for item_id in target.data_item_ids]),
-                        'portalLink': portal_url,
-                    }
-                    subject = f"Reminder: {data_req.reference} - {data_req.title}"
-                    body = render_template(DEFAULT_REMINDER_TEMPLATE, vars_dict)
-                    mail_res = send_mail(to=officer.email, subject=subject, body=body)
-                    delivery_status = (
-                        DeliveryStatus.SENT if mail_res.get('status') == 'SENT'
-                        else (DeliveryStatus.FAILED if mail_res.get('status') == 'FAILED' else DeliveryStatus.SIMULATED)
-                    )
-                    RequestDelivery.objects.create(
-                        request=data_req,
-                        officer=officer,
-                        org_unit=unit,
-                        email=officer.email,
-                        subject=subject,
-                        status=delivery_status,
-                        kind=DeliveryKind.REMINDER,
-                        error=mail_res.get('error', '')
-                    )
-                    reminded_count += 1
+                reminded_count += send_target_reminder(data_req, target)
 
             return Response({'status': 'reminded', 'message': f'{reminded_count} reminder message(s) dispatched.'})
 
@@ -286,6 +240,16 @@ class DataRequestActionsView(APIView):
                 'status': 'reissued',
                 'url': portal_url,
                 'message': 'Fresh upload link provisioned; the previous one was revoked.'
+            })
+
+        elif action == 'SET_AUTO_REMIND':
+            enabled = str(request.data.get('enabled', 'true')).lower() in ('1', 'true', 'yes')
+            data_req.auto_remind = enabled
+            data_req.save(update_fields=['auto_remind'])
+            return Response({
+                'status': 'updated',
+                'autoRemind': enabled,
+                'message': 'Automated reminders resumed.' if enabled else 'Automated reminders paused for this request.',
             })
 
         elif action == 'SET_TARGET_STATUS':
@@ -472,3 +436,66 @@ class MyAssignmentsView(APIView):
             'unitIds': unit_ids,
             'tasks': tasks,
         })
+
+
+class ReminderScheduleView(APIView):
+    """
+    Automated reminder schedule and history (spec 2.5).
+
+    GET   every open request's milestone timeline, the policy, and the most
+          recent automated reminders (oversight roles).
+    POST  run the scheduler now (Admin); `{"dryRun": true}` previews it.
+    """
+    permission_classes = [IsAdminOrOversightReadOnly]
+
+    def get(self, request):
+        from .models import ScheduledReminder
+        from .reminders import policy, schedule_for
+
+        open_requests = (
+            DataRequest.objects.filter(status=DataRequestStatus.DISPATCHED)
+            .prefetch_related('targets', 'scheduled_reminders__target')
+            .order_by('deadline')
+        )
+        now = timezone.now()
+        requests_out = []
+        for req in open_requests:
+            targets = list(req.targets.all())
+            awaiting = [t for t in targets if t.status != TargetStatus.SUBMITTED]
+            requests_out.append({
+                'id': req.id,
+                'reference': req.reference,
+                'title': req.title,
+                'deadline': req.deadline,
+                'autoRemind': req.auto_remind,
+                'sections': len(targets),
+                'sectionsAwaiting': len(awaiting),
+                'overdue': req.deadline < now and bool(awaiting),
+                'timeline': schedule_for(req, now),
+            })
+
+        recent = ScheduledReminder.objects.select_related('request', 'target__org_unit')[:50]
+        return Response({
+            'policy': policy(),
+            'requests': requests_out,
+            'recent': [
+                {
+                    'id': r.id,
+                    'requestId': r.request_id,
+                    'reference': r.request.reference,
+                    'unitId': r.target.org_unit_id,
+                    'unitName': r.target.org_unit.short_name or r.target.org_unit.name,
+                    'milestone': r.milestone,
+                    'outcome': r.outcome,
+                    'detail': r.detail,
+                    'deliveries': r.deliveries,
+                    'at': r.created_at,
+                }
+                for r in recent
+            ],
+        })
+
+    def post(self, request):
+        from .reminders import run_scheduled_reminders
+        dry_run = str(request.data.get('dryRun', '')).lower() in ('1', 'true', 'yes')
+        return Response(run_scheduled_reminders(dry_run=dry_run))

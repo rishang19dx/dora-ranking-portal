@@ -2,7 +2,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from apps.accounts.permissions import IsAdmin
+from apps.accounts.permissions import IsAdmin, IsAdminOrOversightReadOnly
 from .scraper import (  # noqa: F401 - DATA_DIR is re-exported for test fixtures that patch it
     fetch_lock,
     refresh_new_publications,
@@ -449,3 +449,200 @@ class TriggerScraperUpdateView(APIView):
         }
         code = status.HTTP_502_BAD_GATEWAY if (failed and not fetched and not ok) else status.HTTP_200_OK
         return Response(body, status=code)
+
+
+# -----------------------------------------------------------------------------
+# Public ranking portal across systems (spec 2.14)
+# -----------------------------------------------------------------------------
+
+def _nirf_series(category):
+    """IIT Mandi's NIRF rank per cached year for one category."""
+    from .analytics import TARGET_INSTITUTE
+    from .models import parse_rank
+
+    points = []
+    for year in available_years(category):
+        rows = load_ranking_data(year, category) or []
+        row = next((r for r in rows if r.get('name') == TARGET_INSTITUTE), None)
+        if not row or row.get('rank') in (None, ''):
+            continue
+        try:
+            low, high = parse_rank(str(row['rank']))
+        except ValueError:
+            continue
+        points.append({
+            'year': year,
+            'rankText': str(row['rank']),
+            'rankLow': low,
+            'rankHigh': high,
+            'plotRank': low if high is None else (low + high) / 2,
+            'score': row.get('score'),
+            'source': 'https://www.nirfindia.org',
+            'demo': False,
+        })
+    return points
+
+
+def _serialize_external(r):
+    return {
+        'id': r.id,
+        'system': r.system,
+        'systemLabel': r.system_label,
+        'label': r.label,
+        'year': r.year,
+        'rankText': r.rank_text,
+        'rankLow': r.rank_low,
+        'rankHigh': r.rank_high,
+        'plotRank': r.plot_rank,
+        'score': r.score,
+        'source': r.source_url,
+        'notes': r.notes,
+        'published': r.published,
+        'demo': r.is_demo,
+        'updatedAt': r.updated_at,
+    }
+
+
+class PublicRankingSystemsView(APIView):
+    """
+    IIT Mandi's year-wise position in every ranking system DORA tracks, for the
+    public portal (no login). NIRF comes straight from the published tables;
+    other systems from results DORA has entered and marked published.
+    Lower rank is better in every series.
+    """
+    permission_classes = [AllowAny]  # public portal (spec 2.14)
+
+    def get(self, request):
+        from .models import ExternalRankingResult
+
+        systems = []
+        for category in CATEGORIES_FOR_PUBLIC:
+            series = _nirf_series(category)
+            if series:
+                systems.append({
+                    'id': f'NIRF_{category.upper()}',
+                    'label': f'NIRF {category}',
+                    'family': 'NIRF',
+                    'series': series,
+                })
+
+        external = ExternalRankingResult.objects.filter(published=True).order_by('system', 'system_label', 'year')
+        grouped = {}
+        for r in external:
+            key = (r.system, r.system_label if r.system == 'OTHER' else '')
+            grouped.setdefault(key, []).append(r)
+        for (system, other_label), rows in grouped.items():
+            systems.append({
+                'id': system if not other_label else f'OTHER:{other_label}',
+                'label': rows[0].label,
+                'family': system.split('_')[0],
+                'series': [
+                    {k: v for k, v in _serialize_external(r).items()
+                     if k in ('year', 'rankText', 'rankLow', 'rankHigh', 'plotRank', 'score', 'source', 'demo')}
+                    for r in rows
+                ],
+            })
+
+        return Response({
+            'institute': 'IIT Mandi',
+            'lowerIsBetter': True,
+            'hasDemoData': any(p['demo'] for s in systems for p in s['series']),
+            'systems': systems,
+        })
+
+
+CATEGORIES_FOR_PUBLIC = ('Overall', 'Engineering', 'Innovation')
+
+
+class ExternalRankingListView(APIView):
+    """DORA-maintained results for non-NIRF systems. Oversight reads, Admin edits."""
+    permission_classes = [IsAdminOrOversightReadOnly]
+
+    def get(self, request):
+        from .models import ExternalRankingResult, RankingSystem
+        return Response({
+            'systems': [{'value': v, 'label': lbl} for v, lbl in RankingSystem.choices],
+            'results': [_serialize_external(r) for r in ExternalRankingResult.objects.all()],
+        })
+
+    def post(self, request):
+        return _save_external(None, request.data)
+
+
+class ExternalRankingDetailView(APIView):
+    permission_classes = [IsAdminOrOversightReadOnly]
+
+    def patch(self, request, pk):
+        from .models import ExternalRankingResult
+        try:
+            row = ExternalRankingResult.objects.get(pk=pk)
+        except ExternalRankingResult.DoesNotExist:
+            return Response({'error': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return _save_external(row, request.data)
+
+    def delete(self, request, pk):
+        from .models import ExternalRankingResult
+        deleted, _ = ExternalRankingResult.objects.filter(pk=pk).delete()
+        if not deleted:
+            return Response({'error': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+def _save_external(row, data):
+    from django.db import IntegrityError, transaction
+    from .models import ExternalRankingResult, RankingSystem, parse_rank
+
+    row = row or ExternalRankingResult()
+    errors = {}
+    fields = {
+        'system': data.get('system', row.system or None),
+        'system_label': (data.get('systemLabel', row.system_label) or '').strip(),
+        'rank_text': (data.get('rankText', row.rank_text) or '').strip(),
+        'source_url': (data.get('source', row.source_url) or '').strip(),
+        'notes': data.get('notes', row.notes) or '',
+    }
+    if fields['system'] not in RankingSystem.values:
+        errors['system'] = 'Choose a ranking system.'
+    elif fields['system'] == RankingSystem.OTHER and not fields['system_label']:
+        errors['systemLabel'] = 'Name the ranking system.'
+    if fields['system'] != RankingSystem.OTHER:
+        fields['system_label'] = ''
+    try:
+        year = int(data.get('year', row.year))
+        if not 2000 <= year <= 2100:
+            raise ValueError
+        fields['year'] = year
+    except (TypeError, ValueError):
+        errors['year'] = 'Enter the edition year.'
+    try:
+        parse_rank(fields['rank_text'])
+    except ValueError as exc:
+        errors['rankText'] = str(exc)
+    score = data.get('score', row.score)
+    if score in ('', None):
+        fields['score'] = None
+    else:
+        try:
+            fields['score'] = float(score)
+        except (TypeError, ValueError):
+            errors['score'] = 'Score must be a number.'
+    if fields['source_url'] and not fields['source_url'].startswith(('http://', 'https://')):
+        errors['source'] = 'The source must be a web link.'
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+    for k, v in fields.items():
+        setattr(row, k, v)
+    if 'published' in data:
+        row.published = str(data['published']).lower() in ('1', 'true', 'yes')
+    # A figure an admin enters or edits is real data, even on a former demo
+    # row; merely hiding or showing a row changes nothing about its origin.
+    if row.pk is None or any(k in data for k in ('system', 'systemLabel', 'year', 'rankText', 'score', 'source')):
+        row.is_demo = False
+    created = row.pk is None
+    try:
+        with transaction.atomic():
+            row.save()
+    except IntegrityError:
+        return Response({'year': 'This system already has a result for that year.'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(_serialize_external(row), status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)

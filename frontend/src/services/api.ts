@@ -542,3 +542,59 @@ export const discrepancyService = {
     return res.data;
   },
 };
+
+export interface RankingPoint {
+  year: number;
+  rankText: string;
+  rankLow: number;
+  rankHigh: number | null;
+  plotRank: number;
+  score: number | null;
+  source: string;
+  demo: boolean;
+}
+
+export interface PublicRankingSystems {
+  institute: string;
+  lowerIsBetter: boolean;
+  hasDemoData: boolean;
+  systems: { id: string; label: string; family: string; series: RankingPoint[] }[];
+}
+
+export interface ExternalRankingRow {
+  id: number;
+  system: string;
+  systemLabel: string;
+  label: string;
+  year: number;
+  rankText: string;
+  rankLow: number;
+  rankHigh: number | null;
+  score: number | null;
+  source: string;
+  notes: string;
+  published: boolean;
+  demo: boolean;
+  updatedAt: string;
+}
+
+export const publicRankingService = {
+  /** Public, no login: IIT Mandi in every tracked ranking system. */
+  async systems(): Promise<PublicRankingSystems> {
+    const res = await api.get('/api/v1/public/ranking-systems/');
+    return res.data;
+  },
+  async listExternal(): Promise<{ systems: { value: string; label: string }[]; results: ExternalRankingRow[] }> {
+    const res = await api.get('/api/rankings/external/');
+    return res.data;
+  },
+  async saveExternal(row: Partial<ExternalRankingRow> & { id?: number }): Promise<ExternalRankingRow> {
+    const res = row.id
+      ? await api.patch(`/api/rankings/external/${row.id}/`, row)
+      : await api.post('/api/rankings/external/', row);
+    return res.data;
+  },
+  async deleteExternal(id: number): Promise<void> {
+    await api.delete(`/api/rankings/external/${id}/`);
+  },
+};

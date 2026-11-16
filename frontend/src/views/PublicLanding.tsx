@@ -18,6 +18,7 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { RankingsView } from './RankingsView';
 import { TrendsView } from './TrendsView';
+import { RankingSystemsView } from './RankingSystemsView';
 import { AgenciesView } from './AgenciesView';
 import { ComparativeView } from './ComparativeView';
 import { DocumentsView } from './DocumentsView';
@@ -27,14 +28,27 @@ import { useToast } from '../components/ToastProvider';
 import { homeFor, roleOf, ROLE_LABELS } from '../lib/rbac';
 import type { User } from '../types';
 
+const PUBLIC_TABS = ['overview', 'rankings', 'systems', 'trends', 'agencies', 'comparative', 'documents', 'about'] as const;
+type PublicTab = (typeof PUBLIC_TABS)[number];
+
 /** Only same-site paths are honoured as a post-login destination. */
 function safeNext(next: string | null): string | null {
   return next && next.startsWith('/') && !next.startsWith('//') ? next : null;
 }
 
 export default function PublicLanding() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'rankings' | 'trends' | 'agencies' | 'comparative' | 'documents' | 'about'>('overview');
   const [searchParams, setSearchParams] = useSearchParams();
+  // The open tab lives in the URL (?tab=systems), so a chart can be linked to.
+  const initialTab = searchParams.get('tab');
+  const [activeTab, setActiveTabState] = useState<PublicTab>(
+    PUBLIC_TABS.includes(initialTab as PublicTab) ? (initialTab as PublicTab) : 'overview',
+  );
+  const setActiveTab = (tab: PublicTab) => {
+    setActiveTabState(tab);
+    const next = new URLSearchParams(searchParams);
+    if (tab === 'overview') next.delete('tab'); else next.set('tab', tab);
+    setSearchParams(next, { replace: true });
+  };
   const [showLoginModal, setShowLoginModal] = useState(searchParams.get('login') === '1');
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
@@ -44,7 +58,12 @@ export default function PublicLanding() {
 
   const closeLogin = () => {
     setShowLoginModal(false);
-    if (searchParams.has('login') || searchParams.has('next')) setSearchParams({}, { replace: true });
+    if (searchParams.has('login') || searchParams.has('next')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('login');
+      next.delete('next');
+      setSearchParams(next, { replace: true });
+    }
   };
 
   const handleLoginSuccess = (user: User) => {
@@ -77,6 +96,7 @@ export default function PublicLanding() {
             {[
               { id: 'overview', label: 'Overview', icon: <Buildings weight="duotone" className="w-4 h-4" /> },
               { id: 'rankings', label: 'NIRF & Rankings', icon: <Medal weight="duotone" className="w-4 h-4" /> },
+              { id: 'systems', label: 'Ranking Systems', icon: <ChartBar weight="duotone" className="w-4 h-4" /> },
               { id: 'trends', label: 'Trend Analytics', icon: <ChartLineUp weight="duotone" className="w-4 h-4" /> },
               { id: 'agencies', label: 'Agencies', icon: <ChartBar weight="duotone" className="w-4 h-4" /> },
               { id: 'comparative', label: 'Peer Comparison', icon: <FileText weight="duotone" className="w-4 h-4" /> },
@@ -85,7 +105,7 @@ export default function PublicLanding() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as PublicTab)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                   activeTab === tab.id
                     ? 'bg-sage-50 text-sage-800 ring-1 ring-sage-500/20'
@@ -273,6 +293,12 @@ export default function PublicLanding() {
           </div>
         )}
 
+        {activeTab === 'systems' && (
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <RankingSystemsView />
+          </div>
+        )}
+
         {activeTab === 'trends' && (
           <div className="max-w-7xl mx-auto px-4 py-8">
             <TrendsView />
@@ -308,7 +334,7 @@ export default function PublicLanding() {
       </main>
 
       {/* Footer */}
-      <Footer onSelectTab={(tab) => setActiveTab(tab)} />
+      <Footer onSelectTab={(tab) => setActiveTab(tab as PublicTab)} />
 
       {/* Login Modal */}
       {showLoginModal && (

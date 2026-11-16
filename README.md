@@ -125,6 +125,16 @@ Fetches are serialised by a lock and written atomically, and every web worker se
 
 ---
 
+## 🌐 Public Ranking Portal
+
+The public landing page needs no login (spec 2.14). The **Ranking Systems** tab (`/?tab=systems`, linkable) shows IIT Mandi's year-wise rank in every system DORA tracks, one chart per system: their rank scales differ by an order of magnitude, so one shared axis would flatten NIRF into a line. **Peer Comparison** benchmarks against the 2nd-generation IITs, and **Trend Analytics** breaks down NIRF parameters.
+
+- **NIRF** series come straight from the published tables (see *NIRF Ranking Data Refresh*).
+- **QS, THE, MDRA and others** publish no feed, so DORA enters each edition's result in **Admin → Public Rankings** (rank as published, e.g. `601-650`; banded ranks are plotted at the band midpoint). Results can be hidden from the public view.
+- `python manage.py seed_demo_rankings` loads illustrative QS/THE series so the portal can be demonstrated before real figures are entered. They are drawn dashed and labelled *Illustrative*, never overwrite real entries, and are removed with `--clear`. Refuses to run with `DJANGO_DEBUG=False` unless `--force`.
+
+---
+
 ## 🕰 Historical Value Comparison
 
 Every input in a nodal officer's form shows the figure the same unit had **approved** in the latest earlier cycle, and the change is recomputed as they type (spec 2.6). Because NIRF year columns overlap between cycles, each cell is compared on one of two bases:

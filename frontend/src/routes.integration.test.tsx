@@ -37,6 +37,10 @@ vi.mock('./services/api', async (importOriginal) => {
       list: vi.fn().mockResolvedValue({ count: 0, page: 1, pageSize: 50, results: [] }),
       download: vi.fn().mockResolvedValue(undefined),
     },
+    publicRankingService: {
+      systems: vi.fn().mockResolvedValue({ institute: 'IIT Mandi', lowerIsBetter: true, hasDemoData: false, systems: [] }),
+      listExternal: vi.fn().mockResolvedValue({ systems: [], results: [] }),
+    },
     assignmentService: {
       mine: vi.fn().mockResolvedValue({ unitIds: [], tasks: [] }),
     },
@@ -165,6 +169,14 @@ describe('public landing flows', () => {
     renderApp('/');
     await userEvent.click(screen.getByRole('button', { name: /Admin Login/i }));
     expect(await screen.findByRole('heading', { name: /Ranking Portal Login/i })).toBeInTheDocument();
+  });
+});
+
+describe('public portal deep links', () => {
+  it('opens the Ranking Systems tab from ?tab=systems without signing in', async () => {
+    renderApp('/?tab=systems');
+    expect(await screen.findByRole('heading', { name: /across ranking systems/i })).toBeInTheDocument();
+    expect(screen.getByText(/No ranking results have been published yet/)).toBeInTheDocument();
   });
 });
 

@@ -118,6 +118,12 @@ MATRIX = [
     ('get', '/api/v1/rankings/parameters/trends/', PUBLIC),
     ('get', '/api/v1/rankings/gap-analysis/', PUBLIC),
     ('get', '/api/form-schemas/nirf/', PUBLIC),
+    ('get', '/api/v1/public/ranking-systems/', PUBLIC),
+    # DORA-entered results for non-NIRF systems.
+    ('get', '/api/rankings/external/', OVERSIGHT),
+    ('post', '/api/rankings/external/', ADMIN_ONLY),
+    ('patch', '/api/rankings/external/999999/', ADMIN_ONLY),
+    ('delete', '/api/rankings/external/999999/', ADMIN_ONLY),
 ]
 
 # Allowed calls that would reach the network or do heavy work are only

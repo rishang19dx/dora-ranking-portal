@@ -20,6 +20,7 @@ import { DocumentsView } from './views/DocumentsView';
 import AdminUsers from './views/admin/AdminUsers';
 import AdminReminders from './views/admin/AdminReminders';
 import AdminDiscrepancies from './views/admin/AdminDiscrepancies';
+import AdminPublicRankings from './views/admin/AdminPublicRankings';
 import { RequireRole } from './components/auth/RequireRole';
 import { ADMIN_ROUTE_ROLES, OVERSIGHT, type PortalRole } from './lib/rbac';
 
@@ -50,6 +51,7 @@ export default function AppRoutes() {
         <Route path="users" element={guard('users', <AdminUsers />)} />
         <Route path="reminders" element={guard('reminders', <AdminReminders />)} />
         <Route path="discrepancies" element={guard('discrepancies', <AdminDiscrepancies />)} />
+        <Route path="public-rankings" element={guard('public-rankings', <AdminPublicRankings />)} />
         <Route path="data-requests/new" element={guard('data-requests/new', <AdminDataRequestComposer />)} />
         <Route path="data-requests/:id" element={guard('data-requests/:id', <AdminDataRequestDetail />)} />
         <Route path="rankings" element={guard('rankings', <div className="max-w-[1400px] mx-auto"><RankingsView /></div>)} />

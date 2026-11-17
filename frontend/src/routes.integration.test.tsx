@@ -122,9 +122,10 @@ describe('routing', () => {
 });
 
 describe('public landing flows', () => {
-  it('switches tabs and loads live NIRF data for the rankings tab', async () => {
+  it('switches tabs and loads live NIRF data when the live source is selected', async () => {
     renderApp('/');
     await userEvent.click(screen.getByRole('button', { name: /NIRF & Rankings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /NIRF Official Live/i }));
     await waitFor(() => expect(rankingsService.getRankings).toHaveBeenCalledWith(2025, 'overall'));
   });
 
@@ -132,6 +133,7 @@ describe('public landing flows', () => {
     vi.mocked(rankingsService.getRankings).mockRejectedValueOnce(new Error('boom'));
     renderApp('/');
     await userEvent.click(screen.getByRole('button', { name: /NIRF & Rankings/i }));
+    await userEvent.click(screen.getByRole('button', { name: /NIRF Official Live/i }));
     await waitFor(() => expect(rankingsService.getRankings).toHaveBeenCalled());
     expect(screen.getByRole('link', { name: /Admin Portal/i })).toBeInTheDocument();
   });

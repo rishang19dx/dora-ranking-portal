@@ -1,4 +1,18 @@
-import { RankingItem, RankingStatus } from "../types";
+import { NirfRankItem, RankingItem, RankingStatus } from "../types";
+
+function downloadCSV(headers: string[], rows: Array<Array<string | number>>, filename: string) {
+  const escapeValue = (value: string | number) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const csv = [headers, ...rows].map((row) => row.map(escapeValue).join(",")).join("\r\n");
+  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
 
 /**
  * Calculates rank movement and improvement.
@@ -94,32 +108,48 @@ export function exportToCSV(rankings: RankingItem[], filename = "IIT_Mandi_Ranki
   const rows = rankings.map(r => {
     const change = calculateRankChange(r.rank, r.previous_rank);
     return [
-      `"${r.id}"`,
-      `"${r.agency_name}"`,
-      `"${r.ranking_name}"`,
-      `"${r.category}"`,
+      r.id,
+      r.agency_name,
+      r.ranking_name,
+      r.category,
       r.year,
-      `"#${r.rank}"`,
-      r.previous_rank ? `"#${r.previous_rank}"` : "N/A",
-      `"${change.label}"`,
+      `#${r.rank}`,
+      r.previous_rank ? `#${r.previous_rank}` : "N/A",
+      change.label,
       r.score ?? "N/A",
       r.percentile ? `${r.percentile}%` : "N/A",
       r.total_institutions ?? "N/A",
-      `"${r.status}"`,
+      r.status,
       r.verified ? "Yes" : "No",
-      `"${r.source_url || ""}"`,
-      `"${r.created_at}"`
-    ].join(",");
+      r.source_url || "",
+      r.created_at,
+    ];
   });
 
-  const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", filename);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  downloadCSV(headers, rows, filename);
+}
+
+/** Exports the NIRF API table using its own response schema. */
+export function exportNirfRankingsToCSV(
+  rankings: NirfRankItem[],
+  year: number,
+  category: string,
+) {
+  if (!rankings || rankings.length === 0) return;
+
+  downloadCSV(
+    ["Rank", "Institution Name", "City", "State", "NIRF Score", "Year", "Category"],
+    rankings.map((ranking) => [
+      ranking.rank,
+      ranking.name,
+      ranking.city,
+      ranking.state,
+      ranking.score ?? "N/A",
+      year,
+      category,
+    ]),
+    `NIRF_${category}_${year}_Rankings.csv`,
+  );
 }
 
 export function formatDate(isoString?: string): string {

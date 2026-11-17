@@ -2,6 +2,33 @@ import React from "react";
 import { Building2, ExternalLink, Globe, Award, ShieldCheck } from "lucide-react";
 import { RankingAgency, RankingItem } from "../types";
 
+const FEATURED_FRAMEWORKS = [
+  {
+    name: "National Institutional Ranking Framework (NIRF)",
+    description: "India’s national framework evaluates higher-education institutions across teaching, learning and resources, research, graduation outcomes, outreach and perception.",
+    measures: ["Teaching, Learning & Resources", "Research & Professional Practice", "Graduation Outcomes", "Outreach, Inclusivity & Perception"],
+    href: "https://www.nirfindia.org/",
+  },
+  {
+    name: "Times Higher Education (THE)",
+    description: "THE evaluates universities using 13 performance indicators across teaching, research, knowledge transfer, and international outlook.",
+    measures: ["Teaching", "Research", "Knowledge Transfer", "International Outlook"],
+    href: "https://www.timeshighereducation.com/",
+  },
+  {
+    name: "QS World University Rankings",
+    description: "QS assesses academic and employer reputation, teaching capacity, research impact, and internationalisation, with newer measures for research networks, employment outcomes, and sustainability.",
+    measures: ["Academic & employer reputation", "Teaching & research impact", "International outlook", "Sustainability"],
+    href: "https://www.topuniversities.com/world-university-rankings",
+  },
+  {
+    name: "India Today–MDRA Rankings",
+    description: "India Today’s college rankings recognise IIT Mandi across technical-university and engineering-college categories.",
+    measures: ["Best Technical University", "Engineering colleges", "Emerging government colleges", "Most improved colleges"],
+    href: "https://bestcolleges.indiatoday.in/",
+  },
+];
+
 interface AgenciesViewProps {
   agencies?: RankingAgency[];
   rankings?: RankingItem[];
@@ -116,6 +143,35 @@ export const AgenciesView: React.FC<AgenciesViewProps> = ({
           );
         })}
       </div>
+
+      {/* Published framework context remains useful even before agency records are API-managed. */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <Award className="w-5 h-5 text-[#F58220]" />
+          <h2 className="text-lg font-bold text-[#003366]">Featured Ranking Frameworks</h2>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {FEATURED_FRAMEWORKS.map((framework) => (
+            <article key={framework.name} className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-5 flex flex-col">
+              <h3 className="font-bold text-gray-900">{framework.name}</h3>
+              <p className="text-sm text-gray-600 leading-relaxed mt-2">{framework.description}</p>
+              <ul className="mt-4 space-y-1.5 text-xs text-gray-700">
+                {framework.measures.map((measure) => (
+                  <li key={measure} className="flex gap-2"><span className="text-[#F58220]">•</span>{measure}</li>
+                ))}
+              </ul>
+              <a
+                href={framework.href}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-5 text-blue-700 hover:text-blue-900 font-semibold text-xs inline-flex items-center gap-1 hover:underline"
+              >
+                Official website <ExternalLink className="w-3 h-3" />
+              </a>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 };

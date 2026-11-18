@@ -32,7 +32,7 @@ describe('DashboardLayout', () => {
 
   it('shows admin navigation on /admin routes', () => {
     renderAt('/admin');
-    ['Dashboard', 'Organogram', 'Data Collection', 'Nodal Officers', 'Rankings (NIRF)', 'Documents'].forEach(
+    ['Dashboard', 'Organogram', 'Data Collection', 'Nodal Officers', 'Ranking Results', 'Documents'].forEach(
       (label) => expect(screen.getAllByText(label).length).toBeGreaterThan(0),
     );
   });

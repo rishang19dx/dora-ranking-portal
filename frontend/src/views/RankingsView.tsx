@@ -15,7 +15,7 @@ import {
 import { RankingItem, RankingAgency } from "../types";
 import { RankingCard } from "../components/RankingCard";
 import { exportNirfRankingsToCSV, exportToCSV } from "../utils/helpers";
-import { rankingsService } from "../services/api";
+import { rankingRecordsService, rankingsService } from "../services/api";
 
 const DEFAULT_RANKINGS: RankingItem[] = [
   {
@@ -277,6 +277,7 @@ export const RankingsView: React.FC<RankingsViewProps> = ({
   const [secondGenOnly, setSecondGenOnly] = useState<boolean>(false);
   const [nirfData, setNirfData] = useState<any[]>([]);
   const [nirfLoading, setNirfLoading] = useState<boolean>(false);
+  const [publishedRecords, setPublishedRecords] = useState<RankingItem[]>([]);
 
   // Fetch real NIRF ranking data from Django API
   useEffect(() => {
@@ -293,7 +294,19 @@ export const RankingsView: React.FC<RankingsViewProps> = ({
     }
   }, [dataSource, nirfYear, nirfCategory, secondGenOnly]);
 
-  const activeRankings = rankings.length ? rankings : DEFAULT_RANKINGS;
+  useEffect(() => {
+    rankingRecordsService.getPublished().then((records) => {
+      setPublishedRecords(records.map((record: any) => ({
+        id: record.id, agency_id: record.agency.toLowerCase(), agency_name: record.agency.replace(/_/g, ' '),
+        ranking_name: `${record.agency.replace(/_/g, ' ')} ${record.category}`, category: record.category,
+        year: record.year, rank: record.rank, status: 'Published', verified: true,
+        source_url: record.source_url, remarks: record.remarks, created_at: record.created_at, updated_at: record.updated_at,
+      })));
+    }).catch(() => {});
+  }, []);
+
+  // Keep the existing verified catalogue visible while newly approved workflow records appear immediately.
+  const activeRankings = [...(rankings.length ? rankings : DEFAULT_RANKINGS), ...publishedRecords];
 
   const filteredRankings = useMemo(() => {
     return activeRankings.filter((r) => {

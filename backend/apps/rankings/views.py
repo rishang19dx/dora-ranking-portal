@@ -1,5 +1,7 @@
 import os
 import json
+from django.utils import timezone
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from functools import lru_cache
 from rest_framework import status
 from rest_framework.views import APIView
@@ -21,6 +23,16 @@ from .analytics import (
     compute_parameter_trends,
     project_scenarios,
 )
+from .models import RankingRecord, RankingRecordStatus, RankingAuditLog
+from .serializers import RankingRecordSerializer, RankingAuditLogSerializer
+
+
+def ranking_log(record, actor, action, delta=None):
+    RankingAuditLog.objects.create(ranking=record, actor=actor, action=action, delta=delta or {})
+
+
+def is_privileged(user):
+    return user.is_staff or user.is_superuser or getattr(user, 'role', None) in ['ADMIN', 'DIRECTOR']
 
 def get_cache_file(year: int, category: str):
     return os.path.join(DATA_DIR, f"nirf_{year}_{category.lower()}.json")
@@ -394,3 +406,99 @@ class TriggerScraperUpdateView(APIView):
             {"error": "Failed to scrape some or all data from NIRF website."},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+class RankingRecordListCreateView(APIView):
+    """Published records are public; logged-in staff see workflow records too."""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        records = RankingRecord.objects.all()
+        if not request.user.is_authenticated:
+            records = records.filter(status=RankingRecordStatus.PUBLISHED)
+            data = RankingRecordSerializer(records, many=True, context={'request': request}).data
+            # Supporting evidence and workflow identities remain internal even after publication.
+            for record in data:
+                for field in ('evidence', 'evidence_url', 'submitted_by', 'submitted_by_name', 'reviewed_by', 'reviewed_by_name', 'review_comment'):
+                    record.pop(field, None)
+            return Response(data)
+        elif getattr(request.user, 'role', None) == 'NODAL_OFFICER' and not is_privileged(request.user):
+            records = records.filter(submitted_by=request.user)
+        return Response(RankingRecordSerializer(records, many=True, context={'request': request}).data)
+
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return Response({'detail': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
+        serializer = RankingRecordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        record = serializer.save(submitted_by=request.user)
+        ranking_log(record, request.user, 'CREATE', {'status': record.status})
+        return Response(RankingRecordSerializer(record, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+
+class RankingRecordDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return RankingRecord.objects.get(pk=pk)
+        except RankingRecord.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        record = self.get_object(pk)
+        if not record:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        if not (is_privileged(request.user) or getattr(request.user, 'role', None) == 'AUDITOR' or record.submitted_by_id == request.user.id):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        return Response(RankingRecordSerializer(record, context={'request': request}).data)
+
+    def patch(self, request, pk):
+        record = self.get_object(pk)
+        if not record:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        editable = record.submitted_by_id == request.user.id and record.status in [RankingRecordStatus.DRAFT, RankingRecordStatus.REJECTED]
+        if not (is_privileged(request.user) or editable):
+            return Response({'detail': 'Only draft/rejected records may be edited by their submitting officer.'}, status=status.HTTP_403_FORBIDDEN)
+        before = {k: getattr(record, k) for k in ['agency', 'category', 'year', 'rank', 'source_url', 'remarks']}
+        serializer = RankingRecordSerializer(record, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        record = serializer.save()
+        ranking_log(record, request.user, 'UPDATE', {'before': before})
+        return Response(RankingRecordSerializer(record, context={'request': request}).data)
+
+
+class RankingRecordActionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk, action):
+        try:
+            record = RankingRecord.objects.get(pk=pk)
+        except RankingRecord.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        user = request.user
+        role = getattr(user, 'role', None)
+        comment = request.data.get('comment', '')
+        if action == 'submit' and record.submitted_by_id == user.id and record.status in [RankingRecordStatus.DRAFT, RankingRecordStatus.REJECTED]:
+            record.status, record.submitted_at = RankingRecordStatus.PENDING_REVIEW, timezone.now()
+        elif action == 'verify' and role == 'AUDITOR' and record.status == RankingRecordStatus.PENDING_REVIEW:
+            record.status, record.reviewed_by, record.reviewed_at, record.review_comment = RankingRecordStatus.VERIFIED, user, timezone.now(), comment
+        elif action == 'reject' and (role == 'AUDITOR' or is_privileged(user)) and record.status == RankingRecordStatus.PENDING_REVIEW:
+            record.status, record.reviewed_by, record.reviewed_at, record.review_comment = RankingRecordStatus.REJECTED, user, timezone.now(), comment
+        elif action == 'publish' and is_privileged(user) and record.status == RankingRecordStatus.VERIFIED:
+            record.status, record.published_by, record.published_at = RankingRecordStatus.PUBLISHED, user, timezone.now()
+        elif action == 'unpublish' and is_privileged(user) and record.status == RankingRecordStatus.PUBLISHED:
+            record.status = RankingRecordStatus.VERIFIED
+        else:
+            return Response({'detail': 'Action is not permitted in the current workflow state.'}, status=status.HTTP_403_FORBIDDEN)
+        record.save()
+        ranking_log(record, user, action.upper(), {'comment': comment, 'status': record.status})
+        return Response(RankingRecordSerializer(record, context={'request': request}).data)
+
+
+class RankingRecordAuditView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, pk):
+        if not (is_privileged(request.user) or getattr(request.user, 'role', None) == 'AUDITOR'):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        return Response(RankingAuditLogSerializer(RankingAuditLog.objects.filter(ranking_id=pk), many=True).data)

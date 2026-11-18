@@ -215,6 +215,7 @@ function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile }: { p
           <>
             <NavItem to="/nodal-officer" icon={<ChartBar weight="duotone" className="w-5 h-5" />} label="My Dashboard" active={pathname === "/nodal-officer"} open={sidebarOpen} />
             <NavItem to="/nodal-officer/submissions/new" icon={<FileText weight="duotone" className="w-5 h-5" />} label="Submit Data" active={pathname.includes("/submissions/new")} open={sidebarOpen} />
+            <NavItem to="/nodal-officer/rankings" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Ranking Results" active={pathname.includes("/rankings")} open={sidebarOpen} />
             <NavItem to="/nodal-officer/analytics" icon={<Medal weight="duotone" className="w-5 h-5" />} label="My Analytics" active={pathname.includes("/nodal-officer/analytics")} open={sidebarOpen} />
           </>
         ) : (
@@ -224,7 +225,7 @@ function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile }: { p
             <NavItem to="/admin/data-collection" icon={<FileText weight="duotone" className="w-5 h-5" />} label="Data Collection" active={pathname.includes("/data-collection") || pathname.includes("/data-requests")} open={sidebarOpen} />
             <NavItem to="/admin/programmes" icon={<GraduationCap weight="duotone" className="w-5 h-5" />} label="Programmes" active={pathname.includes("/programmes")} open={sidebarOpen} />
             <NavItem to="/admin/nodal-officers" icon={<Users weight="duotone" className="w-5 h-5" />} label="Nodal Officers" active={pathname.includes("/nodal-officers")} open={sidebarOpen} />
-            <NavItem to="/admin/rankings" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Rankings (NIRF)" active={pathname.includes("/rankings")} open={sidebarOpen} />
+            <NavItem to="/admin/ranking-records" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Ranking Results" active={pathname.includes("/ranking-records")} open={sidebarOpen} />
             <NavItem to="/admin/documents" icon={<BookOpen weight="duotone" className="w-5 h-5" />} label="Documents" active={pathname.includes("/documents")} open={sidebarOpen} />
             <NavItem to="/admin/proofs" icon={<Files weight="duotone" className="w-5 h-5" />} label="Proof Repository" active={pathname.includes("/proofs")} open={sidebarOpen} />
             <NavItem to="/admin/audit-log" icon={<ShieldCheck weight="duotone" className="w-5 h-5" />} label="Audit Log" active={pathname.includes("/audit-log")} open={sidebarOpen} />

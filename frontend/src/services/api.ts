@@ -224,6 +224,13 @@ export const rankingsService = {
   },
 };
 
+export const rankingRecordsService = {
+  async getPublished() {
+    const res = await api.get('/api/ranking-records/');
+    return res.data;
+  },
+};
+
 
 export const analyticsService = {
   /**

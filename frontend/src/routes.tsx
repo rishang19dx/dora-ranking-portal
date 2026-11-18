@@ -17,6 +17,7 @@ import NodalOfficerAnalytics from './views/nodal-officer/NodalOfficerAnalytics';
 import RestrictedPortalPage from './views/portal/RestrictedPortalPage';
 import { RankingsView } from './views/RankingsView';
 import { DocumentsView } from './views/DocumentsView';
+import RankingManagement from './views/RankingManagement';
 
 export default function AppRoutes() {
   return (
@@ -39,6 +40,7 @@ export default function AppRoutes() {
         <Route path="data-requests/new" element={<AdminDataRequestComposer />} />
         <Route path="data-requests/:id" element={<AdminDataRequestDetail />} />
         <Route path="rankings" element={<div className="max-w-[1400px] mx-auto"><RankingsView /></div>} />
+        <Route path="ranking-records" element={<RankingManagement />} />
         <Route path="documents" element={<div className="max-w-[1400px] mx-auto"><DocumentsView documents={[]} onSelectDocument={() => {}} /></div>} />
         <Route path="settings" element={
           <div className="max-w-[1400px] mx-auto p-8 bg-white border border-slate-200/50 rounded-2xl">
@@ -53,6 +55,7 @@ export default function AppRoutes() {
         <Route index element={<NodalOfficerPortal />} />
         <Route path="submissions/new" element={<NodalOfficerSubmission />} />
         <Route path="analytics" element={<NodalOfficerAnalytics />} />
+        <Route path="rankings" element={<RankingManagement />} />
       </Route>
 
       {/* Fallback */}

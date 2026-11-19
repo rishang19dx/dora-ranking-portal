@@ -20,6 +20,15 @@ from apps.data_requests.models import (
 from apps.data_requests.services import generate_portal_token, hash_token
 from apps.organogram.models import NodalOfficer, OfficerStatus, OrgUnit, OrgUnitType
 
+@pytest.fixture(autouse=True)
+def _reset_throttle_cache():
+    """Login is rate-limited per IP; every test client shares 127.0.0.1."""
+    from django.core.cache import cache
+    cache.clear()
+    yield
+    cache.clear()
+
+
 # ---------------------------------------------------------------------------
 # User fixtures
 # ---------------------------------------------------------------------------

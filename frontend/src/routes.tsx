@@ -11,6 +11,7 @@ import AdminDataRequestDetail from './views/admin/AdminDataRequestDetail';
 import AdminProgrammes from './views/admin/AdminProgrammes';
 import AdminAuditLog from './views/admin/AdminAuditLog';
 import AdminProofRepository from './views/admin/AdminProofRepository';
+import AdminGoLive from './views/admin/AdminGoLive';
 import NodalOfficerPortal from './views/nodal-officer/NodalOfficerPortal';
 import NodalOfficerSubmission from './views/nodal-officer/NodalOfficerSubmission';
 import NodalOfficerAnalytics from './views/nodal-officer/NodalOfficerAnalytics';
@@ -37,6 +38,7 @@ export default function AppRoutes() {
         <Route path="programmes" element={<AdminProgrammes />} />
         <Route path="audit-log" element={<AdminAuditLog />} />
         <Route path="proofs" element={<AdminProofRepository />} />
+        <Route path="go-live" element={<AdminGoLive />} />
         <Route path="data-requests/new" element={<AdminDataRequestComposer />} />
         <Route path="data-requests/:id" element={<AdminDataRequestDetail />} />
         <Route path="rankings" element={<div className="max-w-[1400px] mx-auto"><RankingsView /></div>} />

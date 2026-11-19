@@ -80,14 +80,30 @@ The system is architected as a decoupled monorepo featuring a **React 19 Single 
 
 ## 🐳 Docker Deployment
 
-The repository includes a production-ready `docker-compose.yml` orchestrating PostgreSQL, Django DRF, and an Nginx reverse-proxied React SPA:
+The repository includes a production-ready `docker-compose.yml` orchestrating PostgreSQL, Django (gunicorn) and an Nginx reverse-proxied React SPA. Secrets live in a git-ignored `.env.production`:
 
 ```bash
-docker compose up --build -d
+cp .env.production.example .env.production   # fill in DJANGO_SECRET_KEY, POSTGRES_PASSWORD, hosts
+docker compose --env-file .env.production up --build -d
 ```
 
 - **Web Application**: [http://localhost:3000](http://localhost:3000)
-- **REST API & Media Proxies**: Handled automatically via Nginx on `/api/` and `/media/`.
+- **REST API**: proxied by Nginx on `/api/`; liveness at `/api/health/`. Proof files are only served through the authenticated download API.
+- The backend refuses to start with `DJANGO_DEBUG=False` and a missing or weak secret key.
+
+Full operations documentation (installation, configuration, release/rollback, backup/restore, disaster recovery, support) is in [`docs/runbooks/`](./docs/runbooks/).
+
+---
+
+## 🚦 Phase 4: Go-Live, UAT & Handover
+
+- **Go-Live Readiness** page (`/admin/go-live`): readiness gates and a GO / NO-GO recommendation computed from live evidence.
+- **Controlled pilot KPIs**: AI reliability (reviewer ground truth on every automated check, >95% accuracy and zero critical false positives), data auditability (100% of modifications traced to an actor and timestamp) and system resilience (witnessed DR drill within 24 h RPO / 8 h RTO).
+- **UAT**: 17 scripted scenarios (`seed_uat_scenarios`) with recorded PASS/FAIL/BLOCKED history.
+- **Backups & DR**: `backup_portal`, `verify_backup`, `restore_portal`, `dr_drill` (restores into a scratch database and verifies every row and proof file).
+- **Training records and immutable sign-offs** (UAT, go/no-go, handover), each storing the readiness snapshot it was based on.
+- **Security hardening**: see [`docs/security/security-audit.md`](./docs/security/security-audit.md).
+- **Handover docs**: [`docs/`](./docs/README.md) (runbooks, user manuals for every role, training, UAT and pilot plans, data inventory, handover checklist).
 
 ---
 

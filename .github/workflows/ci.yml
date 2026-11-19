@@ -61,6 +61,7 @@ jobs:
         run: |
           python manage.py seed_organogram
           python manage.py load_form_schema
+          python manage.py seed_uat_scenarios
 
       - name: Run unit & integration tests with coverage
         env:
@@ -113,7 +114,17 @@ jobs:
         env:
           DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
           DJANGO_DEBUG: "True"
-        run: python manage.py check --deploy --fail-level WARNING 2>&1 | grep -v "WARNINGS:" || true
+        run: python manage.py check
+
+      # Phase 4 security gate: the production configuration must pass
+      # Django's deployment checklist with no warnings.
+      - name: Check production deployment settings
+        env:
+          DJANGO_DEBUG: "False"
+          DJANGO_ALLOWED_HOSTS: arp.iitmandi.ac.in
+        run: |
+          export DJANGO_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(64))')"
+          python manage.py check --deploy --fail-level WARNING
 
       - name: Check for missing migrations
         env:

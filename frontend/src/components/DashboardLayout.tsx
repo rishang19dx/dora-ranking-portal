@@ -16,7 +16,8 @@ import {
   ArrowSquareOut,
   GraduationCap,
   ShieldCheck,
-  Files
+  Files,
+  RocketLaunch
 } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'motion/react';
 import { authService } from '../services/api';
@@ -229,6 +230,7 @@ function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile }: { p
             <NavItem to="/admin/documents" icon={<BookOpen weight="duotone" className="w-5 h-5" />} label="Documents" active={pathname.includes("/documents")} open={sidebarOpen} />
             <NavItem to="/admin/proofs" icon={<Files weight="duotone" className="w-5 h-5" />} label="Proof Repository" active={pathname.includes("/proofs")} open={sidebarOpen} />
             <NavItem to="/admin/audit-log" icon={<ShieldCheck weight="duotone" className="w-5 h-5" />} label="Audit Log" active={pathname.includes("/audit-log")} open={sidebarOpen} />
+            <NavItem to="/admin/go-live" icon={<RocketLaunch weight="duotone" className="w-5 h-5" />} label="Go-Live Readiness" active={pathname.includes("/go-live")} open={sidebarOpen} />
           </>
         )}
       </nav>

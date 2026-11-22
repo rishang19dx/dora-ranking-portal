@@ -48,7 +48,7 @@ SLATE = colors.HexColor('#475569')
 LIGHT = colors.HexColor('#F1F5F9')
 BORDER = colors.HexColor('#CBD5E1')
 
-TREND_YEARS = [2021, 2022, 2023, 2024, 2025]
+TREND_WINDOW = 5  # most recent published cycles in the trend tables
 
 
 def _styles():
@@ -138,8 +138,16 @@ def generate_briefing_pdf(
     peer_names: List[str],
     request_id: Optional[str] = None,
     category_id: Optional[str] = None,
-    ranking_year: int = 2025,
+    ranking_year: Optional[int] = None,
 ) -> io.BytesIO:
+    from apps.rankings.store import latest_year, trend_window
+
+    trend_years = trend_window(('Engineering', 'Overall', 'Innovation'), TREND_WINDOW)
+    if ranking_year is None:
+        ranking_year = latest_year('Engineering')
+    if ranking_year is None:
+        raise ValueError('No ranking data has been fetched yet.')
+
     st = _styles()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -178,7 +186,7 @@ def generate_briefing_pdf(
                       'Net rank movement', 'Trend']]
     trends_cache: Dict[str, Dict[str, Any]] = {}
     for cat in ['Engineering', 'Overall', 'Innovation']:
-        tr = compute_parameter_trends(load_ranking_data, cat, TREND_YEARS)
+        tr = compute_parameter_trends(load_ranking_data, cat, trend_years)
         trends_cache[cat] = tr
         series = tr['series']
         if not series:
@@ -205,7 +213,7 @@ def generate_briefing_pdf(
 
     # Parameter history for the parametric categories.
     for cat in PARAMETRIC_CATEGORIES:
-        tr = trends_cache.get(cat) or compute_parameter_trends(load_ranking_data, cat, TREND_YEARS)
+        tr = trends_cache.get(cat) or compute_parameter_trends(load_ranking_data, cat, trend_years)
         series = [e for e in tr['series'] if e['hasParameters']]
         if not series:
             continue
@@ -461,6 +469,39 @@ def generate_briefing_pdf(
             f"{len(flagged)} of {len(checks)} cross-check(s) require attention before export.",
             st['body']))
 
+    # Year-on-year anomalies and restatements still being worked (spec 2.9).
+    if request_id:
+        from .models import DiscrepancyFlag
+        live = list(
+            DiscrepancyFlag.objects
+            .filter(request_id=request_id, status__in=['OPEN', 'ESCALATED'])
+            .exclude(kind='CROSS_CHECK')
+            .select_related('org_unit')
+        )
+        live.sort(key=lambda f: ({'CRITICAL': 0, 'WARNING': 1}.get(f.severity, 2), f.label))
+        story.append(Spacer(1, 3 * mm))
+        if live:
+            rows = [['Severity', 'Unit', 'Figure', 'Finding', 'Status']]
+            for f in live[:25]:
+                rows.append([
+                    f.severity,
+                    (f.org_unit.short_name or f.org_unit.name) if f.org_unit else '-',
+                    Paragraph(f.label, st['cell']),
+                    Paragraph(f.message, st['cell']),
+                    'With department' if f.status == 'ESCALATED' else 'Open',
+                ])
+            story.append(_table(rows, col_widths=[22 * mm, 30 * mm, 80 * mm, 104 * mm, 26 * mm]))
+            critical = sum(1 for f in live if f.severity == 'CRITICAL')
+            story.append(Spacer(1, 2 * mm))
+            story.append(Paragraph(
+                f"{len(live)} historical-trend flag(s) outstanding ({critical} critical)"
+                + ("; the first 25 are listed." if len(live) > 25 else '.'),
+                st['body']))
+        else:
+            story.append(Paragraph(
+                'No outstanding year-on-year or restatement flags against previously approved figures.',
+                st['body']))
+
     # ---------------- 6. Scenario projections ----------------
     story.append(Paragraph("6. Projected Ranking Outcomes", st['h2']))
     story.append(Paragraph(
@@ -474,7 +515,7 @@ def generate_briefing_pdf(
         peer_gap = compute_gap_analysis(
             load_ranking_data, canonical_name, peer_names, cat, ranking_year)
         own_gap = compute_own_history_gap(
-            load_ranking_data, cat, ranking_year, TREND_YEARS)
+            load_ranking_data, cat, ranking_year, trend_years)
         proj = project_scenarios(
             peer_gap, own_gap, load_ranking_data(ranking_year, cat.lower()) or [])
 

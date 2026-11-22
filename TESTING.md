@@ -206,7 +206,7 @@ flowchart TD
     D --> F
 ```
 
-1. **`backend-tests`**: Runs on Python 3.11 and 3.12 matrix against Ubuntu runner with SQLite. Executes 116 tests with coverage reporting and uploads `coverage.xml`.
+1. **`backend-tests`**: Runs on Python 3.11 and 3.12 matrix against Ubuntu runner with SQLite. Executes the full suite with coverage reporting and uploads `coverage.xml`.
 2. **`backend-lint`**: Checks Python code style with Ruff, runs `python manage.py check`, and ensures no migration drift exists (`makemigrations --check --dry-run`).
 3. **`frontend-build`**: Installs dependencies with `npm ci`, runs TypeScript type checking (`tsc`), builds production assets (`vite build`), and uploads the `dist/` artifact.
 4. **`backend-integration-postgres`**: Boots a dedicated PostgreSQL 16 container, runs migrations, executes the full test suite against real PostgreSQL, and verifies dialect compatibility. (Triggered on `main` pushes and PRs targeting `main`).
@@ -214,11 +214,29 @@ flowchart TD
 
 ---
 
-## 8. Pull Request Merge Requirements
+## 8. Phase 3 Test Modules (RBAC, Reminders, History, Discrepancies, Public Portal)
+
+| Module | What it proves |
+|---|---|
+| `tests/test_rbac_matrix.py` | Every protected endpoint against every role (anonymous, nodal officer, auditor, director, admin, superuser): read-only roles cannot write, nodal officers see only their own department. A structural test walks the URL conf and **fails if any view is public without being on an explicit allowlist**, so a new endpoint cannot ship open by omission. Also covers email login, login throttling, inactive accounts, user management guards and `ensure_admin`. |
+| `tests/test_reminders.py` | Deadline milestones (T-7/T-3/T-1, overdue chases), one reminder per section per milestone, catch-up sends one mail not a backlog, milestones past at dispatch skipped, manual-reminder cooldown, submitted/closed/paused requests skipped, link rotation, outbox mail content, `send_reminders` command and API roles. Time is driven by passing `now`, so no test waits. |
+| `tests/test_history_comparison.py` | Previous approved value per cell: same-period restatements vs prior-period year-on-year change, empty cells get their hint, drafts and unapproved returns are never the baseline, record counts, the history API, the portal and review payloads, and a regression for the cross-check crash on row-keyed grids. |
+| `tests/test_discrepancies.py` | Rule severities (the spec's 80% drop is Critical), configurable thresholds, scan reconciliation (open / reopen on changed figure / auto-resolve), escalation into a real audited correction request, dismissal notes, and the AI layer against **each provider** (OpenAI, OpenRouter, Anthropic, Gemini) with HTTP mocked: no PII in prompts, unknown or ungrounded replies rejected, provider failure falls back, every call logged. |
+| `tests/test_public_rankings.py` | Rank parsing (`=451`, `801-1000`, `1001+`), the public endpoint without login, demo data plotted exactly as seeded and labelled, real entries never overwritten by the demo seed, admin validation. |
+
+Frontend: `RequireRole` route guards and role-filtered navigation are covered in `routes.integration.test.tsx` and `DashboardLayout.test.tsx`; page tests exist for Users & Roles flows, Reminders, Discrepancies, the history hints in `FormRenderer.history.test.tsx` and the public `RankingSystemsView`.
+
+```bash
+cd backend && pytest tests/test_rbac_matrix.py -q   # ~310 parametrised role checks
+```
+
+---
+
+## 9. Pull Request Merge Requirements
 
 Before merging any Pull Request into `phase-2/nirf-ranking-ui` or `main`, the following automated checks **must pass**:
 
-- [x] All 116 backend tests pass with 0 failures or errors.
+- [x] The full backend suite passes with 0 failures or errors (650 tests at the end of Phase 3).
 - [x] Test coverage remains at or above 85%.
 - [x] Ruff lint checks pass without errors (`ruff check apps/ dora_backend/ tests/`).
 - [x] No uncommitted migration drift exists (`makemigrations --check --dry-run`).

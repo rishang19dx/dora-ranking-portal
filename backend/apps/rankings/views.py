@@ -1,17 +1,24 @@
-import os
-import json
 from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from functools import lru_cache
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .scraper import (
+from apps.accounts.permissions import IsAdmin, IsAdminOrOversightReadOnly
+from .scraper import (  # noqa: F401 - DATA_DIR is re-exported for test fixtures that patch it
+    fetch_lock,
+    refresh_new_publications,
     scrape_nirf_data,
     DATA_DIR,
     TARGET_IITS,
     clean_institute_name,
     canonical_iit_name
+)
+from .store import (
+    available_years,
+    get_cache_file,
+    latest_year,
+    load_ranking_data,
+    trend_window,
 )
 from .analytics import (
     PARAMETER_LABELS,
@@ -33,21 +40,6 @@ def ranking_log(record, actor, action, delta=None):
 
 def is_privileged(user):
     return user.is_staff or user.is_superuser or getattr(user, 'role', None) in ['ADMIN', 'DIRECTOR']
-
-def get_cache_file(year: int, category: str):
-    return os.path.join(DATA_DIR, f"nirf_{year}_{category.lower()}.json")
-
-@lru_cache(maxsize=64)
-def load_ranking_data(year: int, category: str):
-    cache_file = get_cache_file(year, category)
-    if not os.path.exists(cache_file):
-        return None
-    with open(cache_file, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-def available_years(category: str, span=range(2016, 2036)):
-    """Years we actually hold a cached dataset for, newest last."""
-    return [y for y in span if os.path.exists(get_cache_file(y, category))]
 
 def resolve_year_range(params, category: str):
     """
@@ -93,6 +85,8 @@ def resolve_year_range(params, category: str):
     return years, None
 
 class RootRankingWelcomeView(APIView):
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     def get(self, request):
         return Response({
             "message": "Welcome to the NIRF Rankings API (Django DRF).",
@@ -108,6 +102,8 @@ class RootRankingWelcomeView(APIView):
         })
 
 class GetRankingsView(APIView):
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     def get(self, request, year, category):
         try:
             year_int = int(year)
@@ -139,6 +135,8 @@ class GetRankingsView(APIView):
         })
 
 class GetSecondGenIITsView(APIView):
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     TARGET_IITS = TARGET_IITS
 
     def get(self, request, year, category):
@@ -168,6 +166,8 @@ class GetSecondGenIITsView(APIView):
         })
 
 class GetRankingByRankView(APIView):
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     def get(self, request, year, category, rank):
         try:
             year_int = int(year)
@@ -196,7 +196,9 @@ class TrendsAnalyticsView(APIView):
     Returns 5-year longitudinal trend data for 2nd Gen IITs
     across Engineering, Innovation, and Overall categories.
     """
-    YEARS = [2021, 2022, 2023, 2024, 2025]
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
+    WINDOW = 5  # most recent published cycles shown
     CATEGORIES = ['Engineering', 'Innovation', 'Overall']
 
     SHORT_NAMES = {
@@ -211,6 +213,9 @@ class TrendsAnalyticsView(APIView):
     }
 
     def get(self, request):
+        # The window follows whatever NIRF has published and the refresh job
+        # has cached - no year is assumed to be the latest.
+        years = trend_window(self.CATEGORIES, self.WINDOW)
         category_param = request.query_params.get('category')
         active_cats = [category_param.capitalize()] if category_param and category_param.capitalize() in self.CATEGORIES else self.CATEGORIES
 
@@ -235,7 +240,8 @@ class TrendsAnalyticsView(APIView):
                 for t_name in TARGET_IITS
             }
 
-            for y in self.YEARS:
+            cat_latest = latest_year(cat)
+            for y in years:
                 data = load_ranking_data(y, cat_lower) or []
                 for item in data:
                     c_name = canonical_iit_name(item.get('name', ''))
@@ -244,7 +250,7 @@ class TrendsAnalyticsView(APIView):
                         sc = item.get('score')
                         peers_map[c_name]["ranks"][str(y)] = rk
                         peers_map[c_name]["scores"][str(y)] = sc
-                        if y == 2025:
+                        if y == cat_latest:
                             peers_map[c_name]["latest_rank"] = rk
                             peers_map[c_name]["latest_score"] = sc
 
@@ -274,7 +280,7 @@ class TrendsAnalyticsView(APIView):
 
             iit_mandi_trends[cat] = mandi_yearly
 
-            # Convert peers_map to sorted list (Target first, then by 2025 rank ascending)
+            # Convert peers_map to sorted list (target first, then by latest rank ascending)
             peer_list = list(peers_map.values())
             peer_list.sort(key=lambda p: (
                 0 if p['is_target'] else 1,
@@ -283,7 +289,8 @@ class TrendsAnalyticsView(APIView):
             peer_comparison[cat] = peer_list
 
         return Response({
-            "years": self.YEARS,
+            "years": years,
+            "latestYear": years[-1] if years else None,
             "categories": self.CATEGORIES,
             "target_institute": "Indian Institute of Technology Mandi",
             "iit_mandi_trends": iit_mandi_trends,
@@ -299,6 +306,8 @@ class ParameterTrendsView(APIView):
     scored parameters moved it, and what each one contributed to the total.
     Published NIRF results, so no authentication - same as the rank endpoints.
     """
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
+
     def get(self, request):
         requested = request.query_params.get('category')
         if requested:
@@ -348,15 +357,23 @@ class GapAnalysisView(APIView):
     acts on - the weighted points the total score would gain by closing it,
     so the rows are directly comparable rather than five raw deltas.
     """
-    DEFAULT_YEAR = 2025
+    permission_classes = [AllowAny]  # published NIRF results: public portal (spec 2.14)
 
     def get(self, request):
-        try:
-            year = int(request.query_params.get('year', self.DEFAULT_YEAR))
-        except (TypeError, ValueError):
-            return Response(
-                {'error': 'Invalid year.'}, status=status.HTTP_400_BAD_REQUEST
-            )
+        requested_year = request.query_params.get('year')
+        if requested_year in (None, ''):
+            # Default to the newest published cycle on disk.
+            year = latest_year('Engineering')
+            if year is None:
+                return Response({'error': 'No ranking data has been fetched yet.'},
+                                status=status.HTTP_404_NOT_FOUND)
+        else:
+            try:
+                year = int(requested_year)
+            except (TypeError, ValueError):
+                return Response(
+                    {'error': 'Invalid year.'}, status=status.HTTP_400_BAD_REQUEST
+                )
 
         requested = request.query_params.get('category')
         if requested:
@@ -397,15 +414,52 @@ class GapAnalysisView(APIView):
         })
 
 class TriggerScraperUpdateView(APIView):
+    """
+    Explicit "fetch now" for DORA staff, alongside the daily schedule.
+
+    By default only cycles not yet cached are requested - at most a request
+    per category, so it answers quickly even inside a web worker's timeout.
+    `full=true` re-fetches every year (slow; the management command
+    `refresh_rankings --full` is the better tool for that).
+
+    Staff only: this was previously open to anyone, and the button sat on
+    the public trends page.
+    """
+    permission_classes = [IsAdmin]
+
     def post(self, request):
-        success = scrape_nirf_data()
-        if success:
-            load_ranking_data.cache_clear()
-            return Response({"message": "Ranking data scraped and cache invalidated successfully."})
-        return Response(
-            {"error": "Failed to scrape some or all data from NIRF website."},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        full = str(request.data.get('full', request.query_params.get('full', ''))).lower() in ('1', 'true', 'yes')
+        report = {}
+        with fetch_lock() as acquired:
+            if not acquired:
+                return Response(
+                    {'error': 'A ranking fetch is already running. Try again in a minute.'},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            ok = scrape_nirf_data(report=report) if full else refresh_new_publications(report=report)
+
+        fetched = [{'year': y, 'category': c, 'institutions': n} for y, c, n in report.get('fetched', [])]
+        pending = [{'year': y, 'category': c} for y, c in report.get('unpublished', [])]
+        failed = [{'year': y, 'category': c} for y, c in report.get('failed', [])]
+
+        if fetched:
+            cycles = sorted({f['year'] for f in fetched})
+            message = f"Fetched NIRF {', '.join(map(str, cycles))}."
+        elif failed:
+            message = 'Could not reach the NIRF site; nothing new was fetched.'
+        else:
+            message = 'Already up to date: no new NIRF cycle has been published.'
+
+        body = {
+            'message': message,
+            'mode': 'full' if full else 'new-only',
+            'fetched': fetched,
+            'notPublishedYet': pending,
+            'failed': failed,
+            'latestYear': latest_year('Engineering'),
+        }
+        code = status.HTTP_502_BAD_GATEWAY if (failed and not fetched and not ok) else status.HTTP_200_OK
+        return Response(body, status=code)
 
 
 class RankingRecordListCreateView(APIView):
@@ -502,3 +556,200 @@ class RankingRecordAuditView(APIView):
         if not (is_privileged(request.user) or getattr(request.user, 'role', None) == 'AUDITOR'):
             return Response(status=status.HTTP_403_FORBIDDEN)
         return Response(RankingAuditLogSerializer(RankingAuditLog.objects.filter(ranking_id=pk), many=True).data)
+
+
+# -----------------------------------------------------------------------------
+# Public ranking portal across systems (spec 2.14)
+# -----------------------------------------------------------------------------
+
+def _nirf_series(category):
+    """IIT Mandi's NIRF rank per cached year for one category."""
+    from .analytics import TARGET_INSTITUTE
+    from .models import parse_rank
+
+    points = []
+    for year in available_years(category):
+        rows = load_ranking_data(year, category) or []
+        row = next((r for r in rows if r.get('name') == TARGET_INSTITUTE), None)
+        if not row or row.get('rank') in (None, ''):
+            continue
+        try:
+            low, high = parse_rank(str(row['rank']))
+        except ValueError:
+            continue
+        points.append({
+            'year': year,
+            'rankText': str(row['rank']),
+            'rankLow': low,
+            'rankHigh': high,
+            'plotRank': low if high is None else (low + high) / 2,
+            'score': row.get('score'),
+            'source': 'https://www.nirfindia.org',
+            'demo': False,
+        })
+    return points
+
+
+def _serialize_external(r):
+    return {
+        'id': r.id,
+        'system': r.system,
+        'systemLabel': r.system_label,
+        'label': r.label,
+        'year': r.year,
+        'rankText': r.rank_text,
+        'rankLow': r.rank_low,
+        'rankHigh': r.rank_high,
+        'plotRank': r.plot_rank,
+        'score': r.score,
+        'source': r.source_url,
+        'notes': r.notes,
+        'published': r.published,
+        'demo': r.is_demo,
+        'updatedAt': r.updated_at,
+    }
+
+
+class PublicRankingSystemsView(APIView):
+    """
+    IIT Mandi's year-wise position in every ranking system DORA tracks, for the
+    public portal (no login). NIRF comes straight from the published tables;
+    other systems from results DORA has entered and marked published.
+    Lower rank is better in every series.
+    """
+    permission_classes = [AllowAny]  # public portal (spec 2.14)
+
+    def get(self, request):
+        from .models import ExternalRankingResult
+
+        systems = []
+        for category in CATEGORIES_FOR_PUBLIC:
+            series = _nirf_series(category)
+            if series:
+                systems.append({
+                    'id': f'NIRF_{category.upper()}',
+                    'label': f'NIRF {category}',
+                    'family': 'NIRF',
+                    'series': series,
+                })
+
+        external = ExternalRankingResult.objects.filter(published=True).order_by('system', 'system_label', 'year')
+        grouped = {}
+        for r in external:
+            key = (r.system, r.system_label if r.system == 'OTHER' else '')
+            grouped.setdefault(key, []).append(r)
+        for (system, other_label), rows in grouped.items():
+            systems.append({
+                'id': system if not other_label else f'OTHER:{other_label}',
+                'label': rows[0].label,
+                'family': system.split('_')[0],
+                'series': [
+                    {k: v for k, v in _serialize_external(r).items()
+                     if k in ('year', 'rankText', 'rankLow', 'rankHigh', 'plotRank', 'score', 'source', 'demo')}
+                    for r in rows
+                ],
+            })
+
+        return Response({
+            'institute': 'IIT Mandi',
+            'lowerIsBetter': True,
+            'hasDemoData': any(p['demo'] for s in systems for p in s['series']),
+            'systems': systems,
+        })
+
+
+CATEGORIES_FOR_PUBLIC = ('Overall', 'Engineering', 'Innovation')
+
+
+class ExternalRankingListView(APIView):
+    """DORA-maintained results for non-NIRF systems. Oversight reads, Admin edits."""
+    permission_classes = [IsAdminOrOversightReadOnly]
+
+    def get(self, request):
+        from .models import ExternalRankingResult, RankingSystem
+        return Response({
+            'systems': [{'value': v, 'label': lbl} for v, lbl in RankingSystem.choices],
+            'results': [_serialize_external(r) for r in ExternalRankingResult.objects.all()],
+        })
+
+    def post(self, request):
+        return _save_external(None, request.data)
+
+
+class ExternalRankingDetailView(APIView):
+    permission_classes = [IsAdminOrOversightReadOnly]
+
+    def patch(self, request, pk):
+        from .models import ExternalRankingResult
+        try:
+            row = ExternalRankingResult.objects.get(pk=pk)
+        except ExternalRankingResult.DoesNotExist:
+            return Response({'error': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return _save_external(row, request.data)
+
+    def delete(self, request, pk):
+        from .models import ExternalRankingResult
+        deleted, _ = ExternalRankingResult.objects.filter(pk=pk).delete()
+        if not deleted:
+            return Response({'error': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+def _save_external(row, data):
+    from django.db import IntegrityError, transaction
+    from .models import ExternalRankingResult, RankingSystem, parse_rank
+
+    row = row or ExternalRankingResult()
+    errors = {}
+    fields = {
+        'system': data.get('system', row.system or None),
+        'system_label': (data.get('systemLabel', row.system_label) or '').strip(),
+        'rank_text': (data.get('rankText', row.rank_text) or '').strip(),
+        'source_url': (data.get('source', row.source_url) or '').strip(),
+        'notes': data.get('notes', row.notes) or '',
+    }
+    if fields['system'] not in RankingSystem.values:
+        errors['system'] = 'Choose a ranking system.'
+    elif fields['system'] == RankingSystem.OTHER and not fields['system_label']:
+        errors['systemLabel'] = 'Name the ranking system.'
+    if fields['system'] != RankingSystem.OTHER:
+        fields['system_label'] = ''
+    try:
+        year = int(data.get('year', row.year))
+        if not 2000 <= year <= 2100:
+            raise ValueError
+        fields['year'] = year
+    except (TypeError, ValueError):
+        errors['year'] = 'Enter the edition year.'
+    try:
+        parse_rank(fields['rank_text'])
+    except ValueError as exc:
+        errors['rankText'] = str(exc)
+    score = data.get('score', row.score)
+    if score in ('', None):
+        fields['score'] = None
+    else:
+        try:
+            fields['score'] = float(score)
+        except (TypeError, ValueError):
+            errors['score'] = 'Score must be a number.'
+    if fields['source_url'] and not fields['source_url'].startswith(('http://', 'https://')):
+        errors['source'] = 'The source must be a web link.'
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+    for k, v in fields.items():
+        setattr(row, k, v)
+    if 'published' in data:
+        row.published = str(data['published']).lower() in ('1', 'true', 'yes')
+    # A figure an admin enters or edits is real data, even on a former demo
+    # row; merely hiding or showing a row changes nothing about its origin.
+    if row.pk is None or any(k in data for k in ('system', 'systemLabel', 'year', 'rankText', 'score', 'source')):
+        row.is_demo = False
+    created = row.pk is None
+    try:
+        with transaction.atomic():
+            row.save()
+    except IntegrityError:
+        return Response({'year': 'This system already has a result for that year.'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(_serialize_external(row), status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)

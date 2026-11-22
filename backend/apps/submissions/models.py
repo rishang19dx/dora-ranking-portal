@@ -194,3 +194,107 @@ class SubmissionAuditLog(models.Model):
 
     def __str__(self):
         return f"[{self.timestamp}] {self.actor_type}:{self.actor_id} -> {self.action}"
+
+
+def generate_flg_id():
+    return generate_id('flg')
+
+
+def generate_ail_id():
+    return generate_id('ail')
+
+
+class FlagSeverity(models.TextChoices):
+    CRITICAL = 'CRITICAL', 'Critical'
+    WARNING = 'WARNING', 'Warning'
+    INFO = 'INFO', 'Info'
+
+
+class FlagStatus(models.TextChoices):
+    OPEN = 'OPEN', 'Open'
+    DISMISSED = 'DISMISSED', 'Dismissed'
+    ESCALATED = 'ESCALATED', 'Escalated to correction request'
+    RESOLVED = 'RESOLVED', 'Resolved'
+
+
+class AIRequestLog(models.Model):
+    """
+    Every call made to an external AI model (spec 9: "All AI requests must be
+    logged for auditability"). The prompt is stored as sent - it carries only
+    aggregated, PII-free figures - so an auditor can see exactly what left the
+    portal and what came back.
+    """
+    id = models.CharField(max_length=64, primary_key=True, default=generate_ail_id)
+    created_at = models.DateTimeField(auto_now_add=True)
+    provider = models.CharField(max_length=32)
+    model = models.CharField(max_length=128)
+    purpose = models.CharField(max_length=64, default='discrepancy-review')
+    request = models.ForeignKey(
+        'data_requests.DataRequest', null=True, blank=True, on_delete=models.SET_NULL, related_name='ai_requests'
+    )
+    triggered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='ai_requests'
+    )
+    prompt = models.JSONField(default=dict)
+    prompt_sha256 = models.CharField(max_length=64)
+    response_text = models.TextField(blank=True, default='')
+    status = models.CharField(max_length=16)  # OK / ERROR / INVALID
+    error = models.TextField(blank=True, default='')
+    latency_ms = models.IntegerField(default=0)
+    flags_sent = models.IntegerField(default=0)
+    flags_annotated = models.IntegerField(default=0)
+    items_rejected = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class DiscrepancyFlag(models.Model):
+    """
+    A figure that warrants a second look before it goes to NIRF (spec 2.9).
+
+    Raised by deterministic rules, always: year-on-year moves, restated
+    periods, record-count swings and failed cross-checks. The optional AI
+    review only annotates a flag (its own severity view, a rationale and a
+    question to put to the department); it never creates numbers, and the
+    figures shown are always the portal's own.
+    """
+    id = models.CharField(max_length=64, primary_key=True, default=generate_flg_id)
+    key = models.CharField(max_length=255)
+    request = models.ForeignKey('data_requests.DataRequest', on_delete=models.CASCADE, related_name='discrepancy_flags')
+    submission = models.ForeignKey(
+        SectionSubmission, null=True, blank=True, on_delete=models.CASCADE, related_name='discrepancy_flags'
+    )
+    org_unit = models.ForeignKey(
+        'organogram.OrgUnit', null=True, blank=True, on_delete=models.SET_NULL, related_name='discrepancy_flags'
+    )
+    section_id = models.CharField(max_length=128, blank=True, default='')
+    kind = models.CharField(max_length=32)  # YOY_CHANGE / RESTATEMENT / RECORD_COUNT / CROSS_CHECK
+    path = models.JSONField(default=dict, blank=True)
+    label = models.CharField(max_length=512, blank=True, default='')
+    severity = models.CharField(max_length=16, choices=FlagSeverity.choices)
+    message = models.TextField()
+    previous_value = models.CharField(max_length=128, blank=True, default='')
+    current_value = models.CharField(max_length=128, blank=True, default='')
+    change_pct = models.FloatField(null=True, blank=True)
+    details = models.JSONField(default=dict, blank=True)
+
+    ai_severity = models.CharField(max_length=16, blank=True, default='')
+    ai_rationale = models.TextField(blank=True, default='')
+    ai_question = models.TextField(blank=True, default='')
+    ai_log = models.ForeignKey(AIRequestLog, null=True, blank=True, on_delete=models.SET_NULL, related_name='flags')
+
+    status = models.CharField(max_length=16, choices=FlagStatus.choices, default=FlagStatus.OPEN)
+    resolution_note = models.TextField(blank=True, default='')
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='resolved_flags'
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    first_seen = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['status', 'severity', '-last_seen']
+        constraints = [
+            models.UniqueConstraint(fields=['request', 'key'], name='uniq_flag_key_per_request'),
+        ]

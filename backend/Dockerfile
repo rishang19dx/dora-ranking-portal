@@ -17,7 +17,7 @@ COPY . /app/
 
 # Run as an unprivileged user (security audit SEC-07).
 RUN useradd --create-home --uid 1000 dora \
-    && mkdir -p /app/media /app/staticfiles /backups \
+    && mkdir -p /app/media /app/staticfiles /app/.data /backups \
     && chown -R dora:dora /app /backups \
     && chmod +x /app/entrypoint.sh
 USER dora

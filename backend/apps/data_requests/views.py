@@ -1,5 +1,6 @@
 import os
 from django.utils import timezone
+from rest_framework.permissions import AllowAny
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -28,11 +29,18 @@ from .services import (
     calculate_checksum,
 )
 from apps.organogram.serializers import OrgUnitSerializer, NodalOfficerSerializer
+from apps.accounts.permissions import IsAdmin, IsAdminOrOversightReadOnly
 
 ALLOWED_EXTENSIONS = {'.pdf', '.xlsx', '.csv', '.docx'}
 MAX_UPLOAD_SIZE = 25 * 1024 * 1024  # 25 MB
 
 class DataRequestListCreateView(APIView):
+    """
+    Data requests are the submission trail (what was asked of whom, by when),
+    so Director and Auditor may read them; only Admin dispatches.
+    """
+    permission_classes = [IsAdminOrOversightReadOnly]
+
     def get(self, request):
         requests = DataRequest.objects.prefetch_related('targets', 'uploads', 'deliveries').all()
         serializer = DataRequestSerializer(requests, many=True)
@@ -105,6 +113,8 @@ class DataRequestListCreateView(APIView):
         return Response(res_data, status=status.HTTP_201_CREATED)
 
 class DataRequestDetailView(APIView):
+    permission_classes = [IsAdminOrOversightReadOnly]
+
     def get(self, request, pk):
         data_req = get_object_or_404(
             DataRequest.objects.prefetch_related('targets__org_unit', 'uploads', 'deliveries'),
@@ -113,6 +123,8 @@ class DataRequestDetailView(APIView):
         return Response(DataRequestSerializer(data_req).data)
 
 class DataRequestActionsView(APIView):
+    permission_classes = [IsAdmin]
+
     def post(self, request, pk):
         from django.conf import settings
         from .services import (
@@ -181,56 +193,10 @@ class DataRequestActionsView(APIView):
             else:
                 targets = targets.filter(status__in=[TargetStatus.PENDING, TargetStatus.PARTIAL])
 
-            from .mailer import send_mail, render_template, DEFAULT_REMINDER_TEMPLATE
-            app_base_url = getattr(settings, 'APP_BASE_URL', 'http://localhost:5173')
+            from .reminders import send_target_reminder
             reminded_count = 0
-
             for target in targets:
-                target.reminders_sent += 1
-                target.last_reminder_at = timezone.now()
-                target.save()
-
-                unit = target.org_unit
-                unit_label = unit.short_name or unit.name
-                officers = eligible_officers_for_unit(unit)
-
-                for officer in officers:
-                    # Rotating here is what makes a reminder safe: the link in
-                    # the earlier mail stops working once the new one is sent.
-                    grant, _token, portal_url = issue_grant(
-                        data_req, unit, officer, target.data_item_ids
-                    )
-                    vars_dict = {
-                        'officer': officer.name,
-                        'email': officer.email,
-                        'section': unit_label,
-                        'sectionFullName': unit.name,
-                        'framework': data_req.framework,
-                        'cycle': str(data_req.cycle_year),
-                        'title': data_req.title,
-                        'reference': data_req.reference,
-                        'deadline': str(data_req.deadline).split('T')[0],
-                        'dataItems': "\n".join([f"  - {item_id}" for item_id in target.data_item_ids]),
-                        'portalLink': portal_url,
-                    }
-                    subject = f"Reminder: {data_req.reference} - {data_req.title}"
-                    body = render_template(DEFAULT_REMINDER_TEMPLATE, vars_dict)
-                    mail_res = send_mail(to=officer.email, subject=subject, body=body)
-                    delivery_status = (
-                        DeliveryStatus.SENT if mail_res.get('status') == 'SENT'
-                        else (DeliveryStatus.FAILED if mail_res.get('status') == 'FAILED' else DeliveryStatus.SIMULATED)
-                    )
-                    RequestDelivery.objects.create(
-                        request=data_req,
-                        officer=officer,
-                        org_unit=unit,
-                        email=officer.email,
-                        subject=subject,
-                        status=delivery_status,
-                        kind=DeliveryKind.REMINDER,
-                        error=mail_res.get('error', '')
-                    )
-                    reminded_count += 1
+                reminded_count += send_target_reminder(data_req, target)
 
             return Response({'status': 'reminded', 'message': f'{reminded_count} reminder message(s) dispatched.'})
 
@@ -276,6 +242,16 @@ class DataRequestActionsView(APIView):
                 'message': 'Fresh upload link provisioned; the previous one was revoked.'
             })
 
+        elif action == 'SET_AUTO_REMIND':
+            enabled = str(request.data.get('enabled', 'true')).lower() in ('1', 'true', 'yes')
+            data_req.auto_remind = enabled
+            data_req.save(update_fields=['auto_remind'])
+            return Response({
+                'status': 'updated',
+                'autoRemind': enabled,
+                'message': 'Automated reminders resumed.' if enabled else 'Automated reminders paused for this request.',
+            })
+
         elif action == 'SET_TARGET_STATUS':
             unit_id = request.data.get('unitId')
             target_status = request.data.get('status', 'SUBMITTED').upper()
@@ -291,6 +267,8 @@ class DataRequestActionsView(APIView):
         return Response({'error': f'Unsupported action: {action}'}, status=status.HTTP_400_BAD_REQUEST)
 
 class PortalGrantContextView(APIView):
+    permission_classes = [AllowAny]  # authorised by the single-purpose link token
+
     def get(self, request, token):
         digest = hash_token(token)
         grant = PortalAccessGrant.objects.select_related('officer', 'request', 'org_unit').filter(token_hash=digest).first()
@@ -323,6 +301,8 @@ class PortalGrantContextView(APIView):
         })
 
 class PortalUploadView(APIView):
+    permission_classes = [AllowAny]  # authorised by the single-purpose link token
+
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, token):
@@ -401,3 +381,121 @@ class PortalUploadView(APIView):
             target.save()
 
         return Response(ProofUploadSerializer(upload).data, status=status.HTTP_201_CREATED)
+
+
+class MyAssignmentsView(APIView):
+    """
+    A signed-in nodal officer's own collection tasks (spec 2.18).
+
+    The officer dashboard used to read the full `/api/data-requests/` list,
+    which showed every department's requests to anyone. This returns only the
+    targets for units the officer is assigned to on the roster, matched by
+    institutional email. Upload links are not returned: they are emailed, and
+    stay single-purpose.
+    """
+    from rest_framework.permissions import IsAuthenticated
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.organogram.models import NodalOfficer
+
+        officer = NodalOfficer.objects.filter(
+            email__iexact=(request.user.email or '')
+        ).first() if request.user.email else None
+        unit_ids = list(officer.assigned_units.values_list('id', flat=True)) if officer else []
+
+        targets = (
+            DataRequestTarget.objects
+            .filter(org_unit_id__in=unit_ids)
+            .select_related('request', 'org_unit')
+            .order_by('request__deadline')
+        )
+        now = timezone.now()
+        tasks = []
+        for t in targets:
+            req = t.request
+            tasks.append({
+                'requestId': req.id,
+                'reference': req.reference,
+                'requestTitle': req.title,
+                'framework': req.framework,
+                'cycleYear': req.cycle_year,
+                'deadline': req.deadline,
+                'requestStatus': req.status,
+                'unitId': t.org_unit_id,
+                'unitName': t.org_unit.short_name or t.org_unit.name,
+                'status': t.status,
+                'overdue': (
+                    req.status == DataRequestStatus.DISPATCHED
+                    and t.status != TargetStatus.SUBMITTED
+                    and req.deadline < now
+                ),
+            })
+        return Response({
+            'officer': NodalOfficerSerializer(officer).data if officer else None,
+            'unitIds': unit_ids,
+            'tasks': tasks,
+        })
+
+
+class ReminderScheduleView(APIView):
+    """
+    Automated reminder schedule and history (spec 2.5).
+
+    GET   every open request's milestone timeline, the policy, and the most
+          recent automated reminders (oversight roles).
+    POST  run the scheduler now (Admin); `{"dryRun": true}` previews it.
+    """
+    permission_classes = [IsAdminOrOversightReadOnly]
+
+    def get(self, request):
+        from .models import ScheduledReminder
+        from .reminders import policy, schedule_for
+
+        open_requests = (
+            DataRequest.objects.filter(status=DataRequestStatus.DISPATCHED)
+            .prefetch_related('targets', 'scheduled_reminders__target')
+            .order_by('deadline')
+        )
+        now = timezone.now()
+        requests_out = []
+        for req in open_requests:
+            targets = list(req.targets.all())
+            awaiting = [t for t in targets if t.status != TargetStatus.SUBMITTED]
+            requests_out.append({
+                'id': req.id,
+                'reference': req.reference,
+                'title': req.title,
+                'deadline': req.deadline,
+                'autoRemind': req.auto_remind,
+                'sections': len(targets),
+                'sectionsAwaiting': len(awaiting),
+                'overdue': req.deadline < now and bool(awaiting),
+                'timeline': schedule_for(req, now),
+            })
+
+        recent = ScheduledReminder.objects.select_related('request', 'target__org_unit')[:50]
+        return Response({
+            'policy': policy(),
+            'requests': requests_out,
+            'recent': [
+                {
+                    'id': r.id,
+                    'requestId': r.request_id,
+                    'reference': r.request.reference,
+                    'unitId': r.target.org_unit_id,
+                    'unitName': r.target.org_unit.short_name or r.target.org_unit.name,
+                    'milestone': r.milestone,
+                    'outcome': r.outcome,
+                    'detail': r.detail,
+                    'deliveries': r.deliveries,
+                    'at': r.created_at,
+                }
+                for r in recent
+            ],
+        })
+
+    def post(self, request):
+        from .reminders import run_scheduled_reminders
+        dry_run = str(request.data.get('dryRun', '')).lower() in ('1', 'true', 'yes')
+        return Response(run_scheduled_reminders(dry_run=dry_run))

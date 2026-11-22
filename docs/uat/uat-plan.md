@@ -21,12 +21,12 @@ The script is loaded into the portal (`manage.py seed_uat_scenarios`) and listed
 | UAT-04 | Data collection | Admin | Critical | Dispatch a targeted NIRF request |
 | UAT-05 | Officer portal | Officer | Critical | Fill, save, prove and submit a section |
 | UAT-06 | Officer portal | Officer | High | Excel template import |
-| UAT-07 | Validation | Admin | Critical | Rule-based validation and cross-check flags |
+| UAT-07 | Validation | Admin | Critical | Validation and discrepancy flags (escalate / dismiss) |
 | UAT-08 | Maker-checker | Admin | Critical | Correction request → resubmission → approval |
 | UAT-09 | Audit | Auditor | Critical | Trace a change; export the audit log |
 | UAT-10 | Proofs | Auditor | High | Open the proof behind a figure |
 | UAT-11 | Export | Admin | Critical | NIRF DCS export matches the rollup |
-| UAT-12 | Reminders | Admin | High | Reminders reach pending sections only and rotate links |
+| UAT-12 | Reminders | Admin | High | Manual and scheduled reminders; pause |
 | UAT-13 | Analytics | Director | High | Executive dashboards and briefing PDF |
 | UAT-14 | Analytics | Officer | Normal | Department head sees only their own analytics |
 | UAT-15 | Public portal | Public | High | Ranking trends without login |

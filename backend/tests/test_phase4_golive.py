@@ -196,6 +196,26 @@ class TestPilot:
                                   {'requestId': sample_data_request.id}, format='json')
         assert again.data['created'] == 0
 
+    def test_sync_uses_discrepancy_engine_flags(self, admin_client, pilot, sample_data_request):
+        from apps.submissions.models import DiscrepancyFlag
+        DiscrepancyFlag.objects.create(
+            request=sample_data_request, key='YOY_CHANGE:pubs', kind='YOY_CHANGE', severity='CRITICAL',
+            label='Publications', message='Dropped 85% from last year.',
+        )
+        DiscrepancyFlag.objects.create(
+            request=sample_data_request, key='YOY_CHANGE:old', kind='YOY_CHANGE', severity='WARNING',
+            label='Old', message='Corrected since.', status='RESOLVED',
+        )
+        with patch('apps.golive.views.scan_request'):
+            res = admin_client.post(f'/api/golive/pilots/{pilot.id}/flag-reviews/',
+                                    {'requestId': sample_data_request.id}, format='json')
+        assert res.status_code == 200
+        by_id = {r['checkId']: r for r in res.data['reviews']}
+        assert by_id['YOY_CHANGE:pubs']['systemFlagged'] is True
+        assert by_id['YOY_CHANGE:pubs']['critical'] is True
+        assert by_id['YOY_CHANGE:old']['systemFlagged'] is False
+        assert any(k.startswith('CROSS_CHECK:') and not r['systemFlagged'] for k, r in by_id.items())
+
     def test_disagreeing_requires_reason(self, admin_client, pilot, sample_data_request):
         review = FlagReview.objects.create(pilot=pilot, request=sample_data_request, check_id='c1',
                                            severity='warning', system_flagged=True)

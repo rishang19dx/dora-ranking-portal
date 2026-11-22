@@ -10,14 +10,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Add apps to sys.path so 'apps.<app_name>' can also be imported if needed
 sys.path.insert(0, str(BASE_DIR))
 
-
-
 def _env_list(name, default=''):
     return [v.strip() for v in os.getenv(name, default).split(',') if v.strip()]
 
 
 def _env_bool(name, default):
     return os.getenv(name, str(default)).strip().lower() in ('true', '1', 'yes')
+
+
+def _env_flag(name, default='False'):
+    return _env_bool(name, default)
 
 
 DEV_SECRET_KEY = 'django-insecure-dora-ranking-portal-secret-key-2026'
@@ -143,8 +145,10 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+    # Deny by default (spec 2.18): a view is public only if it says so with
+    # AllowAny, so a newly added endpoint can never be open by omission.
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ),
     # SEC-05: brute-force protection on the login endpoint (scoped throttle
     # applied in accounts.views). Other endpoints are not throttled.
@@ -200,6 +204,7 @@ LOGGING = {
     'loggers': {'django.security': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False}},
 }
 
+
 # Portal-specific settings
 PORTAL_ACCESS_TTL_DAYS = int(os.getenv('PORTAL_ACCESS_TTL_DAYS', '45'))
 APP_BASE_URL = os.getenv('APP_BASE_URL', 'http://localhost:5173')
@@ -219,3 +224,26 @@ DR_TARGET_RTO_HOURS = float(os.getenv('DR_TARGET_RTO_HOURS', '8'))
 # Pilot KPI thresholds (proposal section 3.3).
 KPI_FLAG_ACCURACY_TARGET = float(os.getenv('KPI_FLAG_ACCURACY_TARGET', '0.95'))
 APP_VERSION = os.getenv('APP_VERSION', '2.0.0')
+
+# Automated deadline reminders (apps/data_requests/reminders.py).
+REMINDER_DAYS_BEFORE = [int(d) for d in _env_list('REMINDER_DAYS_BEFORE', '7,3,1')]
+REMINDER_OVERDUE_INTERVAL_DAYS = int(os.getenv('REMINDER_OVERDUE_INTERVAL_DAYS', '3'))
+REMINDER_OVERDUE_MAX = int(os.getenv('REMINDER_OVERDUE_MAX', '3'))
+REMINDER_MANUAL_COOLDOWN_HOURS = int(os.getenv('REMINDER_MANUAL_COOLDOWN_HOURS', '20'))
+
+# AI-assisted discrepancy review (apps/submissions/ai_client.py). Optional:
+# with no provider/key the rule-based flags work on their own.
+AI_PROVIDER = os.getenv('AI_PROVIDER', '')
+AI_API_KEY = os.getenv('AI_API_KEY', '')
+AI_MODEL = os.getenv('AI_MODEL', '')
+AI_BASE_URL = os.getenv('AI_BASE_URL', '')
+AI_TIMEOUT_SECONDS = float(os.getenv('AI_TIMEOUT_SECONDS', '30'))
+AI_MAX_FLAGS = int(os.getenv('AI_MAX_FLAGS', '60'))
+
+# Rule thresholds for discrepancy flags (apps/submissions/discrepancies.py).
+DISCREPANCY_CRITICAL_DROP_PCT = float(os.getenv('DISCREPANCY_CRITICAL_DROP_PCT', '80'))
+DISCREPANCY_CRITICAL_RISE_PCT = float(os.getenv('DISCREPANCY_CRITICAL_RISE_PCT', '300'))
+DISCREPANCY_WARNING_CHANGE_PCT = float(os.getenv('DISCREPANCY_WARNING_CHANGE_PCT', '40'))
+DISCREPANCY_RESTATE_CRITICAL_PCT = float(os.getenv('DISCREPANCY_RESTATE_CRITICAL_PCT', '50'))
+DISCREPANCY_RESTATE_WARNING_PCT = float(os.getenv('DISCREPANCY_RESTATE_WARNING_PCT', '5'))
+DISCREPANCY_RECORD_WARNING_PCT = float(os.getenv('DISCREPANCY_RECORD_WARNING_PCT', '50'))

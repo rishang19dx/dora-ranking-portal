@@ -26,11 +26,13 @@ Indian Institute of Technology Mandi"""
 
 DEFAULT_REMINDER_TEMPLATE = """Dear {{officer}},
 
-This is a reminder for data request {{reference}} covering {{section}}. The following items are still awaited:
+This is a reminder for data request {{reference}} covering {{section}}. {{timing}}
+
+The following items are still awaited:
 
 {{dataItems}}
 
-Your restricted upload link remains active:
+Your restricted upload link (this replaces any earlier link):
 
 {{portalLink}}
 

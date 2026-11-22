@@ -648,3 +648,13 @@ export interface ProofRepositoryResponse {
   results: ProofEntry[];
 }
 
+/** Result of an explicit "fetch NIRF results now" (spec 2.14). */
+export interface RankingFetchReport {
+  message: string;
+  mode: 'new-only' | 'full';
+  fetched: Array<{ year: number; category: string; institutions: number }>;
+  notPublishedYet: Array<{ year: number; category: string }>;
+  failed: Array<{ year: number; category: string }>;
+  latestYear: number | null;
+}
+

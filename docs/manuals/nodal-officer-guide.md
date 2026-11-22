@@ -14,7 +14,8 @@ You provide your department's ranking data and the documents that prove it. Ther
 1. Open the link. **NIRF Form Completion Progress** shows what is outstanding.
 2. Fill each section. Work is saved as a draft, so you can stop and come back with the same link.
 3. Impossible values (a negative count, a percentage above 100) are rejected with a message beside the field.
-4. If a section does not apply to your department, mark it **Not applicable**.
+4. Where your department submitted last cycle, the previously approved value and the change are shown beside the field. A large change is fine if it is real, but expect DORA to ask about it.
+5. If a section does not apply to your department, mark it **Not applicable**.
 
 ### Large tables: use the Excel template
 

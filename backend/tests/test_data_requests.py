@@ -238,12 +238,12 @@ class TestDispatchDataRequest:
 @pytest.mark.django_db
 class TestDataRequestAPI:
 
-    def test_list_data_requests_returns_200(self, api_client):
-        response = api_client.get('/api/data-requests/')
+    def test_list_data_requests_returns_200(self, admin_client):
+        response = admin_client.get('/api/data-requests/')
         assert response.status_code == 200
         assert isinstance(response.data, list)
 
-    def test_create_data_request_valid(self, api_client, sample_org_unit, sample_officer):
+    def test_create_data_request_valid(self, admin_client, sample_org_unit, sample_officer):
         deadline = (timezone.now() + timedelta(days=30)).isoformat()
         payload = {
             'title': 'API Created Request',
@@ -256,30 +256,30 @@ class TestDataRequestAPI:
                 {'unitId': sample_org_unit.id, 'dataItemIds': ['api_item_001']}
             ],
         }
-        response = api_client.post('/api/data-requests/', data=payload, format='json')
+        response = admin_client.post('/api/data-requests/', data=payload, format='json')
         assert response.status_code == 201
         assert response.data['title'] == 'API Created Request'
         assert 'issuedGrants' in response.data
 
-    def test_create_data_request_missing_fields(self, api_client):
+    def test_create_data_request_missing_fields(self, admin_client):
         payload = {
             'framework': 'NIRF',
             # missing 'title' and other required fields
         }
-        response = api_client.post('/api/data-requests/', data=payload, format='json')
+        response = admin_client.post('/api/data-requests/', data=payload, format='json')
         assert response.status_code == 400
 
-    def test_get_data_request_detail(self, api_client, sample_data_request):
-        response = api_client.get(f'/api/data-requests/{sample_data_request.id}/')
+    def test_get_data_request_detail(self, admin_client, sample_data_request):
+        response = admin_client.get(f'/api/data-requests/{sample_data_request.id}/')
         assert response.status_code == 200
         assert response.data['id'] == sample_data_request.id
 
-    def test_get_data_request_not_found(self, api_client):
-        response = api_client.get('/api/data-requests/req_doesnotexist/')
+    def test_get_data_request_not_found(self, admin_client):
+        response = admin_client.get('/api/data-requests/req_doesnotexist/')
         assert response.status_code == 404
 
-    def test_data_request_action_close(self, api_client, sample_data_request):
-        response = api_client.post(
+    def test_data_request_action_close(self, admin_client, sample_data_request):
+        response = admin_client.post(
             f'/api/data-requests/{sample_data_request.id}/actions/',
             data={'action': 'close'},
             format='json',
@@ -290,9 +290,9 @@ class TestDataRequestAPI:
         sample_data_request.refresh_from_db()
         assert sample_data_request.status == DataRequestStatus.CLOSED
 
-    def test_data_request_action_remind(self, api_client, sample_data_request, sample_target):
+    def test_data_request_action_remind(self, admin_client, sample_data_request, sample_target):
         initial_reminders = sample_target.reminders_sent
-        response = api_client.post(
+        response = admin_client.post(
             f'/api/data-requests/{sample_data_request.id}/actions/',
             data={'action': 'remind'},
             format='json',
@@ -303,8 +303,8 @@ class TestDataRequestAPI:
         sample_target.refresh_from_db()
         assert sample_target.reminders_sent == initial_reminders + 1
 
-    def test_data_request_action_invalid(self, api_client, sample_data_request):
-        response = api_client.post(
+    def test_data_request_action_invalid(self, admin_client, sample_data_request):
+        response = admin_client.post(
             f'/api/data-requests/{sample_data_request.id}/actions/',
             data={'action': 'launch_missiles'},
             format='json',

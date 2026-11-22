@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { TrendUp, TrendDown, Medal, FileText, FilePdf, Warning } from '@phosphor-icons/react';
+import { TrendUp, TrendDown, Medal, FileText, FilePdf, Warning, ArrowsClockwise } from '@phosphor-icons/react';
 import { motion } from 'motion/react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -19,7 +19,6 @@ const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transiti
 const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: spring } };
 
 const CYCLE_YEAR = 2027;
-const RANKING_YEAR = 2025;
 const CATEGORY = 'Engineering';
 const RANGE_OPTIONS = [3, 5] as const;
 
@@ -45,6 +44,8 @@ export default function AdminOverview() {
   const [analytics, setAnalytics] = useState<DepartmentAnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [briefingBusy, setBriefingBusy] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +58,8 @@ export default function AdminOverview() {
       const settle = <T,>(load: () => Promise<T>) => Promise.resolve().then(load);
       const [t, g, a] = await Promise.allSettled([
         settle(() => rankingsService.getParameterTrends(CATEGORY, { last: range })),
-        settle(() => rankingsService.getGapAnalysis(CATEGORY, RANKING_YEAR)),
+        // No year: the API answers for the newest published cycle.
+        settle(() => rankingsService.getGapAnalysis(CATEGORY)),
         settle(() => analyticsService.getDepartmentAnalytics(CYCLE_YEAR)),
       ]);
       if (cancelled) return;
@@ -67,7 +69,7 @@ export default function AdminOverview() {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [range]);
+  }, [range, reloadKey]);
 
   const entry = gap?.analysis?.[CATEGORY];
   const peers = entry?.vsPeers;
@@ -119,10 +121,31 @@ export default function AdminOverview() {
   const contrib = analytics?.contribution?.institute;
   const leaders = analytics?.contribution?.leaders;
 
+  // Explicit fetch alongside the daily schedule: when results are announced,
+  // staff need not wait for the next scheduled check.
+  const handleFetch = async () => {
+    try {
+      setFetching(true);
+      const report = await rankingsService.updateScraper();
+      showToast(report.message, report.fetched.length ? 'success' : 'info');
+      if (report.fetched.length) setReloadKey((k) => k + 1);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      showToast(
+        status === 409 ? 'A fetch is already running. Try again in a minute.'
+          : status === 401 || status === 403 ? 'Only DORA staff can fetch new NIRF results.'
+          : err?.response?.data?.message ?? 'Could not reach the NIRF site.',
+        'error',
+      );
+    } finally {
+      setFetching(false);
+    }
+  };
+
   const handleBriefing = async () => {
     try {
       setBriefingBusy(true);
-      await analyticsService.downloadBriefing(CYCLE_YEAR, { rankingYear: RANKING_YEAR });
+      await analyticsService.downloadBriefing(CYCLE_YEAR);
       showToast('Boardroom briefing generated.', 'success');
     } catch {
       showToast('Could not generate the briefing.', 'error');
@@ -155,6 +178,15 @@ export default function AdminOverview() {
             ))}
           </div>
           <button
+            onClick={handleFetch}
+            disabled={fetching}
+            title="Fetch any NIRF cycle published since the last check"
+            className="bg-white hover:bg-zinc-50 disabled:opacity-60 border border-slate-200 text-zinc-800 px-4 py-2.5 rounded-xl text-sm font-medium transition-all inline-flex items-center gap-2"
+          >
+            <ArrowsClockwise weight="bold" className={`w-4 h-4 ${fetching ? 'animate-spin' : ''}`} />
+            {fetching ? 'Checking NIRF…' : 'Fetch NIRF results'}
+          </button>
+          <button
             onClick={handleBriefing}
             disabled={briefingBusy}
             className="bg-zinc-900 hover:bg-black disabled:opacity-60 active:scale-[0.98] text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all inline-flex items-center gap-2"
@@ -185,7 +217,7 @@ export default function AdminOverview() {
             value={latest && latest.rank !== null ? `${latest.rank}` : '—'}
             trend={
               rankMove === null
-                ? `${RANKING_YEAR} standing`
+                ? `${gap?.year ?? latest?.year ?? ''} standing`
                 : `${rankMove > 0 ? '+' : ''}${rankMove} since ${first?.year}`
             }
             positive={(rankMove ?? 0) >= 0}

@@ -2,7 +2,7 @@
 
 **Owner:** IIT Mandi IT Services · **Applies to:** staging and production
 
-ARP runs as three containers: PostgreSQL 16, the Django API (gunicorn), and Nginx serving the React SPA and proxying `/api/`. Every piece runs on Institute-provisioned servers. No external cloud service is required. The optional mail provider (Resend) is the only outbound dependency, and without it mail is written to an outbox folder.
+ARP runs as five containers: PostgreSQL 16, the Django API (gunicorn), Nginx serving the React SPA and proxying `/api/`, and two background workers: `scheduler` (fetches newly published NIRF cycles daily) and `reminders` (sends deadline reminders hourly). The workers start once the backend is healthy. Every piece runs on Institute-provisioned servers. No external cloud service is required. The optional mail provider (Resend) is the only outbound dependency, and without it mail is written to an outbox folder.
 
 ## 1. Host prerequisites
 
@@ -19,35 +19,39 @@ ARP runs as three containers: PostgreSQL 16, the Django API (gunicorn), and Ngin
 ```bash
 git clone <institute-repo-url> arp && cd arp
 cp .env.production.example .env.production
-# Edit .env.production: DJANGO_SECRET_KEY, POSTGRES_PASSWORD, DJANGO_ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, APP_BASE_URL
+# Edit .env.production: DJANGO_SECRET_KEY, POSTGRES_PASSWORD, DORA_ADMIN_PASSWORD, DJANGO_ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, APP_BASE_URL
 python3 -c "import secrets; print(secrets.token_urlsafe(64))"   # paste into DJANGO_SECRET_KEY
 docker compose --env-file .env.production up -d --build
 ```
 
-On start, the backend container runs (all idempotent): `migrate`, `seed_organogram`, `load_form_schema`, `seed_uat_scenarios`, `collectstatic`, then gunicorn.
+On start, the backend container runs (all idempotent): `migrate`, `seed_organogram`, `load_form_schema`, `seed_uat_scenarios`, `ensure_admin` (when `DORA_ADMIN_PASSWORD` is set), `collectstatic`, then gunicorn.
 
 The backend **refuses to start** if `DJANGO_DEBUG=False` and the secret key is missing, is the development key, or is shorter than 50 characters. This is intentional.
 
-## 3. Create the first administrator
+## 3. Accounts and roles
+
+The bootstrap Admin account comes from `DORA_ADMIN_USERNAME` / `DORA_ADMIN_PASSWORD`. If you are locked out, run:
 
 ```bash
-docker compose exec backend python manage.py createsuperuser
+docker compose exec backend python manage.py ensure_admin --reset-password
 ```
 
-Sign in at `https://<host>/admin/` (Django admin), open **Users**, and for each staff member create a user with the right **role**:
+Sign in to the portal as that Admin, open **Users & Roles**, and create an account for each staff member with the right **role**:
 
 | Role | Who |
 |---|---|
 | `ADMIN` | DORA data officers |
 | `DIRECTOR` | Director / Dean (read-only dashboards, sign-offs) |
 | `AUDITOR` | Internal audit (read-only audit log, proofs, go-live evidence) |
-| `NODAL_OFFICER` | Only for department heads who use *My Analytics*. Data entry itself uses mailed links, not accounts. |
+| `NODAL_OFFICER` | Department heads who use *My Analytics* (scoped to their own unit). Data entry itself uses mailed links, not accounts. |
+
+Every API endpoint denies access unless a role is explicitly allowed. Director and Auditor are read-only everywhere, except that the Director records go-live sign-offs.
 
 ## 4. Verify the installation
 
 ```bash
 curl -fsS https://<host>/api/health/          # {"status":"ok","database":"ok",...}
-docker compose ps                              # all three containers "healthy"/"running"
+docker compose ps                              # backend "healthy"; db, frontend, scheduler, reminders running
 docker compose exec backend python manage.py check --deploy
 ```
 

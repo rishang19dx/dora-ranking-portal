@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { 
   ChartBar, 
@@ -17,10 +17,13 @@ import {
   GraduationCap,
   ShieldCheck,
   Files,
-  RocketLaunch
+  RocketLaunch,
+  Warning
 } from '@phosphor-icons/react';
 import { motion, AnimatePresence } from 'motion/react';
-import { authService } from '../services/api';
+import { authService, reminderService, type ReminderScheduleResponse } from '../services/api';
+import { hasRole, roleOf, ROLE_LABELS, ADMIN_ROUTE_ROLES, OVERSIGHT, type PortalRole } from '../lib/rbac';
+import type { User } from '../types';
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -31,6 +34,21 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const pathname = location.pathname;
   const currentUser = authService.getCurrentUser();
+  const [schedule, setSchedule] = useState<ReminderScheduleResponse | null>(null);
+  const isOversight = hasRole(currentUser, OVERSIGHT);
+
+  // Notifications are live: overdue requests and recent automated reminders.
+  useEffect(() => {
+    if (!isOversight) return;
+    reminderService.schedule().then(setSchedule).catch(() => setSchedule(null));
+  }, [isOversight]);
+
+  const overdueRequests = schedule?.requests.filter((r) => r.overdue) ?? [];
+  const dueSoon = schedule?.requests.filter(
+    (r) => !r.overdue && r.sectionsAwaiting > 0 && new Date(r.deadline).getTime() - Date.now() < 7 * 86400000,
+  ) ?? [];
+  const recentReminders = schedule?.recent.slice(0, 5) ?? [];
+  const attention = overdueRequests.length + dueSoon.length;
 
   const handleSignOut = () => {
     authService.logout();
@@ -58,7 +76,7 @@ export default function DashboardLayout() {
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200/50 flex flex-col z-50 md:hidden shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)]"
             >
-              <SidebarContent pathname={pathname} sidebarOpen={true} setSidebarOpen={() => setMobileMenuOpen(false)} isMobile={true} />
+              <SidebarContent pathname={pathname} sidebarOpen={true} setSidebarOpen={() => setMobileMenuOpen(false)} isMobile={true} user={currentUser} />
             </motion.aside>
           </>
         )}
@@ -71,7 +89,7 @@ export default function DashboardLayout() {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="hidden md:flex bg-white/70 backdrop-blur-2xl border-r border-slate-200/50 flex-col z-20 shrink-0"
       >
-        <SidebarContent pathname={pathname} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} isMobile={false} />
+        <SidebarContent pathname={pathname} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} isMobile={false} user={currentUser} />
       </motion.aside>
 
       {/* Main Content Area */}
@@ -107,10 +125,13 @@ export default function DashboardLayout() {
             <div className="relative">
               <button 
                 onClick={() => { setNotificationsOpen(!notificationsOpen); setProfileOpen(false); }}
+                aria-label="Notifications"
                 className="relative p-2 hover:bg-zinc-100 rounded-xl text-zinc-600 transition-colors"
               >
                 <Bell weight="bold" className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-dusty-rose-500 rounded-full ring-2 ring-white"></span>
+                {attention > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-dusty-rose-500 rounded-full ring-2 ring-white"></span>
+                )}
               </button>
               
               <AnimatePresence>
@@ -123,19 +144,37 @@ export default function DashboardLayout() {
                   >
                     <div className="p-4 border-b border-slate-100 bg-zinc-50/50 flex justify-between items-center">
                       <h4 className="font-semibold text-sm text-zinc-900">Notifications</h4>
-                      <span className="text-xs text-sage-600 font-medium cursor-pointer">Mark all as read</span>
+                      {isOversight && (
+                        <Link to="/admin/reminders" onClick={() => setNotificationsOpen(false)} className="text-xs text-sage-600 font-medium">
+                          Reminder schedule
+                        </Link>
+                      )}
                     </div>
-                    <div className="p-2 max-h-64 overflow-y-auto">
-                      <div className="p-3 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer">
-                        <p className="text-sm font-medium text-zinc-900">Submission Received</p>
-                        <p className="text-xs text-zinc-500 mt-1">SCEE has uploaded Student Intake data.</p>
-                        <p className="text-[10px] text-zinc-400 mt-2 uppercase font-semibold">2 hours ago</p>
-                      </div>
-                      <div className="p-3 hover:bg-zinc-50 rounded-xl transition-colors cursor-pointer">
-                        <p className="text-sm font-medium text-zinc-900">Deadline Approaching</p>
-                        <p className="text-xs text-zinc-500 mt-1">NIRF 2026 Phase 1 ends in 5 days.</p>
-                        <p className="text-[10px] text-zinc-400 mt-2 uppercase font-semibold">1 day ago</p>
-                      </div>
+                    <div className="p-2 max-h-72 overflow-y-auto">
+                      {overdueRequests.map((r) => (
+                        <Link key={`o-${r.id}`} to={`/admin/data-requests/${r.id}`} onClick={() => setNotificationsOpen(false)} className="block p-3 hover:bg-zinc-50 rounded-xl">
+                          <p className="text-sm font-medium text-dusty-rose-700">Deadline passed</p>
+                          <p className="text-xs text-zinc-500 mt-1">{r.reference}: {r.sectionsAwaiting} section(s) still awaited.</p>
+                        </Link>
+                      ))}
+                      {dueSoon.map((r) => (
+                        <Link key={`d-${r.id}`} to={`/admin/data-requests/${r.id}`} onClick={() => setNotificationsOpen(false)} className="block p-3 hover:bg-zinc-50 rounded-xl">
+                          <p className="text-sm font-medium text-zinc-900">Deadline approaching</p>
+                          <p className="text-xs text-zinc-500 mt-1">
+                            {r.reference} is due {new Date(r.deadline).toLocaleDateString('en-IN')}; {r.sectionsAwaiting} section(s) awaited.
+                          </p>
+                        </Link>
+                      ))}
+                      {recentReminders.map((r) => (
+                        <div key={`r-${r.id}`} className="p-3 rounded-xl">
+                          <p className="text-sm font-medium text-zinc-900">Reminder {r.outcome === 'SENT' ? 'sent' : 'skipped'}</p>
+                          <p className="text-xs text-zinc-500 mt-1">{r.unitName} · {r.reference} · {r.milestone}</p>
+                          <p className="text-[10px] text-zinc-400 mt-1 uppercase font-semibold">{new Date(r.at).toLocaleString('en-IN')}</p>
+                        </div>
+                      ))}
+                      {attention === 0 && recentReminders.length === 0 && (
+                        <p className="p-3 text-xs text-zinc-500">Nothing needs attention.</p>
+                      )}
                     </div>
                   </motion.div>
                 )}
@@ -159,10 +198,10 @@ export default function DashboardLayout() {
                     className="absolute right-0 mt-2 w-56 bg-white border border-slate-200/50 rounded-2xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] overflow-hidden z-50 p-2"
                   >
                     <div className="p-3 border-b border-slate-100 mb-2">
-                      <p className="text-sm font-semibold text-zinc-900">{currentUser?.username || 'DORA Admin'}</p>
-                      <p className="text-xs text-zinc-500 truncate">{currentUser?.email || 'admin@iitmandi.ac.in'}</p>
+                      <p className="text-sm font-semibold text-zinc-900">{currentUser?.username || 'Signed in'}</p>
+                      <p className="text-xs text-zinc-500 truncate">{currentUser?.email || ''}</p>
                       <span className="inline-block mt-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-sage-100 text-sage-800">
-                        {currentUser?.role || 'ADMIN'}
+                        {roleOf(currentUser) ? ROLE_LABELS[roleOf(currentUser) as PortalRole] : 'Signed in'}
                       </span>
                     </div>
                     <button 
@@ -187,7 +226,9 @@ export default function DashboardLayout() {
   );
 }
 
-function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile }: { pathname: string, sidebarOpen: boolean, setSidebarOpen: (v: boolean) => void, isMobile: boolean }) {
+function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile, user }: { pathname: string, sidebarOpen: boolean, setSidebarOpen: (v: boolean) => void, isMobile: boolean, user: User | null }) {
+  // A page's nav item is shown only to roles that page admits.
+  const can = (route: string) => hasRole(user, ADMIN_ROUTE_ROLES[route] ?? OVERSIGHT);
   return (
     <>
       <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200/50 shrink-0">
@@ -221,16 +262,23 @@ function SidebarContent({ pathname, sidebarOpen, setSidebarOpen, isMobile }: { p
           </>
         ) : (
           <>
-            <NavItem to="/admin" icon={<ChartBar weight="duotone" className="w-5 h-5" />} label="Dashboard" active={pathname === "/admin"} open={sidebarOpen} />
-            <NavItem to="/admin/organogram" icon={<TreeStructure weight="duotone" className="w-5 h-5" />} label="Organogram" active={pathname.includes("/organogram")} open={sidebarOpen} />
-            <NavItem to="/admin/data-collection" icon={<FileText weight="duotone" className="w-5 h-5" />} label="Data Collection" active={pathname.includes("/data-collection") || pathname.includes("/data-requests")} open={sidebarOpen} />
-            <NavItem to="/admin/programmes" icon={<GraduationCap weight="duotone" className="w-5 h-5" />} label="Programmes" active={pathname.includes("/programmes")} open={sidebarOpen} />
-            <NavItem to="/admin/nodal-officers" icon={<Users weight="duotone" className="w-5 h-5" />} label="Nodal Officers" active={pathname.includes("/nodal-officers")} open={sidebarOpen} />
-            <NavItem to="/admin/ranking-records" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Ranking Results" active={pathname.includes("/ranking-records")} open={sidebarOpen} />
-            <NavItem to="/admin/documents" icon={<BookOpen weight="duotone" className="w-5 h-5" />} label="Documents" active={pathname.includes("/documents")} open={sidebarOpen} />
-            <NavItem to="/admin/proofs" icon={<Files weight="duotone" className="w-5 h-5" />} label="Proof Repository" active={pathname.includes("/proofs")} open={sidebarOpen} />
-            <NavItem to="/admin/audit-log" icon={<ShieldCheck weight="duotone" className="w-5 h-5" />} label="Audit Log" active={pathname.includes("/audit-log")} open={sidebarOpen} />
-            <NavItem to="/admin/go-live" icon={<RocketLaunch weight="duotone" className="w-5 h-5" />} label="Go-Live Readiness" active={pathname.includes("/go-live")} open={sidebarOpen} />
+            {can('') && <NavItem to="/admin" icon={<ChartBar weight="duotone" className="w-5 h-5" />} label="Dashboard" active={pathname === "/admin"} open={sidebarOpen} />}
+            {can('organogram') && <NavItem to="/admin/organogram" icon={<TreeStructure weight="duotone" className="w-5 h-5" />} label="Organogram" active={pathname.includes("/organogram")} open={sidebarOpen} />}
+            {can('data-collection') && <NavItem to="/admin/data-collection" icon={<FileText weight="duotone" className="w-5 h-5" />} label="Data Collection" active={pathname.includes("/data-collection") || pathname.includes("/data-requests")} open={sidebarOpen} />}
+            {can('programmes') && <NavItem to="/admin/programmes" icon={<GraduationCap weight="duotone" className="w-5 h-5" />} label="Programmes" active={pathname.includes("/programmes")} open={sidebarOpen} />}
+            {can('nodal-officers') && <NavItem to="/admin/nodal-officers" icon={<Users weight="duotone" className="w-5 h-5" />} label="Nodal Officers" active={pathname.includes("/nodal-officers")} open={sidebarOpen} />}
+            {can('rankings') && <NavItem to="/admin/rankings" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Rankings (NIRF)" active={pathname.startsWith("/admin/rankings")} open={sidebarOpen} />}
+            {can('public-rankings') && <NavItem to="/admin/public-rankings" icon={<ArrowSquareOut weight="duotone" className="w-5 h-5" />} label="Public Rankings" active={pathname.includes("/public-rankings")} open={sidebarOpen} />}
+            {can('ranking-records') && <NavItem to="/admin/ranking-records" icon={<Medal weight="duotone" className="w-5 h-5" />} label="Ranking Results" active={pathname.includes("/ranking-records")} open={sidebarOpen} />}
+
+            {can('documents') && <NavItem to="/admin/documents" icon={<BookOpen weight="duotone" className="w-5 h-5" />} label="Documents" active={pathname.includes("/documents")} open={sidebarOpen} />}
+            {can('proofs') && <NavItem to="/admin/proofs" icon={<Files weight="duotone" className="w-5 h-5" />} label="Proof Repository" active={pathname.includes("/proofs")} open={sidebarOpen} />}
+            {can('discrepancies') && <NavItem to="/admin/discrepancies" icon={<Warning weight="duotone" className="w-5 h-5" />} label="Discrepancies" active={pathname.includes("/discrepancies")} open={sidebarOpen} />}
+            {can('reminders') && <NavItem to="/admin/reminders" icon={<Bell weight="duotone" className="w-5 h-5" />} label="Reminders" active={pathname.includes("/reminders")} open={sidebarOpen} />}
+            {can('audit-log') && <NavItem to="/admin/audit-log" icon={<ShieldCheck weight="duotone" className="w-5 h-5" />} label="Audit Log" active={pathname.includes("/audit-log")} open={sidebarOpen} />}
+            {can('go-live') && <NavItem to="/admin/go-live" icon={<RocketLaunch weight="duotone" className="w-5 h-5" />} label="Go-Live Readiness" active={pathname.includes("/go-live")} open={sidebarOpen} />}
+
+            {can('users') && <NavItem to="/admin/users" icon={<Gear weight="duotone" className="w-5 h-5" />} label="Users & Roles" active={pathname.includes("/admin/users")} open={sidebarOpen} />}
           </>
         )}
       </nav>

@@ -24,6 +24,25 @@ The system is architected as a decoupled monorepo featuring a **React 19 Single 
 
 ---
 
+## 🔐 Roles & Access Control
+
+Access follows proposal §2.18 and is enforced by the API on every request; the UI only hides what a role cannot use.
+
+| Role | Can see | Can change |
+|---|---|---|
+| **Admin / Data Officer** | Everything | Everything: dispatch, review/approve, correct, export, users |
+| **Director (Leadership)** | Dashboards, analytics, briefing, exports, submission trails | Nothing (read-only) |
+| **Auditor** | Proofs, audit log, submission trails, exports | Nothing (read-only) |
+| **Nodal Officer** | Their own department's tasks and analytics | Their department's returns, via the emailed upload link |
+| **Public** | Published rankings, trends, peer benchmarks, institute structure (no contacts) | — |
+
+- Sign in with username **or** institutional email. Failed logins are throttled (`LOGIN_THROTTLE_RATE`).
+- The DRF default is **deny**: an endpoint is public only if it declares `AllowAny`, and `tests/test_rbac_matrix.py` fails if any public view is not on its allowlist.
+- A Django superuser is treated as Admin; `is_staff` alone grants nothing in the portal.
+- Accounts are deactivated, never deleted, so audit entries keep their actor.
+
+---
+
 ## 🛠 Tech Stack
 
 ### Frontend (`frontend/`)
@@ -58,6 +77,7 @@ The system is architected as a decoupled monorepo featuring a **React 19 Single 
    source venv/bin/activate
    pip install -r requirements.txt
    python manage.py migrate
+   python manage.py ensure_admin      # admin / admin123 in development; set DORA_ADMIN_PASSWORD otherwise
    python manage.py seed_organogram
    python manage.py load_form_schema
    cd ..
@@ -74,7 +94,7 @@ The system is architected as a decoupled monorepo featuring a **React 19 Single 
    ```
    - **Frontend UI**: [http://localhost:5173](http://localhost:5173)
    - **Django REST API**: [http://127.0.0.1:8000/api/](http://127.0.0.1:8000/api/)
-   - **Default Admin Account**: `admin` / `admin123`
+   - **Development Admin Account**: `admin` / `admin123` (created by `ensure_admin`; refused with `DJANGO_DEBUG=False`). Further accounts and roles: **Users & Roles** in the admin sidebar.
 
 ---
 
@@ -107,9 +127,76 @@ Full operations documentation (installation, configuration, release/rollback, ba
 
 ---
 
+## 🔄 NIRF Ranking Data Refresh
+
+Published NIRF results are cached as JSON under `backend/apps/rankings/data/`. No year is hardcoded: whichever cycles are on disk drive every dashboard, and the newest becomes the "latest" automatically.
+
+- **Scheduled:** `python manage.py refresh_rankings` fetches any cycle NIRF has published since the last run. Cached years are never re-fetched; an unpublished cycle is reported as pending, not as a failure.
+  - *Docker:* the `scheduler` service runs it daily (`REFRESH_INTERVAL_SECONDS`, default 86400), sharing the `rankings_data` volume with the backend.
+  - *Bare metal:* `scripts/deploy.sh` installs a daily 06:30 cron entry (idempotent; existing crontab lines are kept). Set `DORA_SKIP_CRON=1` to skip.
+- **On demand:** Admin and Director users see **Fetch NIRF results** on the Executive Dashboard and the trends page (`POST /api/v1/scraper/update/`), for when results are announced between scheduled runs.
+- **Rewriting cached cycles** (e.g. after a scraper change): `python manage.py refresh_rankings --full`.
+
+Fetches are serialised by a lock and written atomically, and every web worker sees a new file on its next read without a restart.
+
+---
+
+## 🌐 Public Ranking Portal
+
+The public landing page needs no login (spec 2.14). The **Ranking Systems** tab (`/?tab=systems`, linkable) shows IIT Mandi's year-wise rank in every system DORA tracks, one chart per system: their rank scales differ by an order of magnitude, so one shared axis would flatten NIRF into a line. **Peer Comparison** benchmarks against the 2nd-generation IITs, and **Trend Analytics** breaks down NIRF parameters.
+
+- **NIRF** series come straight from the published tables (see *NIRF Ranking Data Refresh*).
+- **QS, THE, MDRA and others** publish no feed, so DORA enters each edition's result in **Admin → Public Rankings** (rank as published, e.g. `601-650`; banded ranks are plotted at the band midpoint). Results can be hidden from the public view.
+- `python manage.py seed_demo_rankings` loads illustrative QS/THE series so the portal can be demonstrated before real figures are entered. They are drawn dashed and labelled *Illustrative*, never overwrite real entries, and are removed with `--clear`. Refuses to run with `DJANGO_DEBUG=False` unless `--force`.
+
+---
+
+## 🕰 Historical Value Comparison
+
+Every input in a nodal officer's form shows the figure the same unit had **approved** in the latest earlier cycle, and the change is recomputed as they type (spec 2.6). Because NIRF year columns overlap between cycles, each cell is compared on one of two bases:
+
+- **Same period**: the year was already reported last cycle. A different figure is flagged as a *restatement*.
+- **Prior period**: the year is new. It is compared with last cycle's figure for the year before, i.e. the year-on-year change. Moves of 25% or more are highlighted.
+
+Reviewers see the same comparison, plus a list of restatements and large moves, on the submission detail. `GET /api/nirf/history/?unitId=&sectionId=&cycles=3` returns a unit's approved returns over past cycles (oversight roles). To see it with demo data, run `seed_demo_cycle --cycle-year 2026` and then `--cycle-year 2027`.
+
+---
+
+## 🚩 Discrepancy Flagging (Rules + Optional AI)
+
+Every submitted or approved return is checked against the department's previously approved figures (spec 2.9). Flags are raised by **deterministic rules** and graded **Critical / Warning / Info**:
+
+| Rule | Severity |
+|---|---|
+| Year-on-year drop ≥ 80%, or to zero | Critical |
+| Year-on-year rise ≥ 300% | Critical |
+| Year-on-year move ≥ 40% | Warning |
+| Restated year ≥ 50% / ≥ 5% different | Critical / Warning |
+| Record count to zero / moves ≥ 50% | Critical / Warning |
+| Failed cross-check | its own severity |
+
+Scans run automatically after each portal submission and on demand. In **Admin → Discrepancies** each flag can be **dismissed** (with a note for the auditor) or sent back as a **correction request** (the maker-checker route). A flag whose figure is corrected resolves itself.
+
+**AI review is optional and provider-agnostic.** Set `AI_PROVIDER` (`openai`, `openrouter`, `anthropic`, `gemini` or `openai-compatible` with `AI_BASE_URL`) and `AI_API_KEY` in `.env`. "Scan + AI review" then sends the open flags, as aggregated figures with no records, names or contacts, and the model adds its own severity view, a rationale and a question for the department. Replies naming unknown flags, or quoting figures not in the data, are rejected. Rule severities and figures are never overwritten. Every call is stored in the AI request log (Admin and Auditor). If the provider is down or unset, the rule flags still work. Open flags also appear in §5 of the boardroom briefing.
+
+---
+
+## ⏰ Automated Deadline Reminders
+
+Sections that have not submitted are reminded on a schedule relative to each request's deadline: **7, 3 and 1 days before**, then **every 3 days after, up to 3 times** (all configurable via `REMINDER_*`, see `.env.example`).
+
+- `python manage.py send_reminders` sends whatever has fallen due; `--dry-run` previews. It is idempotent (one reminder per section per milestone), so run it as often as you like.
+  - *Docker:* the `reminders` service runs it hourly (`REMINDER_INTERVAL_SECONDS`).
+  - *Bare metal:* `scripts/deploy.sh` installs an hourly cron entry next to the ranking refresh.
+- A scheduler that was down sends one catch-up reminder, not a backlog; milestones already past at dispatch are skipped; a manual reminder within `REMINDER_MANUAL_COOLDOWN_HOURS` suppresses the automated one.
+- Every reminder rotates the officer's upload link, exactly like a manual one.
+- **Admin → Reminders** shows each open request's timeline and history; Admin can preview, run now, or pause reminders per request.
+
+---
+
 ## 🧪 Testing & Continuous Integration
 
-The project includes an enterprise-grade automated test suite with **161 backend tests** and **163 frontend tests** (100% passing), statement coverage reporting across all Django apps, and a 5-stage GitHub Actions CI pipeline.
+The project includes an enterprise-grade automated test suite with **650 backend tests** and **200 frontend tests** (100% passing), statement coverage reporting across all Django apps, and a 5-stage GitHub Actions CI pipeline.
 
 For in-depth details, architecture diagrams, and scenario matrices, see [**TESTING.md**](./TESTING.md).
 

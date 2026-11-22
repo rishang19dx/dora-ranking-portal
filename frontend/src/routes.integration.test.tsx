@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AppRoutes from './routes';
-import { renderWithProviders } from './test/test-utils';
+import { renderWithProviders, signInAs } from './test/test-utils';
 
 vi.mock('./services/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./services/api')>();
@@ -37,10 +37,22 @@ vi.mock('./services/api', async (importOriginal) => {
       list: vi.fn().mockResolvedValue({ count: 0, page: 1, pageSize: 50, results: [] }),
       download: vi.fn().mockResolvedValue(undefined),
     },
+    publicRankingService: {
+      systems: vi.fn().mockResolvedValue({ institute: 'IIT Mandi', lowerIsBetter: true, hasDemoData: false, systems: [] }),
+      listExternal: vi.fn().mockResolvedValue({ systems: [], results: [] }),
+    },
+    assignmentService: {
+      mine: vi.fn().mockResolvedValue({ unitIds: [], tasks: [] }),
+    },
+    authService: {
+      ...actual.authService,
+      // The guard re-reads the profile on entry; serve the stored one.
+      fetchMe: vi.fn(async () => JSON.parse(localStorage.getItem('dora_user') || 'null')),
+    },
   };
 });
 
-import { rankingsService } from './services/api';
+import { rankingsService, assignmentService } from './services/api';
 
 type FetchHandler = (url: string, init?: RequestInit) => Partial<Response> & { json?: () => Promise<unknown> };
 
@@ -95,26 +107,29 @@ describe('routing', () => {
   it('renders the public landing page at /', () => {
     renderApp('/');
     expect(screen.getByRole('button', { name: /NIRF & Rankings/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Admin Portal/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Staff Sign In/i })).toBeInTheDocument();
   });
 
   it('redirects unknown paths to the public landing page', () => {
     renderApp('/definitely/not/a/page');
-    expect(screen.getByRole('link', { name: /Admin Portal/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Staff Sign In/i })).toBeInTheDocument();
   });
 
   it('renders the admin dashboard inside the dashboard layout at /admin', () => {
+    signInAs('ADMIN');
     renderApp('/admin');
     expect(screen.getByRole('heading', { name: 'Executive Dashboard' })).toBeInTheDocument();
     expect(screen.getAllByText('Data Collection').length).toBeGreaterThan(0); // sidebar
   });
 
   it('renders the settings route', () => {
+    signInAs('ADMIN');
     renderApp('/admin/settings');
     expect(screen.getByText('Portal Configuration')).toBeInTheDocument();
   });
 
   it('renders the nodal officer dashboard at /nodal-officer', () => {
+    signInAs('NODAL_OFFICER');
     renderApp('/nodal-officer');
     expect(screen.getByRole('heading', { name: 'Officer Overview' })).toBeInTheDocument();
     expect(screen.getAllByText('My Dashboard').length).toBeGreaterThan(0);
@@ -135,29 +150,85 @@ describe('public landing flows', () => {
     await userEvent.click(screen.getByRole('button', { name: /NIRF & Rankings/i }));
     await userEvent.click(screen.getByRole('button', { name: /NIRF Official Live/i }));
     await waitFor(() => expect(rankingsService.getRankings).toHaveBeenCalled());
-    expect(screen.getByRole('link', { name: /Admin Portal/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Staff Sign In/i })).toBeInTheDocument();
   });
 
-  it('navigates from the landing page to the admin portal', async () => {
+  it('takes a signed-in admin from the landing page to their dashboard', async () => {
+    signInAs('ADMIN');
     renderApp('/');
-    await userEvent.click(screen.getByRole('link', { name: /Admin Portal/i }));
+    await userEvent.click(screen.getByRole('link', { name: /My Dashboard/i }));
     expect(await screen.findByRole('heading', { name: 'Executive Dashboard' })).toBeInTheDocument();
   });
 
-  it('navigates from the landing page to the nodal officer portal', async () => {
+  it('takes a signed-in nodal officer to the officer portal', async () => {
+    signInAs('NODAL_OFFICER');
     renderApp('/');
-    await userEvent.click(screen.getByRole('link', { name: /Nodal Officer Portal/i }));
+    await userEvent.click(screen.getByRole('link', { name: /My Dashboard/i }));
     expect(await screen.findByRole('heading', { name: 'Officer Overview' })).toBeInTheDocument();
   });
 
   it('opens the login modal from the header', async () => {
     renderApp('/');
     await userEvent.click(screen.getByRole('button', { name: /Admin Login/i }));
-    expect(await screen.findByRole('heading', { name: /IIT Mandi Admin Login/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Ranking Portal Login/i })).toBeInTheDocument();
+  });
+});
+
+describe('public portal deep links', () => {
+  it('opens the Ranking Systems tab from ?tab=systems without signing in', async () => {
+    renderApp('/?tab=systems');
+    expect(await screen.findByRole('heading', { name: /across ranking systems/i })).toBeInTheDocument();
+    expect(screen.getByText(/No ranking results have been published yet/)).toBeInTheDocument();
+  });
+});
+
+describe('route guards (spec 2.18)', () => {
+  it('sends an anonymous visitor to sign in instead of the admin suite', async () => {
+    renderApp('/admin/data-collection');
+    expect(await screen.findByRole('heading', { name: /Ranking Portal Login/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Data Collection' })).not.toBeInTheDocument();
+  });
+
+  it('keeps a nodal officer out of the admin suite', async () => {
+    signInAs('NODAL_OFFICER');
+    renderApp('/admin');
+    expect(await screen.findByText('Not available for your role')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Executive Dashboard' })).not.toBeInTheDocument();
+  });
+
+  it('keeps read-only roles off admin-only pages', async () => {
+    signInAs('DIRECTOR');
+    renderApp('/admin/data-requests/new');
+    expect(await screen.findByText('Not available for your role')).toBeInTheDocument();
+  });
+
+  it('keeps the auditor out of user management', async () => {
+    signInAs('AUDITOR');
+    renderApp('/admin/users');
+    expect(await screen.findByText('Not available for your role')).toBeInTheDocument();
+  });
+
+  it('hides dispatch from a read-only Director but shows the request list', async () => {
+    signInAs('DIRECTOR');
+    mockFetch(() => ({ json: async () => ({ requests: [baseRequest], uploads: [] }) }));
+    renderApp('/admin/data-collection');
+    expect(await screen.findByText('NIRF 2026 Faculty Data')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /New Data Request/i })).not.toBeInTheDocument();
+  });
+
+  it('sends the JWT with admin API calls', async () => {
+    signInAs('ADMIN');
+    const fetchMock = mockFetch(() => ({ json: async () => ({ requests: [], uploads: [] }) }));
+    renderApp('/admin/data-collection');
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const [, init] = fetchMock.mock.calls[0];
+    expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer test-access');
   });
 });
 
 describe('admin: data collection', () => {
+  beforeEach(() => { signInAs('ADMIN'); });
+
   it('shows the empty state when no requests exist', async () => {
     mockFetch(() => ({ json: async () => ({ requests: [], uploads: [], transport: 'outbox' }) }));
     renderApp('/admin/data-collection');
@@ -230,6 +301,8 @@ describe('admin: data collection', () => {
 });
 
 describe('admin: organogram', () => {
+  beforeEach(() => { signInAs('ADMIN'); });
+
   it('renders the organogram tree and the active unit details after loading', async () => {
     mockFetch(() => ({ json: async () => ({ coverage: {}, officers: [] }) }));
     renderApp('/admin/organogram');
@@ -258,6 +331,8 @@ describe('admin: organogram', () => {
 });
 
 describe('admin: nodal officers', () => {
+  beforeEach(() => { signInAs('ADMIN'); });
+
   it('loads and renders the nodal officers page', async () => {
     mockFetch(() => ({ json: async () => ({ officers: [], coverage: {} }) }));
     renderApp('/admin/nodal-officers');
@@ -302,15 +377,23 @@ describe('restricted upload portal (/portal/:token)', () => {
     mockFetch(() => ({ ok: false, status: 404, json: async () => ({}) }));
     renderApp('/portal/bad');
     await userEvent.click(await screen.findByRole('link', { name: /public portal/i }));
-    expect(await screen.findByRole('link', { name: /Admin Portal/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Staff Sign In/i })).toBeInTheDocument();
   });
 });
 
 describe('nodal officer flow', () => {
   it('navigates from the dashboard to the submission form', async () => {
-    // The dashboard builds its task cards from the dispatched requests, and the
-    // Submit Data link hangs off a card, so the list has to be served.
-    mockFetch(() => ({ json: async () => ({ requests: [baseRequest] }) }));
+    // The dashboard builds its task cards from the officer's own assignments,
+    // and the Submit Data link hangs off a card, so one has to be served.
+    signInAs('NODAL_OFFICER');
+    vi.mocked(assignmentService.mine).mockResolvedValueOnce({
+      unitIds: ['sbs'],
+      tasks: [{
+        requestId: 'req-1', reference: 'DR-2026-001', requestTitle: 'NIRF 2026 Faculty Data', framework: 'NIRF',
+        cycleYear: 2026, deadline: baseRequest.deadline, requestStatus: 'DISPATCHED', unitId: 'sbs',
+        unitName: 'SBS', status: 'PENDING', overdue: false,
+      }],
+    });
     renderApp('/nodal-officer');
     const main = screen.getByRole('main');
     await userEvent.click(await within(main).findByRole('link', { name: /Submit Data/i }));

@@ -2,7 +2,9 @@
 Go-live API (Phase 4): readiness, pilot + KPI evidence, UAT, DR drills,
 backups, training and sign-offs.
 
-Reads are open to Admin, Director and Auditor; writes to Admin and Director.
+Reads are open to Admin, Director and Auditor; writes are Admin-only, as
+everywhere in the portal (spec 2.18), except sign-offs, which the Director
+also records because the go/no-go decision is theirs.
 Every write is also recorded in the platform audit trail.
 """
 
@@ -14,10 +16,15 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsAdminOrDirectorOrAuditorReadOnly
+from apps.accounts.permissions import (
+    DIRECTOR,
+    IsAdminOrOversightReadOnly,
+)
 from apps.data_requests.models import DataRequest
 from apps.organogram.models import OrgUnit
 from apps.submissions.cross_checks import run_cross_checks
+from apps.submissions.discrepancies import scan_request
+from apps.submissions.models import DiscrepancyFlag, FlagSeverity, FlagStatus
 
 from . import audit
 from . import backup as backup_lib
@@ -81,7 +88,7 @@ class HealthView(APIView):
 # ---------------------------------------------------------------------------
 
 class ReadinessView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request):
         pilot = None
@@ -135,7 +142,7 @@ def _apply_scope(pilot, data):
 
 
 class PilotListView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request):
         pilots = Pilot.objects.prefetch_related('units', 'requests')
@@ -162,7 +169,7 @@ class PilotListView(APIView):
 
 
 class PilotDetailView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, pk):
         return Response(pilot_dict(get_object_or_404(Pilot, pk=pk), with_kpis=True))
@@ -219,14 +226,40 @@ def flag_dict(f: FlagReview):
     }
 
 
+def system_answers(req: DataRequest) -> dict:
+    """
+    What the discrepancy engine currently says about a request, keyed by a
+    stable check id: {key: (flagged, severity, message)}.
+
+    Re-runs the Phase 3 scan first, so the answer reflects the figures as they
+    stand. Every flag the engine has not resolved is a positive (year-on-year
+    moves, restatements, record-count swings, failed cross-checks); every
+    cross-check that passed is a negative, giving reviewers something to
+    confirm or overrule in both directions.
+    """
+    scan_request(req)
+    answers = {}
+    for flag in DiscrepancyFlag.objects.filter(request=req):
+        answers[flag.key] = (
+            flag.status != FlagStatus.RESOLVED,
+            flag.severity,
+            f'{flag.label}: {flag.message}' if flag.label else flag.message,
+        )
+    for check in run_cross_checks(req.id, req.cycle_year):
+        key = f"CROSS_CHECK:{check['id']}"
+        if check.get('passed', True) and not answers.get(key, (False,))[0]:
+            answers[key] = (False, str(check.get('severity', 'info')).upper(), check.get('message', ''))
+    return answers
+
+
 class PilotFlagReviewsView(APIView):
     """
     GET  the pilot's reviewed checks.
-    POST {requestId} runs the automated cross-checks for that request now and
+    POST {requestId} re-runs the discrepancy engine for that request and
          queues each result for a reviewer verdict. Re-syncing refreshes the
          system's answer; a changed answer resets the verdict to PENDING.
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, pk):
         pilot = get_object_or_404(Pilot, pk=pk)
@@ -242,29 +275,28 @@ class PilotFlagReviewsView(APIView):
             pilot.requests.add(req)
 
         created = updated = 0
-        for result in run_cross_checks(req.id, req.cycle_year):
-            flagged = not result.get('passed', True)
-            severity = result.get('severity', 'info')
+        for key, (flagged, severity, message) in system_answers(req).items():
+            critical = severity == FlagSeverity.CRITICAL
             review, was_created = FlagReview.objects.get_or_create(
-                pilot=pilot, request=req, check_id=result['id'],
+                pilot=pilot, request=req, check_id=key[:128],
                 defaults={
-                    'severity': severity,
-                    'critical': severity == 'error',
+                    'severity': severity.lower(),
+                    'critical': critical,
                     'system_flagged': flagged,
-                    'message': result.get('message', ''),
+                    'message': message,
                 },
             )
             if was_created:
                 created += 1
-            elif review.system_flagged != flagged or review.message != result.get('message', ''):
+            elif review.system_flagged != flagged or review.message != message or review.critical != critical:
                 if review.system_flagged != flagged:
                     review.verdict = FlagVerdict.PENDING
                     review.reviewer = None
                     review.reviewed_at = None
                 review.system_flagged = flagged
-                review.severity = severity
-                review.critical = severity == 'error'
-                review.message = result.get('message', '')
+                review.severity = severity.lower()
+                review.critical = critical
+                review.message = message
                 review.save()
                 updated += 1
 
@@ -273,7 +305,7 @@ class PilotFlagReviewsView(APIView):
 
 
 class FlagReviewDetailView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def patch(self, request, pk):
         review = get_object_or_404(FlagReview.objects.select_related('pilot', 'request'), pk=pk)
@@ -313,7 +345,7 @@ def execution_dict(e: UatExecution):
 
 
 class UatScenarioListView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request):
         scenarios = UatScenario.objects.filter(active=True).prefetch_related('executions')
@@ -335,7 +367,7 @@ class UatScenarioListView(APIView):
 
 
 class UatExecutionCreateView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def post(self, request, code):
         scenario = get_object_or_404(UatScenario, code=code, active=True)
@@ -392,7 +424,7 @@ class DrillListView(APIView):
     production host) drill run by IT Services with a named witness; automated
     scratch-database drills are recorded by `manage.py dr_drill`.
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request):
         return Response([drill_dict(d) for d in DisasterRecoveryDrill.objects.all()[:50]])
@@ -430,7 +462,7 @@ class DrillListView(APIView):
 
 
 class BackupListView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request):
         rows = backup_lib.list_backups()
@@ -474,7 +506,7 @@ def training_dict(t: TrainingSession):
 
 
 class TrainingListView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request):
         return Response([training_dict(t) for t in TrainingSession.objects.prefetch_related('units')])
@@ -531,8 +563,12 @@ def signoff_dict(s: SignOff, with_snapshot=False):
     return data
 
 
+class IsOversightReadAdminOrDirectorSigns(IsAdminOrOversightReadOnly):
+    write_roles = IsAdminOrOversightReadOnly.write_roles + (DIRECTOR,)
+
+
 class SignOffListView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsOversightReadAdminOrDirectorSigns]
 
     def get(self, request):
         with_snapshot = request.query_params.get('snapshot') == '1'

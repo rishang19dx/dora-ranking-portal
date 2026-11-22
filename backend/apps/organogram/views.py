@@ -3,6 +3,7 @@ import csv
 import io
 import openpyxl
 from pathlib import Path
+from rest_framework.permissions import AllowAny
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,7 +18,7 @@ from .serializers import (
     ProgrammeSerializer,
     ProgrammeWriteSerializer,
 )
-from apps.accounts.permissions import IsAdminOrDirector, IsAdminOrDirectorOrAuditorReadOnly
+from apps.accounts.permissions import IsAdmin, IsAdminOrOversightReadOnly, has_oversight
 from apps.data_requests.mailer import send_mail, render_template, INVITE_TEMPLATE
 
 FIXTURES_DIR = Path(__file__).resolve().parent / 'fixtures'
@@ -29,17 +30,42 @@ def load_fixture(filename):
             return json.load(f)
     return None
 
+def _strip_contacts(node):
+    """Copy of an organogram tree node with mailboxes removed, recursively."""
+    if isinstance(node, list):
+        return [_strip_contacts(n) for n in node]
+    if not isinstance(node, dict):
+        return node
+    return {
+        k: _strip_contacts(v) for k, v in node.items() if k != 'email'
+    }
+
+
 class OrganogramOverviewView(APIView):
+    """
+    The institute structure and the data catalogue.
+
+    The structure itself is public (it is the institute's published
+    organogram), but unit mailboxes are only returned to Admin, Director and
+    Auditor: they are where data requests are sent, and a public endpoint
+    listing every one of them is a phishing target list.
+    """
+    permission_classes = [AllowAny]  # structure is public; contacts are stripped below
+
     def get(self, request):
         units = OrgUnit.objects.all()
-        units_serializer = OrgUnitSerializer(units, many=True)
+        units_data = OrgUnitSerializer(units, many=True).data
         tree = load_fixture('organogram_tree.json')
         catalogue = load_fixture('data_catalogue.json') or []
         groups = load_fixture('parameter_groups.json') or {}
 
+        if not has_oversight(request.user):
+            units_data = [_strip_contacts(dict(u)) for u in units_data]
+            tree = _strip_contacts(tree)
+
         return Response({
             'tree': tree,
-            'units': units_serializer.data,
+            'units': units_data,
             'catalogue': catalogue,
             'groups': groups,
         })
@@ -54,7 +80,7 @@ class OrgUnitContactView(APIView):
     mailbox also moves the unit's seeded nodal officer to the new address, so
     the next data request reaches the right inbox.
     """
-    permission_classes = [IsAdminOrDirector]
+    permission_classes = [IsAdmin]
 
     def patch(self, request, pk):
         unit = get_object_or_404(OrgUnit, pk=pk)
@@ -115,7 +141,7 @@ class OrgUnitCoverageView(APIView):
     assigned to it, so this is what the admin needs to clear before a cycle is
     dispatched.
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request):
         units = OrgUnit.objects.prefetch_related('nodal_officers').all()
@@ -150,6 +176,9 @@ class OrgUnitCoverageView(APIView):
         })
 
 class NodalOfficerListCreateView(APIView):
+    """The officer roster: personal contacts, so oversight roles only; Admin edits."""
+    permission_classes = [IsAdminOrOversightReadOnly]
+
     def get(self, request):
         officers = NodalOfficer.objects.prefetch_related('assigned_units').all()
         serializer = NodalOfficerSerializer(officers, many=True)
@@ -163,6 +192,8 @@ class NodalOfficerListCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class NodalOfficerDetailView(APIView):
+    permission_classes = [IsAdminOrOversightReadOnly]
+
     def get(self, request, pk):
         officer = get_object_or_404(NodalOfficer.objects.prefetch_related('assigned_units'), pk=pk)
         return Response(NodalOfficerSerializer(officer).data)
@@ -189,6 +220,9 @@ class NodalOfficerDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class NodalOfficerAccessView(APIView):
+    """Invite, revoke and restore officers, and list their live links: Admin only."""
+    permission_classes = [IsAdmin]
+
     def get(self, request, pk):
         from apps.data_requests.models import PortalAccessGrant
         from apps.data_requests.serializers import PortalAccessGrantSerializer
@@ -247,7 +281,7 @@ class NodalOfficerAccessView(APIView):
         return Response({'error': f'Unknown action: {action}'}, status=status.HTTP_400_BAD_REQUEST)
 
 class ProgrammeListCreateView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request):
         qs = Programme.objects.select_related('unit').all()
@@ -271,7 +305,7 @@ class ProgrammeListCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ProgrammeDetailView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, pk):
         prog = get_object_or_404(Programme.objects.select_related('unit'), pk=pk)
@@ -291,7 +325,7 @@ class ProgrammeDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ProgrammeImportView(APIView):
-    permission_classes = [IsAdminOrDirector]
+    permission_classes = [IsAdmin]
 
     def post(self, request):
         file_obj = request.FILES.get('file')

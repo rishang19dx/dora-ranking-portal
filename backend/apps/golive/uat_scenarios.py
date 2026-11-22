@@ -49,8 +49,9 @@ SCENARIOS = [
             'Fill a section, save a draft, reload and confirm the draft persisted.',
             'Upload a supporting proof and submit the section.',
         ],
-        'expected': 'Validation errors block submission until fixed; the submitted section becomes read-only '
-                    'and appears as SUBMITTED in the DORA review queue.',
+        'expected': 'Validation errors block submission until fixed; previous approved values and the change '
+                    'are shown beside each field; the submitted section becomes read-only and appears as '
+                    'SUBMITTED in the DORA review queue.',
     },
     {
         'code': 'UAT-06', 'area': 'Nodal officer portal', 'role': 'NODAL_OFFICER', 'priority': 'HIGH',
@@ -60,13 +61,14 @@ SCENARIOS = [
     },
     {
         'code': 'UAT-07', 'area': 'Validation', 'role': 'ADMIN', 'priority': 'CRITICAL',
-        'title': 'Rule-based validation and cross-check flags',
+        'title': 'Validation and discrepancy flags',
         'steps': [
             'Submit a section with a placement percentage above 100.',
-            'Open the request and review the cross-check panel.',
+            "Submit a figure 85% lower than last cycle's approved value.",
+            'Open Discrepancies; escalate one flag and dismiss another with a note.',
         ],
-        'expected': 'The impossible value is rejected at entry; cross-check discrepancies show with severity '
-                    'and link back to the source submission.',
+        'expected': 'The impossible value is rejected at entry; the drop is flagged CRITICAL and links to its '
+                    'submission; escalating sends a correction request; the dismissal note is kept.',
     },
     {
         'code': 'UAT-08', 'area': 'Maker-checker', 'role': 'ADMIN', 'priority': 'CRITICAL',
@@ -101,9 +103,11 @@ SCENARIOS = [
     },
     {
         'code': 'UAT-12', 'area': 'Reminders', 'role': 'ADMIN', 'priority': 'HIGH',
-        'title': 'Send reminders to pending sections',
-        'steps': ['Open a request with pending targets.', 'Send reminders.'],
-        'expected': 'Only pending/partial targets are reminded, reminder counts increase, and the old link stops working.',
+        'title': 'Manual and scheduled reminders',
+        'steps': ['Open a request with pending targets.', 'Send reminders.',
+                  'Open Reminders, check the schedule, then pause it.'],
+        'expected': 'Only pending/partial targets are reminded, the old link stops working, the automated '
+                    'schedule shows upcoming reminders, and a paused request sends none.',
     },
     {
         'code': 'UAT-13', 'area': 'Analytics', 'role': 'DIRECTOR', 'priority': 'HIGH',
@@ -120,7 +124,8 @@ SCENARIOS = [
     {
         'code': 'UAT-15', 'area': 'Public portal', 'role': 'PUBLIC', 'priority': 'HIGH',
         'title': 'Public visitor views ranking trends without signing in',
-        'steps': ['Open the portal in a private window.', 'Browse NIRF trends and 2nd-generation IIT comparisons.'],
+        'steps': ['Open the portal in a private window.',
+                  'Browse NIRF trends, 2nd-generation IIT comparisons and the QS/THE/MDRA results DORA has published.'],
         'expected': 'Charts load without login; no administrative data or links are exposed.',
     },
     {

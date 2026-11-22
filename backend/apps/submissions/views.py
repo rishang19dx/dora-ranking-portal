@@ -18,7 +18,11 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from apps.organogram.models import NodalOfficer, OrgUnit, Programme
 from apps.data_requests.models import DataRequest, DataRequestTarget, PortalAccessGrant, ProofUpload, TargetStatus
 from apps.data_requests.services import hash_token
-from apps.accounts.permissions import IsAdminOrDirector, IsAdminOrDirectorOrAuditorReadOnly
+from .history import section_history, notable_changes, unit_history
+from .discrepancies import scan_quietly
+from apps.accounts.permissions import (
+    IsAdmin, IsAdminOrAuditorReadOnly, IsAdminOrOversightReadOnly, effective_role, has_oversight,
+)
 
 from .models import (
     FormSchema,
@@ -445,6 +449,8 @@ class PortalFormsView(APIView):
                 'section': sec,
                 'submission': SectionSubmissionSerializer(sub).data,
                 'records': records_by_block,
+                # Previously approved figures for this unit and section (2.6).
+                'history': section_history(sub, current_records=records_by_block, resolved_section=sec),
                 'proofUploadsCount': proofs.count(),
                 'proofRequired': sec.get('proof', {}).get('required', False),
             })
@@ -900,6 +906,10 @@ class PortalFormSubmitView(APIView):
                 target.status = TargetStatus.PARTIAL
             target.save()
 
+        # Re-check the cycle for discrepancies now this return is in (2.9).
+        # Advisory only: a failed scan never fails the submission.
+        scan_quietly(grant.request)
+
         return Response(SectionSubmissionSerializer(sub).data)
 
 # -----------------------------------------------------------------------------
@@ -1211,7 +1221,7 @@ class PortalRecordConfirmView(APIView):
 # -----------------------------------------------------------------------------
 
 class AdminSubmissionsListView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request):
         qs = SectionSubmission.objects.select_related('request', 'org_unit', 'submitted_by').all()
@@ -1232,7 +1242,7 @@ class AdminSubmissionsListView(APIView):
         return Response(serializer.data)
 
 class AdminSubmissionDetailView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, pk):
         sub = get_object_or_404(
@@ -1243,7 +1253,7 @@ class AdminSubmissionDetailView(APIView):
 
         # Records
         pii_fields = {'name', 'gender', 'employeeId', 'email', 'alumniName', 'coordinator', 'coordinatorContact'}
-        is_elevated = getattr(request.user, 'role', '') in ('ADMIN', 'DIRECTOR') or request.user.is_superuser
+        is_elevated = effective_role(request.user) in ('ADMIN', 'DIRECTOR')
 
         recs = []
         for r in sub.records.all():
@@ -1276,6 +1286,16 @@ class AdminSubmissionDetailView(APIView):
         # Cross checks
         data['crossChecks'] = run_cross_checks(sub.request_id, sub.request.cycle_year)
 
+        # Previous approved cycle, side by side (spec 2.6): the reviewer sees
+        # the same "Previous / New / Change" the officer saw while typing.
+        resolved = resolve_section_schema(
+            prov_sec, sub.request.cycle_year, unit=sub.org_unit,
+            enums=prov_schema.content.get('enums', {}) if prov_schema else {},
+        ) if prov_sec else None
+        history = section_history(sub, resolved_section=resolved)
+        data['history'] = history
+        data['notableChanges'] = notable_changes(history)
+
         return Response(data)
 
 class AdminSubmissionActionView(APIView):
@@ -1295,7 +1315,7 @@ class AdminSubmissionActionView(APIView):
     - `reopen`             APPROVED / CORRECTION_REQUESTED -> DRAFT. An
                            audited override to unlock a settled submission.
     """
-    permission_classes = [IsAdminOrDirector]
+    permission_classes = [IsAdmin]
 
     TRANSITIONS = {
         'approve': ({SubmissionStatus.SUBMITTED}, SubmissionStatus.APPROVED, 'APPROVE', False),
@@ -1377,7 +1397,7 @@ class AdminSubmissionActionView(APIView):
         return Response(SectionSubmissionSerializer(sub).data)
 
 class NirfRollupView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, year):
         category = request.query_params.get('category', 'OVERALL').upper()
@@ -1402,14 +1422,7 @@ def resolve_visible_units(user, requested_unit_id=None):
 
     Returns (unit_ids or None for all, error_response or None).
     """
-    role = getattr(user, 'role', None)
-    privileged = (
-        role in ('ADMIN', 'DIRECTOR', 'AUDITOR')
-        or user.is_staff
-        or user.is_superuser
-    )
-
-    if privileged:
+    if has_oversight(user):
         return ([requested_unit_id] if requested_unit_id else None), None
 
     officer = NodalOfficer.objects.filter(email__iexact=(user.email or '')).first()
@@ -1531,7 +1544,7 @@ class BoardroomBriefingView(APIView):
     Carries the cycle's submission statistics, the discrepancies cross-checks
     flagged, and scenario-based score projections.
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, year):
         from apps.rankings.views import load_ranking_data
@@ -1542,8 +1555,10 @@ class BoardroomBriefingView(APIView):
         except (TypeError, ValueError):
             return Response({'error': 'Invalid cycle year.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        raw_year = request.query_params.get('rankingYear')
         try:
-            ranking_year = int(request.query_params.get('rankingYear', 2025))
+            # Default: the newest published NIRF cycle on disk.
+            ranking_year = int(raw_year) if raw_year not in (None, '') else None
         except (TypeError, ValueError):
             return Response({'error': 'Invalid rankingYear.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1563,7 +1578,7 @@ class BoardroomBriefingView(APIView):
         filename = f"DORA_Boardroom_Briefing_NIRF_{cycle_year}.pdf"
         audit_export(
             request, 'boardroom-briefing', pdf.getvalue(),
-            cycleYear=cycle_year, rankingYear=ranking_year,
+            cycleYear=cycle_year, rankingYear=ranking_year or 'latest',
             requestId=request.query_params.get('requestId'), filename=filename,
         )
         response = HttpResponse(pdf.getvalue(), content_type='application/pdf')
@@ -1600,7 +1615,7 @@ class AuditLogView(APIView):
     across the recorded changes, and CSV export of the filtered set
     (`?export=csv`).
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
     MAX_PAGE_SIZE = 200
     CSV_LIMIT = 20000
 
@@ -1761,7 +1776,7 @@ class ProofRepositoryView(APIView):
     the schema sections it supports. Read-only for Admin, Director and
     Auditor (spec 2.18: the auditor has read access to raw proofs).
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
     MAX_PAGE_SIZE = 200
 
     def get(self, request):
@@ -1837,7 +1852,7 @@ class ProofDownloadView(APIView):
     production not at all. This serves them to Admin, Director and Auditor
     only, and re-verifies the stored SHA-256 so a tampered file is refused.
     """
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, pk):
         from django.http import FileResponse
@@ -1901,7 +1916,7 @@ class RecordsTemplateView(APIView):
         return response
 
 class NirfExportView(APIView):
-    permission_classes = [IsAdminOrDirectorOrAuditorReadOnly]
+    permission_classes = [IsAdminOrOversightReadOnly]
 
     def get(self, request, year):
         category = request.query_params.get('category', 'OVERALL').upper()
@@ -1924,3 +1939,199 @@ class NirfExportView(APIView):
             return response
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SubmissionHistoryView(APIView):
+    """
+    Approved returns of one unit and section across past cycles (spec 2.6:
+    "storage and easy backend querying of at least the previous three years").
+
+    GET /api/nirf/history/?unitId=scee&sectionId=sanctioned-intake[&cycles=3][&before=2027]
+
+    Raw departmental figures, so oversight roles only; a nodal officer sees
+    their own history beside the form through their upload link instead.
+    """
+    permission_classes = [IsAdminOrOversightReadOnly]
+
+    def get(self, request):
+        unit_id = request.query_params.get('unitId')
+        section_id = request.query_params.get('sectionId')
+        if not unit_id or not section_id:
+            return Response({'error': 'unitId and sectionId are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            cycles = max(1, min(10, int(request.query_params.get('cycles', 3))))
+            before = request.query_params.get('before')
+            before = int(before) if before else None
+        except (TypeError, ValueError):
+            return Response({'error': 'cycles and before must be integers.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            'unitId': unit_id,
+            'sectionId': section_id,
+            'cycles': unit_history(unit_id, section_id, before_cycle=before, cycles=cycles),
+        })
+
+
+# -----------------------------------------------------------------------------
+# Discrepancy flagging (spec 2.9)
+# -----------------------------------------------------------------------------
+
+def serialize_flag(f):
+    return {
+        'id': f.id,
+        'requestId': f.request_id,
+        'submissionId': f.submission_id,
+        'submissionStatus': f.submission.status if f.submission_id else None,
+        'unitId': f.org_unit_id,
+        'unitName': (f.org_unit.short_name or f.org_unit.name) if f.org_unit_id else None,
+        'sectionId': f.section_id,
+        'kind': f.kind,
+        'label': f.label,
+        'severity': f.severity,
+        'message': f.message,
+        'previous': f.previous_value,
+        'current': f.current_value,
+        'changePct': f.change_pct,
+        'details': f.details,
+        'ai': {
+            'severity': f.ai_severity,
+            'rationale': f.ai_rationale,
+            'question': f.ai_question,
+            'model': f.ai_log.model if f.ai_log_id else None,
+            'logId': f.ai_log_id,
+        } if f.ai_rationale else None,
+        'status': f.status,
+        'resolutionNote': f.resolution_note,
+        'resolvedBy': f.resolved_by.username if f.resolved_by_id else None,
+        'resolvedAt': f.resolved_at,
+        'firstSeen': f.first_seen,
+        'lastSeen': f.last_seen,
+    }
+
+
+class DiscrepancyListView(APIView):
+    """
+    GET  /api/nirf/discrepancies/?requestId=&status=&severity=   flags for a request (oversight)
+    """
+    permission_classes = [IsAdminOrOversightReadOnly]
+
+    def get(self, request):
+        from apps.data_requests.models import DataRequest as DR
+        from . import ai_client
+        from .discrepancies import SEVERITY_ORDER, thresholds
+        from .models import DiscrepancyFlag
+
+        request_id = request.query_params.get('requestId')
+        if not request_id:
+            latest = DR.objects.order_by('-cycle_year', '-created_at').first()
+            request_id = latest.id if latest else None
+        flags = (DiscrepancyFlag.objects.filter(request_id=request_id)
+                 .select_related('org_unit', 'submission', 'resolved_by', 'ai_log'))
+        st = request.query_params.get('status')
+        if st:
+            flags = flags.filter(status=st.upper())
+        sev = request.query_params.get('severity')
+        if sev:
+            flags = flags.filter(severity=sev.upper())
+        flags = sorted(flags, key=lambda f: (f.status != 'OPEN', SEVERITY_ORDER.get(f.severity, 9), f.label))
+
+        all_flags = DiscrepancyFlag.objects.filter(request_id=request_id)
+        summary = {
+            'open': all_flags.filter(status='OPEN').count(),
+            'openCritical': all_flags.filter(status='OPEN', severity='CRITICAL').count(),
+            'openWarning': all_flags.filter(status='OPEN', severity='WARNING').count(),
+            'escalated': all_flags.filter(status='ESCALATED').count(),
+            'dismissed': all_flags.filter(status='DISMISSED').count(),
+            'resolved': all_flags.filter(status='RESOLVED').count(),
+        }
+        return Response({
+            'requestId': request_id,
+            'requests': [
+                {'id': r.id, 'reference': r.reference, 'title': r.title, 'cycleYear': r.cycle_year}
+                for r in DR.objects.order_by('-cycle_year', '-created_at')[:50]
+            ],
+            'summary': summary,
+            'thresholds': thresholds(),
+            'ai': ai_client.status(),
+            'flags': [serialize_flag(f) for f in flags],
+        })
+
+
+class DiscrepancyScanView(APIView):
+    """
+    POST /api/nirf/discrepancies/scan/  {"requestId": "...", "useAi": false}   (Admin)
+
+    Re-runs the rules; with useAi and a configured provider, the open flags
+    are then sent for AI review.
+    """
+    permission_classes = [IsAdmin]
+
+    def post(self, request):
+        from apps.data_requests.models import DataRequest as DR
+        from .discrepancies import ai_review, scan_request
+
+        data_req = get_object_or_404(DR, pk=request.data.get('requestId'))
+        report = {'scan': scan_request(data_req)}
+        if str(request.data.get('useAi', '')).lower() in ('1', 'true', 'yes'):
+            report['ai'] = ai_review(data_req, user=request.user)
+        return Response(report)
+
+
+class DiscrepancyActionView(APIView):
+    """
+    POST /api/nirf/discrepancies/<id>/  {"action": "dismiss"|"escalate"|"reopen", "note": "..."}   (Admin)
+    """
+    permission_classes = [IsAdmin]
+
+    def post(self, request, pk):
+        from .discrepancies import FlagActionError, dismiss, escalate, reopen
+        from .models import DiscrepancyFlag
+
+        flag = get_object_or_404(DiscrepancyFlag.objects.select_related('submission', 'org_unit'), pk=pk)
+        action = str(request.data.get('action', '')).lower()
+        note = request.data.get('note', '')
+        try:
+            if action == 'dismiss':
+                dismiss(flag, request.user, note)
+            elif action == 'escalate':
+                escalate(flag, request.user, note)
+            elif action == 'reopen':
+                reopen(flag)
+            else:
+                return Response({'error': f"Unknown action '{action}'."}, status=status.HTTP_400_BAD_REQUEST)
+        except FlagActionError as exc:
+            return Response({'error': str(exc)}, status=exc.status)
+        flag.refresh_from_db()
+        return Response(serialize_flag(flag))
+
+
+class AIRequestLogView(APIView):
+    """
+    GET /api/ai/requests/   every AI call, newest first (spec 9 auditability).
+    Admin and Auditor; Director has no need for the raw prompts.
+    """
+    permission_classes = [IsAdminOrAuditorReadOnly]
+
+    def get(self, request):
+        from .models import AIRequestLog
+        logs = AIRequestLog.objects.select_related('request', 'triggered_by')[:100]
+        return Response([
+            {
+                'id': log.id,
+                'createdAt': log.created_at,
+                'provider': log.provider,
+                'model': log.model,
+                'purpose': log.purpose,
+                'requestReference': log.request.reference if log.request_id else None,
+                'triggeredBy': log.triggered_by.username if log.triggered_by_id else None,
+                'status': log.status,
+                'error': log.error,
+                'latencyMs': log.latency_ms,
+                'flagsSent': log.flags_sent,
+                'flagsAnnotated': log.flags_annotated,
+                'itemsRejected': log.items_rejected,
+                'promptSha256': log.prompt_sha256,
+                'prompt': log.prompt,
+                'response': log.response_text,
+            }
+            for log in logs
+        ])

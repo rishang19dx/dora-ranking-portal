@@ -22,6 +22,8 @@ import OrgTree, { ORG_TYPE_STYLES } from '../../components/organogram/OrgTree';
 import { useToast } from '../../components/ToastProvider';
 import { ORG_UNITS, getUnit, unitLabel } from '../../lib/organogram';
 import type { NodalOfficer, OfficerStatus, UnitCoverage } from '../../lib/types';
+import { authFetch } from '../../lib/authFetch';
+import { canWriteNow } from '../../lib/rbac';
 
 const spring = { type: 'spring' as const, stiffness: 100, damping: 20 };
 
@@ -78,7 +80,7 @@ function NodalOfficers() {
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch('/api/nodal-officers/');
+      const response = await authFetch('/api/nodal-officers/');
       if (!response.ok) throw new Error('Unable to load the nodal officer roster.');
       const raw = await response.json();
       const officers: NodalOfficer[] = Array.isArray(raw) ? raw : (raw.officers ?? []);
@@ -171,7 +173,7 @@ function NodalOfficers() {
         notes: form.notes.trim() || undefined,
         unitIds: form.unitIds,
       };
-      const response = await fetch(
+      const response = await authFetch(
         editing ? `/api/nodal-officers/${editing.id}/` : '/api/nodal-officers/',
         {
           method: editing ? 'PATCH' : 'POST',
@@ -208,7 +210,7 @@ function NodalOfficers() {
   const runAccessAction = async (officer: NodalOfficer, action: 'INVITE' | 'REVOKE' | 'RESTORE') => {
     setBusyId(officer.id);
     try {
-      const response = await fetch(`/api/nodal-officers/${officer.id}/access/`, {
+      const response = await authFetch(`/api/nodal-officers/${officer.id}/access/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
@@ -227,7 +229,7 @@ function NodalOfficers() {
   const removeOfficer = async (officer: NodalOfficer) => {
     setBusyId(officer.id);
     try {
-      const response = await fetch(`/api/nodal-officers/${officer.id}/`, { method: 'DELETE' });
+      const response = await authFetch(`/api/nodal-officers/${officer.id}/`, { method: 'DELETE' });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error ?? 'The officer could not be removed.');
@@ -258,12 +260,14 @@ function NodalOfficers() {
             Assignments here decide who receives a targeted data request.
           </p>
         </div>
-        <button
-          onClick={() => openCreate()}
-          className="bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(90,115,89,0.3)] flex items-center gap-2 shrink-0"
-        >
-          <UserPlus weight="bold" className="w-4 h-4" /> Add Officer
-        </button>
+        {canWriteNow() && (
+          <button
+            onClick={() => openCreate()}
+            className="bg-sage-600 hover:bg-sage-700 active:scale-[0.98] text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-[0_8px_16px_-4px_rgba(90,115,89,0.3)] flex items-center gap-2 shrink-0"
+          >
+            <UserPlus weight="bold" className="w-4 h-4" /> Add Officer
+          </button>
+        )}
       </div>
 
       {uncoveredUnits.length > 0 && (
@@ -282,13 +286,15 @@ function NodalOfficers() {
               </p>
               <div className="flex flex-wrap gap-2 mt-4">
                 {uncoveredUnits.slice(0, 10).map((unit) => (
-                  <button
-                    key={unit.id}
-                    onClick={() => openCreate([unit.id])}
-                    className="px-3 py-1.5 rounded-lg bg-white border border-orange-200/60 text-xs font-semibold text-zinc-700 hover:border-orange-400 hover:text-orange-700 transition-colors"
-                  >
-                    {unit.shortName ?? unit.name}
-                  </button>
+                  canWriteNow() && (
+                    <button
+                      key={unit.id}
+                      onClick={() => openCreate([unit.id])}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-orange-200/60 text-xs font-semibold text-zinc-700 hover:border-orange-400 hover:text-orange-700 transition-colors"
+                    >
+                      {unit.shortName ?? unit.name}
+                    </button>
+                  )
                 ))}
                 {uncoveredUnits.length > 10 && (
                   <span className="px-3 py-1.5 text-xs font-semibold text-orange-700/70">
@@ -419,42 +425,52 @@ function NodalOfficers() {
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex items-center justify-end gap-1">
-                        <IconButton
-                          title="Send invitation"
-                          disabled={busyId === officer.id}
-                          onClick={() => runAccessAction(officer, 'INVITE')}
-                        >
-                          <PaperPlaneTilt weight="bold" className="w-4 h-4" />
-                        </IconButton>
-                        <IconButton title="Edit officer" onClick={() => openEdit(officer)}>
-                          <PencilSimple weight="bold" className="w-4 h-4" />
-                        </IconButton>
-                        {officer.status === 'REVOKED' ? (
+                        {canWriteNow() && (
                           <IconButton
-                            title="Restore access"
+                            title="Send invitation"
                             disabled={busyId === officer.id}
-                            onClick={() => runAccessAction(officer, 'RESTORE')}
+                            onClick={() => runAccessAction(officer, 'INVITE')}
                           >
-                            <ArrowCounterClockwise weight="bold" className="w-4 h-4" />
-                          </IconButton>
-                        ) : (
-                          <IconButton
-                            title="Revoke portal access"
-                            tone="warn"
-                            disabled={busyId === officer.id}
-                            onClick={() => runAccessAction(officer, 'REVOKE')}
-                          >
-                            <Prohibit weight="bold" className="w-4 h-4" />
+                            <PaperPlaneTilt weight="bold" className="w-4 h-4" />
                           </IconButton>
                         )}
-                        <IconButton
-                          title="Remove from roster"
-                          tone="danger"
-                          disabled={busyId === officer.id}
-                          onClick={() => removeOfficer(officer)}
-                        >
-                          <TrashSimple weight="bold" className="w-4 h-4" />
-                        </IconButton>
+                        {canWriteNow() && (
+                          <IconButton title="Edit officer" onClick={() => openEdit(officer)}>
+                            <PencilSimple weight="bold" className="w-4 h-4" />
+                          </IconButton>
+                        )}
+                        {officer.status === 'REVOKED' ? (
+                          canWriteNow() && (
+                            <IconButton
+                              title="Restore access"
+                              disabled={busyId === officer.id}
+                              onClick={() => runAccessAction(officer, 'RESTORE')}
+                            >
+                              <ArrowCounterClockwise weight="bold" className="w-4 h-4" />
+                            </IconButton>
+                          )
+                        ) : (
+                          canWriteNow() && (
+                            <IconButton
+                              title="Revoke portal access"
+                              tone="warn"
+                              disabled={busyId === officer.id}
+                              onClick={() => runAccessAction(officer, 'REVOKE')}
+                            >
+                              <Prohibit weight="bold" className="w-4 h-4" />
+                            </IconButton>
+                          )
+                        )}
+                        {canWriteNow() && (
+                          <IconButton
+                            title="Remove from roster"
+                            tone="danger"
+                            disabled={busyId === officer.id}
+                            onClick={() => removeOfficer(officer)}
+                          >
+                            <TrashSimple weight="bold" className="w-4 h-4" />
+                          </IconButton>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -18,6 +18,11 @@ from .views import (
     ProofRepositoryView,
     ProofDownloadView,
     RecordsTemplateView,
+    SubmissionHistoryView,
+    DiscrepancyListView,
+    DiscrepancyScanView,
+    DiscrepancyActionView,
+    AIRequestLogView,
 )
 
 urlpatterns = [
@@ -58,6 +63,20 @@ urlpatterns = [
     # Audit trail (auditor interface, spec 2.11)
     path('audit-log/', AuditLogView.as_view(), name='audit_log'),
     path('audit-log', AuditLogView.as_view()),
+
+    # Historical approved values (spec 2.6)
+    path('nirf/history/', SubmissionHistoryView.as_view(), name='nirf_history'),
+    path('nirf/history', SubmissionHistoryView.as_view()),
+
+    # Discrepancy flagging and AI audit log (spec 2.9, 9)
+    path('nirf/discrepancies/', DiscrepancyListView.as_view(), name='discrepancies'),
+    path('nirf/discrepancies', DiscrepancyListView.as_view()),
+    path('nirf/discrepancies/scan/', DiscrepancyScanView.as_view(), name='discrepancies_scan'),
+    path('nirf/discrepancies/scan', DiscrepancyScanView.as_view()),
+    path('nirf/discrepancies/<str:pk>/', DiscrepancyActionView.as_view(), name='discrepancy_action'),
+    path('nirf/discrepancies/<str:pk>', DiscrepancyActionView.as_view()),
+    path('ai/requests/', AIRequestLogView.as_view(), name='ai_requests'),
+    path('ai/requests', AIRequestLogView.as_view()),
 
     # Category Rollup & Export
     path('nirf/cycles/<str:year>/rollup/', NirfRollupView.as_view(), name='nirf_rollup'),

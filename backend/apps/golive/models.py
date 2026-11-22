@@ -82,7 +82,8 @@ class FlagVerdict(models.TextChoices):
 
 class FlagReview(models.Model):
     """
-    A reviewer's ground-truth judgement on one automated discrepancy check.
+    A reviewer's ground-truth judgement on one automated discrepancy check
+    (a DiscrepancyFlag the engine raised, or a cross-check it passed).
 
     `system_flagged` is what the system said (check failed = flagged). The
     reviewer's verdict turns that into the confusion matrix the AI-reliability
@@ -98,7 +99,7 @@ class FlagReview(models.Model):
     pilot = models.ForeignKey(Pilot, on_delete=models.CASCADE, related_name='flag_reviews')
     request = models.ForeignKey('data_requests.DataRequest', on_delete=models.CASCADE, related_name='flag_reviews')
     check_id = models.CharField(max_length=128)
-    severity = models.CharField(max_length=16)  # info | warning | error
+    severity = models.CharField(max_length=16)  # critical | warning | info (discrepancy engine)
     critical = models.BooleanField(default=False)
     system_flagged = models.BooleanField()
     message = models.TextField(blank=True, default='')

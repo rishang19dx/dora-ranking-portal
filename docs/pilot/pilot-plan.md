@@ -13,7 +13,7 @@ Proposal §3.3: before a campus-wide launch, a closed pilot with selected depart
 1. **Dispatch** a data request to the pilot sections (Data Collection).
 2. **Go-Live Readiness → Pilot & KPIs → Create pilot**, choosing that request. Its target sections become the pilot scope.
 3. **Start pilot.** Officers submit; DORA reviews with maker-checker as normal.
-4. When submissions are in, press **Run checks** for the request. Every automated cross-check result is queued for review.
+4. When submissions are in, press **Run checks** for the request. This re-runs the discrepancy engine (the same one behind **Discrepancies**). Every unresolved flag is queued as "system flagged", and every cross-check that passed is queued as "system passed".
 5. For each check, a DORA reviewer who knows the data records the ground truth:
    - **System correct**: the flag was a real discrepancy, or the pass was genuinely clean.
    - **System wrong**: a false alarm, or a discrepancy the system missed. A reason is required.
@@ -24,13 +24,13 @@ Proposal §3.3: before a campus-wide launch, a closed pilot with selected depart
 
 | KPI | Target | Computed from |
 |---|---|---|
-| **AI reliability** | Accuracy > 95% **and** 0 false positives on critical checks | Reviewer verdicts. Accuracy = (correct flags + correct passes) / all reviewed checks. A *critical* check is one of `error` severity. Pending verdicts keep the KPI red. |
+| **AI reliability** | Accuracy > 95% **and** 0 false positives on critical checks | Reviewer verdicts. Accuracy = (correct flags + correct passes) / all reviewed checks. A *critical* check is a flag the engine graded CRITICAL. Pending verdicts keep the KPI red. |
 | **Data auditability** | 100% | For pilot submissions: every audit row must name an actor that resolves to a real officer or user, and every modification visible in the data (edits, submissions, reviews) must have its audit entry. Any exception is listed by ID. |
 | **System resilience** | Witnessed drill with RPO ≤ 24 h and RTO ≤ 8 h, integrity verified | The most recent witnessed DR drill |
 
 All three appear on the Readiness tab with their evidence.
 
-> **Note on "AI".** In this release the discrepancy flags come from deterministic cross-checks (`apps/submissions/cross_checks.py`), not a language model. The KPI measures whatever produces the flags, so it stays valid if an AI-assisted check is added later. If one is, its requests must be logged and its flags must be grounded in portal data (proposal §9).
+> **What is measured.** Flags are raised by the deterministic rules in `apps/submissions/discrepancies.py` (year-on-year moves, restated periods, record-count swings, failed cross-checks). The optional AI review (`AI_PROVIDER`) only annotates those flags with a second opinion; it never raises or removes one, so the KPI measures the flags DORA actually acts on. Every AI call is logged in the AI request log, and replies quoting figures that are not in the data are rejected (proposal §9).
 
 ## 4. Readiness gates
 

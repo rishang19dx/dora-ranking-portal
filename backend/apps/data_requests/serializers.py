@@ -98,6 +98,7 @@ class DataRequestSerializer(serializers.ModelSerializer):
     createdBy = serializers.CharField(source='created_by')
     createdAt = serializers.DateTimeField(source='created_at')
     dispatchedAt = serializers.DateTimeField(source='dispatched_at')
+    autoRemind = serializers.BooleanField(source='auto_remind', read_only=True)
     targets = DataRequestTargetSerializer(many=True, read_only=True)
     uploads = ProofUploadSerializer(many=True, read_only=True)
     deliveries = RequestDeliverySerializer(many=True, read_only=True)
@@ -107,5 +108,5 @@ class DataRequestSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'reference', 'title', 'framework', 'cycleYear', 'categories',
             'subject', 'message', 'deadline', 'dataItemIds', 'status',
-            'createdBy', 'createdAt', 'dispatchedAt', 'targets', 'uploads', 'deliveries'
+            'createdBy', 'createdAt', 'dispatchedAt', 'autoRemind', 'targets', 'uploads', 'deliveries'
         ]

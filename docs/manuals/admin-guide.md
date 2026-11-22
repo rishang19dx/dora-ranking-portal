@@ -34,6 +34,7 @@ Each officer receives a mail with a **personal upload link**. The link only open
 Open the request from **Data Collection**:
 - **Collection Progress** and **Missing Units** show who has not submitted.
 - **Send reminders** mails pending or partial sections only. Each reminder replaces the officer's link, so the old link stops working.
+- Reminders are also sent automatically before the deadline (7, 3 and 1 days by default) and after it. **Reminders** shows the timeline and lets you pause a request's automated reminders.
 - **Close** the request once the cycle is done. Reopen it if a late correction is needed.
 
 ## 6. Reviewing submissions (maker-checker)
@@ -49,18 +50,26 @@ On the request page, under **Maker-Checker Actions**, each submitted section can
 
 Faculty details also need each school's confirmation before they can be approved.
 
-**Cross-Check Anomalies** lists automated discrepancy checks (for example, the sponsored-project register against SRIC totals), each with a severity. Resolve errors before exporting.
+**Cross-Check Anomalies** lists automated discrepancy checks (for example, the sponsored-project register against SRIC totals), each with a severity. While you review, each figure shows the previous cycle's approved value and the change.
+
+**Discrepancies** lists every flag across the cycle, graded Critical or Warning: large year-on-year moves, restated earlier-year figures, record-count swings and failed cross-checks. For each flag, either **escalate** it (this sends a correction request to the department) or **dismiss** it with a note. If an AI provider is configured, **Scan + AI review** adds a second opinion beside each flag. Resolve critical flags before exporting.
 
 ## 7. Exporting
 
 From the cycle rollup, export the **NIRF DCS workbook** per category. Totals match the rollup screen and include approved data only. Every export is logged with a SHA-256 of the file. The **Boardroom briefing** PDF summarises the cycle for the Director.
 
-## 8. Evidence and audit
+## 8. Users and rankings
+
+- **Users & Roles**: create staff accounts and set each one's role (Admin, Director, Auditor, Nodal Officer).
+- **Public Rankings**: enter IIT Mandi's QS, THE and MDRA results. Published ones appear on the public portal next to NIRF.
+- **Rankings (NIRF)**: NIRF cycles are fetched automatically each day. **Fetch** pulls a newly published cycle immediately.
+
+## 9. Evidence and audit
 
 - **Proof Repository**: every uploaded document, searchable, versioned, and linked to the figures it supports.
 - **Audit Log**: every change with its old and new value, actor and time. Personal fields are redacted.
 
-## 9. Go-Live Readiness (Phase 4)
+## 10. Go-Live Readiness (Phase 4)
 
 Used during the pilot and at handover. See the [pilot plan](../pilot/pilot-plan.md) and [UAT plan](../uat/uat-plan.md).
 
@@ -72,6 +81,6 @@ Used during the pilot and at handover. See the [pilot plan](../pilot/pilot-plan.
 | Backups, DR & Training | Take an on-demand backup; record training sessions; view DR drills |
 | Sign-off | Record UAT sign-off, the go/no-go decision and handover acceptance. These cannot be edited. |
 
-## 10. Getting help
+## 11. Getting help
 
 Report problems to IT Services with the severity, a screenshot and the time. See [operations-support](../runbooks/operations-support.md).

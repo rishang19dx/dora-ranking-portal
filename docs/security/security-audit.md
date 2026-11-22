@@ -25,7 +25,8 @@ This is a pre-go-live review by the Development Team. It does **not** replace th
 
 ## Controls verified as already in place
 
-- **Role-based access**: Admin and Director write; Auditor reads only; nodal officers are confined to their own section's token-scoped endpoints (`tests/test_portal_link_security.py`, `test_spec_phase1_compliance.py`).
+- **Role-based access (Phase 3)**: deny by default (`IsAuthenticated` is the global default, and public endpoints opt in with `AllowAny`). Admin is the only role that writes, apart from go-live sign-offs, which the Director also records. Director and Auditor are read-only. Nodal officers are confined to their own unit and to token-scoped upload links. Guarded SPA routes mirror the API rules.
+- **AI review (Phase 3)**: optional; sends only aggregated, PII-free figures; rejects ungrounded replies; logs every call.
 - **Upload links**: only SHA-256 digests are stored, links rotate on reminder, and they expire and can be revoked.
 - **Audit trail**: append-only (`save` on an existing row and `delete` both raise). Personal fields are redacted from deltas.
 - **Proof files**: type and size limits (25 MB), SHA-256 on upload, re-verified on download.

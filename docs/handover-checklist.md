@@ -20,6 +20,7 @@ Tick each item and record **Handover acceptance** on Go-Live Readiness → Sign-
 
 ## Backup and recovery
 
+- [ ] `scheduler` and `reminders` containers running (`docker compose ps`)
 - [ ] Nightly `backup_portal` cron and the off-host copy are running ([backup-restore §2](runbooks/backup-restore.md#2-scheduled-backups))
 - [ ] A restore performed by IT Services on staging
 - [ ] Witnessed DR drill recorded; *System resilience* KPI green

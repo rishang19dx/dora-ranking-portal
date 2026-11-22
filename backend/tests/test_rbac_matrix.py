@@ -170,6 +170,11 @@ PUBLIC_VIEWS = {
     'RootRankingWelcomeView', 'GetRankingsView', 'GetSecondGenIITsView', 'GetRankingByRankView',
     'TrendsAnalyticsView', 'ParameterTrendsView', 'GapAnalysisView',
     'PublicRankingSystemsView',
+    # Published manual ranking records (evidence and reviewer identities are
+    # stripped for anonymous callers); creating a record still needs a login.
+    'RankingRecordListCreateView',
+    # Liveness probe for Docker and campus monitoring: status and version only.
+    'HealthView',
     # Institute structure, contacts stripped for the public.
     'OrganogramOverviewView',
     # Blank form definitions and Excel templates carry no institutional data.

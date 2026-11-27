@@ -28,6 +28,7 @@ work_logs/*
 # Testing coverage artifacts
 .coverage
 .coverage*
+!.coveragerc
 coverage.xml
 htmlcov/
 

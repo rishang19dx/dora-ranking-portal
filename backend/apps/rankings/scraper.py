@@ -54,20 +54,49 @@ def fetch_lock():
     the scheduler and the management command, so two fetches never write
     the same files at once. Yields True if acquired, False if one is
     already running.
+
+    Uses ``fcntl.flock`` on POSIX systems and falls back to non-blocking
+    byte-range locking via ``msvcrt.locking`` on Windows.
     """
     os.makedirs(DATA_DIR, exist_ok=True)
-    handle = open(os.path.join(DATA_DIR, '.fetch.lock'), 'w')
+    lock_path = os.path.join(DATA_DIR, '.fetch.lock')
+    handle = open(lock_path, 'a+', encoding='utf-8')
+    locked_backend = None
     try:
         try:
             import fcntl
             fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except ImportError:  # non-POSIX dev machines: no cross-process lock
-            pass
+            locked_backend = ('fcntl', fcntl)
+        except ImportError:
+            try:
+                import msvcrt
+                handle.seek(0)
+                if not handle.read(1):
+                    handle.write('0')
+                    handle.flush()
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                locked_backend = ('msvcrt', msvcrt)
+            except ImportError:
+                pass
+            except OSError:
+                yield False
+                return
         except OSError:
             yield False
             return
         yield True
     finally:
+        if locked_backend is not None:
+            kind, mod = locked_backend
+            try:
+                if kind == 'msvcrt':
+                    handle.seek(0)
+                    mod.locking(handle.fileno(), mod.LK_UNLCK, 1)
+                else:
+                    mod.flock(handle, mod.LOCK_UN)
+            except OSError:
+                pass
         handle.close()
 
 # 2nd Generation IITs Canonical Mapping

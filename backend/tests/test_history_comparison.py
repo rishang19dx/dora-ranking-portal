@@ -147,6 +147,33 @@ def test_unit_history_returns_last_cycles_oldest_first(cycles):
     assert unit_history(UNIT, SECTION, before_cycle=2026)[0]['cycleYear'] == 2025
 
 
+def test_unit_history_3_year_baseline_excludes_unapproved(cycles):
+    unit = cycles['unit']
+    for year, status in ((2023, SubmissionStatus.SUBMITTED), (2024, SubmissionStatus.APPROVED)):
+        req = DataRequest.objects.create(
+            reference=f'DORA/{year}/NIRF/H3',
+            title=f'NIRF {year}',
+            framework='NIRF',
+            cycle_year=year,
+            subject='s',
+            message='m',
+            deadline=timezone.now() + timedelta(days=20),
+            data_item_ids=[],
+        )
+        SectionSubmission.objects.create(
+            request=req,
+            org_unit=unit,
+            section_id=SECTION,
+            schema_version='1.0.0',
+            status=status,
+            payload={'sponsored': {'projects': {f'{year - 2}-{str(year - 1)[-2:]}': year - 2000}}},
+            reviewed_at=timezone.now(),
+        )
+
+    rows = unit_history(UNIT, SECTION, before_cycle=2027, cycles=3)
+    assert [r['cycleYear'] for r in rows] == [2024, 2025, 2026]
+
+
 def test_history_api_is_oversight_only(cycles):
     auditor = User.objects.create_user(username='aud', email='aud@iitmandi.ac.in', password='x', role='AUDITOR')
     client = APIClient()

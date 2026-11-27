@@ -230,6 +230,50 @@ class TestDispatchDataRequest:
         assert NodalOfficer.objects.filter(email='fallback_unit@iitmandi.ac.in').exists()
         assert len(issued_grants) >= 1
 
+    def test_dispatch_data_request_multi_unit_creates_distinct_targets_grants_and_deliveries(
+        self, sample_org_unit, child_org_unit, sample_officer
+    ):
+        from apps.data_requests.models import RequestDelivery
+        from apps.organogram.models import OfficerStatus
+
+        second_officer = NodalOfficer.objects.create(
+            name='Dean Academics Officer',
+            email='acad_officer@iitmandi.ac.in',
+            status=OfficerStatus.ACTIVE,
+        )
+        second_officer.assigned_units.add(child_org_unit)
+
+        deadline = timezone.now() + timedelta(days=20)
+        sections = [
+            {'unitId': sample_org_unit.id, 'dataItemIds': ['item_A']},
+            {'unitId': child_org_unit.id, 'dataItemIds': ['item_B']},
+        ]
+        data_request, issued_grants = dispatch_data_request(
+            title='Multi-Unit Dispatch',
+            framework='NIRF',
+            cycle_year=2025,
+            subject='Multi-Unit Subject',
+            message='Please submit data.',
+            deadline=deadline,
+            sections=sections,
+        )
+
+        targets = DataRequestTarget.objects.filter(request=data_request)
+        grants = PortalAccessGrant.objects.filter(request=data_request)
+        deliveries = RequestDelivery.objects.filter(request=data_request)
+
+        assert targets.count() == 2
+        assert grants.count() == 2
+        assert deliveries.count() == 2
+        assert len(issued_grants) == 2
+
+        hashes = set(grants.values_list('token_hash', flat=True))
+        assert len(hashes) == 2
+        for g in issued_grants:
+            raw_token = g['portalUrl'].split('/portal/')[1]
+            assert raw_token not in hashes
+            assert hash_token(raw_token) in hashes
+
 
 # ===========================================================================
 # API tests — DataRequest
@@ -488,3 +532,24 @@ class TestPortalUploadAPI:
 
         sample_target.refresh_from_db()
         assert sample_target.status == TargetStatus.SUBMITTED
+
+    def test_upload_media_isolation_writes_within_tmp_media_root(
+        self, api_client, sample_grant, sample_target, tmp_path, settings
+    ):
+        """Uploaded proofs must stay isolated inside the configured MEDIA_ROOT."""
+        from pathlib import Path
+
+        settings.MEDIA_ROOT = str(tmp_path)
+        payload = b'%PDF-1.4 scoped vault content'
+        pdf = SimpleUploadedFile('isolated.pdf', payload, content_type='application/pdf')
+        response = api_client.post(
+            f'/api/portal/{sample_grant.raw_token}/upload/',
+            data={'file': pdf, 'dataItemId': 'item_001'},
+            format='multipart',
+        )
+        assert response.status_code == 201
+        upload = ProofUpload.objects.get(grant=sample_grant, file_name='isolated.pdf')
+        stored_path = Path(upload.file.path).resolve()
+        assert stored_path.is_relative_to(tmp_path.resolve())
+        assert stored_path.read_bytes() == payload
+        assert upload.checksum == hashlib.sha256(payload).hexdigest()

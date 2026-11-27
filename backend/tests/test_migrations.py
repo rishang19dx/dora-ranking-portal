@@ -85,6 +85,58 @@ class TestTableExistence:
                 f"Expected table '{table}' not found. Available: {tables}"
             )
 
+    def test_organogram_programme_table_exists(self):
+        tables = self._get_table_names()
+        assert 'organogram_programme' in tables
+
+    def test_scheduled_reminder_table_exists(self):
+        tables = self._get_table_names()
+        assert 'data_requests_scheduledreminder' in tables
+
+    def test_submissions_migrations_create_all_tables(self):
+        tables = self._get_table_names()
+        expected_tables = [
+            'submissions_formschema',
+            'submissions_sectionsubmission',
+            'submissions_submissionrecord',
+            'submissions_recordverification',
+            'submissions_submissionauditlog',
+            'submissions_discrepancyflag',
+            'submissions_airequestlog',
+        ]
+        for table in expected_tables:
+            assert table in tables, (
+                f"Expected table '{table}' not found. Available: {tables}"
+            )
+
+    def test_rankings_migrations_create_all_tables(self):
+        tables = self._get_table_names()
+        expected_tables = [
+            'rankings_externalrankingresult',
+            'rankings_rankingrecord',
+            'rankings_rankingauditlog',
+        ]
+        for table in expected_tables:
+            assert table in tables, (
+                f"Expected table '{table}' not found. Available: {tables}"
+            )
+
+    def test_golive_migrations_create_all_tables(self):
+        tables = self._get_table_names()
+        expected_tables = [
+            'golive_pilot',
+            'golive_flagreview',
+            'golive_disasterrecoverydrill',
+            'golive_uatscenario',
+            'golive_uatexecution',
+            'golive_trainingsession',
+            'golive_signoff',
+        ]
+        for table in expected_tables:
+            assert table in tables, (
+                f"Expected table '{table}' not found. Available: {tables}"
+            )
+
 
 # ===========================================================================
 # Field-level schema tests
@@ -139,3 +191,12 @@ class TestFieldSchemas:
         officer_id = generate_officer_id()
         assert officer_id.startswith('no_')
         assert len(officer_id) == 15  # 'no_' + 12 hex chars
+
+    def test_proof_upload_and_delivery_schema_parity(self):
+        """Verify ProofUpload checksum field length and RequestDelivery foreign keys."""
+        from apps.data_requests.models import ProofUpload, RequestDelivery
+        assert ProofUpload._meta.get_field('checksum').max_length == 64
+        for fk_name in ('request', 'grant', 'officer', 'org_unit'):
+            assert ProofUpload._meta.get_field(fk_name).many_to_one is True
+        for fk_name in ('request', 'officer', 'org_unit'):
+            assert RequestDelivery._meta.get_field(fk_name).many_to_one is True

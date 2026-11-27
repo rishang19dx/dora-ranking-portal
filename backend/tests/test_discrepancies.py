@@ -98,6 +98,14 @@ def test_drop_to_zero_is_critical(cycle):
     assert flag['severity'] == 'CRITICAL' and 'Dropped to zero' in flag['message']
 
 
+def test_rise_300_percent_is_critical(cycle):
+    cycle.payload['sponsored']['projects']['2025-26'] = 200  # 50 -> 200 (+300%)
+    cycle.save()
+    flag = by_field(rule_flags_for_submission(cycle, _schema()))[('projects', '2025-26')]
+    assert flag['severity'] == 'CRITICAL' and flag['kind'] == 'YOY_CHANGE'
+    assert 'Up 300.0%' in flag['message']
+
+
 def test_thresholds_are_configurable(cycle, settings):
     settings.DISCREPANCY_WARNING_CHANGE_PCT = 60
     flags = by_field(rule_flags_for_submission(cycle, _schema()))

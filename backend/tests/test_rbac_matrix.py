@@ -124,6 +124,21 @@ MATRIX = [
     ('post', '/api/rankings/external/', ADMIN_ONLY),
     ('patch', '/api/rankings/external/999999/', ADMIN_ONLY),
     ('delete', '/api/rankings/external/999999/', ADMIN_ONLY),
+    # Phase 4 go-live readiness, pilots, UAT, DR drills, backups, training.
+    ('get', '/api/golive/readiness/', OVERSIGHT),
+    ('get', '/api/golive/pilots/', OVERSIGHT),
+    ('post', '/api/golive/pilots/', ADMIN_ONLY),
+    ('get', '/api/golive/uat/scenarios/', OVERSIGHT),
+    ('get', '/api/golive/dr-drills/', OVERSIGHT),
+    ('post', '/api/golive/dr-drills/', ADMIN_ONLY),
+    ('get', '/api/golive/backups/', OVERSIGHT),
+    ('post', '/api/golive/backups/', ADMIN_ONLY),
+    ('get', '/api/golive/training/', OVERSIGHT),
+    ('post', '/api/golive/training/', ADMIN_ONLY),
+    ('get', '/api/golive/signoffs/', OVERSIGHT),
+    ('post', '/api/golive/signoffs/', {DIRECTOR, ADMIN, SUPERUSER}),
+    # Explicit PUT denial for non-admin oversight roles.
+    ('put', '/api/nodal-officers/no_missing/', ADMIN_ONLY),
 ]
 
 # Allowed calls that would reach the network or do heavy work are only

@@ -283,14 +283,23 @@ The application architecture is a modern decoupled full-stack system:
 - **Coverage Configuration & Environment Fixes:** Standardized test coverage metrics by introducing `backend/.coveragerc` (omitting migrations and `__init__.py`) and unmasked it from `.gitignore`; resolved missing test packages (`openpyxl`, `reportlab`, Vitest globals). (1.00 hr)
 - **Full Regression Execution & Production Gates:** Executed full backend pytest run (787 collected: 785 passed, 2 skipped, 0 failures, 89% statement coverage in 371s); executed Ruff linting (`0 errors`); ran Django migration checks (`No changes detected`) and production deployment checks (`check --deploy` passed with 0 issues); executed frontend Vitest suite (203/203 passed) and verified Vite production bundling[cite: 13]. (2.00 hrs)
 
+### Update: 12 (Phase 4)
+**Date:** 2026-11-27
+**Task:** Public Portal Smoke Testing, Vite Bundle Optimization, and CI Pipeline Audit
+**Time Logged:** ~4.00 Hours (240 minutes)
+
+#### Work Completed:
+- **Public Portal Smoke Testing & Console Security Audit:** Executed manual verification of local dev servers across unauthenticated views: tested public rankings landing page (`/`, `/rankings`), verified 2nd-generation IIT peer comparison tables and category navigation, inspected browser DevTools console (evaluating and clearing Chrome extension CSP blocks vs application code), and confirmed zero unhandled runtime fetch exceptions. (2.00 hrs)
+- **Vite Bundle Optimization & Vendor Chunk Splitting:** Investigated the Vite production build warning (`dist/assets/index-50mOX_La.js` exceeding 1,526 kB). Implemented Rollup `manualChunks` in `frontend/vite.config.ts` to split third-party vendor dependencies (`react`, `react-dom`, `react-router-dom`, `@tanstack/react-query`, UI icon sets) into distinct cache-isolated bundles, resolving the bundle size warning and accelerating client First Contentful Paint. (1.00 hrs)
+- **GitHub Actions CI/CD Pipeline Monitoring & PR Validation:** Monitored the 5-job GitHub Actions pipeline for PR branch `test/phases-2-to-4-validation` (`backend-tests` Python 3.11/3.12 matrix, Ruff linting, `check --deploy`, Vitest/Vite bundling, PostgreSQL 16 container integration, and Docker Buildx layer caching). Verified container execution and branch merge readiness against `main`. (1.00 hrs)
+
 ### Weekly Billing & Effort Compliance Summary (Yash — Phases 2 to 4)
-*Institutional Rate Ceiling: Max 20.00 hours/week per student @ Rs. 270/hr.*[cite: 11, 12]
 
 | Phase | Date / Sprint Window | Updates Logged | Weekly Hours (Yash) | Weekly Ceiling | Status |
 |---|---|---|---|---|---|
-| Phase 2 | 2026-10-31 | Updates 05, 06, 07 (`2.50 + 3.00 + 3.00`) | **8.50 hrs** | 20.00 hrs/wk | Within Ceiling[cite: 12] |
-| Phase 3 | 2026-11-16 | Updates 08, 09 (`6.00 + 7.50`) | **13.50 hrs** | 20.00 hrs/wk | Within Ceiling[cite: 12] |
-| Phase 4 | 2026-11-27 | Updates 10, 11 (`6.50 + 6.50`) | **13.00 hrs** | 20.00 hrs/wk | Within Ceiling[cite: 12] |
+| Phase 2 | 2026-10-31 | Updates 05, 06, 07 (`2.50 + 3.00 + 3.00`) | **8.50 hrs** | 20.00 hrs/wk | Within Ceiling |
+| Phase 3 | 2026-11-16 | Updates 08, 09 (`6.00 + 7.50`) | **13.50 hrs** | 20.00 hrs/wk | Within Ceiling |
+| Phase 4 | 2026-11-27 | Updates 10, 11, 12 (`6.50 + 6.50 + 4.00`) | **17.00 hrs** | 20.00 hrs/wk | Within Ceiling |
 
 ---
 

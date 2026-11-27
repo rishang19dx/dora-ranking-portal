@@ -1,5 +1,11 @@
 import axios from 'axios';
 import type {
+  RankingFetchReport,
+  AuditLogResponse,
+  ProofRepositoryResponse,
+  DepartmentAnalyticsResponse,
+  GapAnalysisResponse,
+  ParameterTrendsResponse,
   OrgUnit,
   NodalOfficer,
   DataRequest,
@@ -194,8 +200,408 @@ export const rankingsService = {
     return res.data;
   },
 
-  async updateScraper(): Promise<{ message: string }> {
-    const res = await api.post('/api/v1/scraper/update/');
+  /** Parameter-wise history (TLR/RPC/GO/OI/PR) over a selectable range. */
+  async getParameterTrends(
+    category?: string,
+    range?: { last?: number; from?: number; to?: number },
+  ): Promise<ParameterTrendsResponse> {
+    const res = await api.get('/api/v1/rankings/parameters/trends/', {
+      params: { ...(category ? { category } : {}), ...(range || {}) },
+    });
     return res.data;
+  },
+
+  /** Gap analysis against peer IITs and against the institute's own history. */
+  async getGapAnalysis(category?: string, year?: number): Promise<GapAnalysisResponse> {
+    const res = await api.get('/api/v1/rankings/gap-analysis/', {
+      params: { ...(category ? { category } : {}), ...(year ? { year } : {}) },
+    });
+    return res.data;
+  },
+
+  /**
+   * Explicitly fetch newly published NIRF cycles (staff only). By default
+   * only cycles not yet cached are requested; `full` re-fetches every year.
+   */
+  async updateScraper(full = false): Promise<RankingFetchReport> {
+    const res = await api.post('/api/v1/scraper/update/', full ? { full: true } : {});
+    return res.data;
+  },
+};
+
+export const rankingRecordsService = {
+  async getPublished() {
+    const res = await api.get('/api/ranking-records/');
+    return res.data;
+  },
+};
+
+
+export const analyticsService = {
+  /**
+   * Department-wise contribution and performance for a cycle. The backend
+   * scopes the result by role, so a department head receives only their own.
+   */
+  async getDepartmentAnalytics(
+    cycleYear: number,
+    params?: { requestId?: string; category?: string; unitId?: string },
+  ): Promise<DepartmentAnalyticsResponse> {
+    const res = await api.get(`/api/nirf/cycles/${cycleYear}/department-analytics/`, {
+      params: params || {},
+    });
+    return res.data;
+  },
+
+  /** Downloads the boardroom briefing PDF. */
+  async downloadBriefing(
+    cycleYear: number,
+    params?: { requestId?: string; category?: string; rankingYear?: number },
+  ): Promise<void> {
+    const res = await api.get(`/api/nirf/cycles/${cycleYear}/briefing/`, {
+      params: params || {},
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(res.data as Blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `DORA_Boardroom_Briefing_NIRF_${cycleYear}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  },
+};
+
+export interface AuditLogFilters {
+  action?: string;
+  actorType?: string;
+  sectionId?: string;
+  unitId?: string;
+  requestId?: string;
+  cycleYear?: number;
+  from?: string;
+  to?: string;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+function compact(filters: AuditLogFilters): Record<string, string | number> {
+  return Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== '' && v !== null),
+  ) as Record<string, string | number>;
+}
+
+export const auditService = {
+  /** Filterable, searchable audit trail (Admin, Director, Auditor). */
+  async list(filters: AuditLogFilters = {}): Promise<AuditLogResponse> {
+    const res = await api.get('/api/audit-log/', { params: compact(filters) });
+    return res.data;
+  },
+
+  /** Downloads the filtered trail as CSV. The download is itself audited. */
+  async exportCsv(filters: AuditLogFilters = {}): Promise<void> {
+    const { page: _page, pageSize: _size, ...rest } = filters;
+    const res = await api.get('/api/audit-log/', {
+      params: { ...compact(rest), export: 'csv' },
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(res.data as Blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `DORA_Audit_Log_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  },
+};
+
+export interface ProofFilters {
+  q?: string;
+  sectionId?: string;
+  unitId?: string;
+  requestId?: string;
+  dataItemId?: string;
+  cycleYear?: number;
+  latestOnly?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export const proofService = {
+  /** The searchable proof repository (Admin, Director, Auditor). */
+  async list(filters: ProofFilters = {}): Promise<ProofRepositoryResponse> {
+    const params: Record<string, string | number> = {};
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v === undefined || v === '' || v === null || v === false) return;
+      params[k] = v === true ? 1 : (v as string | number);
+    });
+    const res = await api.get('/api/proofs/', { params });
+    return res.data;
+  },
+
+  /**
+   * Downloads one proof through the authenticated endpoint, which also
+   * re-verifies the file against its stored SHA-256.
+   */
+  async download(id: string, fileName: string): Promise<void> {
+    const res = await api.get(`/api/proofs/${id}/download/`, { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data as Blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  },
+};
+
+/**
+ * Whether the signed-in user may trigger staff-only actions such as a fetch.
+ * Admin only: Director is read-only (spec 2.18).
+ */
+export function isStaffUser(): boolean {
+  return authService.getCurrentUser()?.role === 'ADMIN';
+}
+
+export interface AssignedTask {
+  requestId: string;
+  reference: string;
+  requestTitle: string;
+  framework: string;
+  cycleYear: number;
+  deadline: string;
+  requestStatus: string;
+  unitId: string;
+  unitName: string;
+  status: string;
+  overdue: boolean;
+}
+
+export const assignmentService = {
+  /** The signed-in nodal officer's own tasks; never other departments'. */
+  async mine(): Promise<{ unitIds: string[]; tasks: AssignedTask[] }> {
+    const res = await api.get('/api/me/assignments/');
+    return res.data;
+  },
+};
+
+export interface ManagedUser {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string | null;
+  role: 'ADMIN' | 'DIRECTOR' | 'AUDITOR' | 'NODAL_OFFICER';
+  isActive: boolean;
+  isSuperuser: boolean;
+  lastLogin: string | null;
+  dateJoined: string;
+}
+
+export const userService = {
+  async list(): Promise<ManagedUser[]> {
+    const res = await api.get('/api/auth/users/');
+    return res.data;
+  },
+  async create(payload: Partial<ManagedUser> & { password: string }): Promise<ManagedUser> {
+    const res = await api.post('/api/auth/users/', payload);
+    return res.data;
+  },
+  async update(id: number, payload: Partial<ManagedUser> & { password?: string }): Promise<ManagedUser> {
+    const res = await api.patch(`/api/auth/users/${id}/`, payload);
+    return res.data;
+  },
+};
+
+export interface ReminderTimelineEntry {
+  milestone: string;
+  dueAt: string;
+  overdue: boolean;
+  state: 'SENT' | 'SKIPPED' | 'UPCOMING' | 'DUE';
+  sections: { unitId: string; outcome: string; detail: string; deliveries: number; at: string }[];
+  sectionsAwaiting: number | null;
+}
+
+export interface ReminderScheduleResponse {
+  policy: { daysBefore: number[]; overdueIntervalDays: number; overdueMax: number; manualCooldownHours: number };
+  requests: {
+    id: string;
+    reference: string;
+    title: string;
+    deadline: string;
+    autoRemind: boolean;
+    sections: number;
+    sectionsAwaiting: number;
+    overdue: boolean;
+    timeline: ReminderTimelineEntry[];
+  }[];
+  recent: {
+    id: string;
+    requestId: string;
+    reference: string;
+    unitId: string;
+    unitName: string;
+    milestone: string;
+    outcome: 'SENT' | 'SKIPPED';
+    detail: string;
+    deliveries: number;
+    at: string;
+  }[];
+}
+
+export interface ReminderRunReport {
+  ranAt: string;
+  dryRun: boolean;
+  sent: { requestId: string; reference: string; unitId: string; milestone: string; deliveries?: number }[];
+  skipped: { requestId: string; reference: string; unitId: string; milestone: string; reason: string }[];
+}
+
+export const reminderService = {
+  async schedule(): Promise<ReminderScheduleResponse> {
+    const res = await api.get('/api/reminders/');
+    return res.data;
+  },
+  async run(dryRun: boolean): Promise<ReminderRunReport> {
+    const res = await api.post('/api/reminders/', { dryRun });
+    return res.data;
+  },
+  async setAutoRemind(requestId: string, enabled: boolean): Promise<{ autoRemind: boolean; message: string }> {
+    const res = await api.post(`/api/data-requests/${requestId}/actions/`, { action: 'SET_AUTO_REMIND', enabled });
+    return res.data;
+  },
+};
+
+export interface DiscrepancyFlagView {
+  id: string;
+  requestId: string;
+  submissionId: string | null;
+  submissionStatus: string | null;
+  unitId: string | null;
+  unitName: string | null;
+  sectionId: string;
+  kind: 'YOY_CHANGE' | 'RESTATEMENT' | 'RECORD_COUNT' | 'CROSS_CHECK';
+  label: string;
+  severity: 'CRITICAL' | 'WARNING' | 'INFO';
+  message: string;
+  previous: string;
+  current: string;
+  changePct: number | null;
+  details: Record<string, unknown>;
+  ai: { severity: string; rationale: string; question: string; model: string | null; logId: string | null } | null;
+  status: 'OPEN' | 'DISMISSED' | 'ESCALATED' | 'RESOLVED';
+  resolutionNote: string;
+  resolvedBy: string | null;
+  resolvedAt: string | null;
+  firstSeen: string;
+  lastSeen: string;
+}
+
+export interface DiscrepancyListResponse {
+  requestId: string | null;
+  requests: { id: string; reference: string; title: string; cycleYear: number }[];
+  summary: { open: number; openCritical: number; openWarning: number; escalated: number; dismissed: number; resolved: number };
+  thresholds: Record<string, number>;
+  ai: { configured: boolean; provider?: string; model?: string; reason?: string };
+  flags: DiscrepancyFlagView[];
+}
+
+export interface AIRequestLogEntry {
+  id: string;
+  createdAt: string;
+  provider: string;
+  model: string;
+  purpose: string;
+  requestReference: string | null;
+  triggeredBy: string | null;
+  status: 'OK' | 'ERROR' | 'INVALID';
+  error: string;
+  latencyMs: number;
+  flagsSent: number;
+  flagsAnnotated: number;
+  itemsRejected: number;
+  promptSha256: string;
+  prompt: unknown;
+  response: string;
+}
+
+export const discrepancyService = {
+  async list(requestId?: string): Promise<DiscrepancyListResponse> {
+    const res = await api.get('/api/nirf/discrepancies/', { params: requestId ? { requestId } : {} });
+    return res.data;
+  },
+  async scan(requestId: string, useAi: boolean) {
+    const res = await api.post('/api/nirf/discrepancies/scan/', { requestId, useAi });
+    return res.data as {
+      scan: { opened: number; reopened: number; resolved: number; candidates: number };
+      ai?: { configured: boolean; sent?: number; annotated?: number; rejected?: number; message?: string; error?: string };
+    };
+  },
+  async act(flagId: string, action: 'dismiss' | 'escalate' | 'reopen', note = ''): Promise<DiscrepancyFlagView> {
+    const res = await api.post(`/api/nirf/discrepancies/${flagId}/`, { action, note });
+    return res.data;
+  },
+  async aiLog(): Promise<AIRequestLogEntry[]> {
+    const res = await api.get('/api/ai/requests/');
+    return res.data;
+  },
+};
+
+export interface RankingPoint {
+  year: number;
+  rankText: string;
+  rankLow: number;
+  rankHigh: number | null;
+  plotRank: number;
+  score: number | null;
+  source: string;
+  demo: boolean;
+}
+
+export interface PublicRankingSystems {
+  institute: string;
+  lowerIsBetter: boolean;
+  hasDemoData: boolean;
+  systems: { id: string; label: string; family: string; series: RankingPoint[] }[];
+}
+
+export interface ExternalRankingRow {
+  id: number;
+  system: string;
+  systemLabel: string;
+  label: string;
+  year: number;
+  rankText: string;
+  rankLow: number;
+  rankHigh: number | null;
+  score: number | null;
+  source: string;
+  notes: string;
+  published: boolean;
+  demo: boolean;
+  updatedAt: string;
+}
+
+export const publicRankingService = {
+  /** Public, no login: IIT Mandi in every tracked ranking system. */
+  async systems(): Promise<PublicRankingSystems> {
+    const res = await api.get('/api/v1/public/ranking-systems/');
+    return res.data;
+  },
+  async listExternal(): Promise<{ systems: { value: string; label: string }[]; results: ExternalRankingRow[] }> {
+    const res = await api.get('/api/rankings/external/');
+    return res.data;
+  },
+  async saveExternal(row: Partial<ExternalRankingRow> & { id?: number }): Promise<ExternalRankingRow> {
+    const res = row.id
+      ? await api.patch(`/api/rankings/external/${row.id}/`, row)
+      : await api.post('/api/rankings/external/', row);
+    return res.data;
+  },
+  async deleteExternal(id: number): Promise<void> {
+    await api.delete(`/api/rankings/external/${id}/`);
   },
 };

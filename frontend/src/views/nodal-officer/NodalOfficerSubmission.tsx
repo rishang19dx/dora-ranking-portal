@@ -9,12 +9,13 @@ import {
 import { FileSpreadsheet } from 'lucide-react';
 import { useToast } from '../../components/ToastProvider';
 import { ORG_UNITS } from '../../lib/organogram';
+import { assignmentService, type AssignedTask } from '../../services/api';
 
 export default function NodalOfficerSubmission() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [tokenInput, setTokenInput] = useState('');
-  const [activeRequests, setActiveRequests] = useState<any[]>([]);
+  const [activeRequests, setActiveRequests] = useState<AssignedTask[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
@@ -23,20 +24,10 @@ export default function NodalOfficerSubmission() {
   );
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/data-requests/');
-        if (res.ok) {
-          const raw = await res.json();
-          const reqs = Array.isArray(raw) ? raw : (raw.requests || []);
-          setActiveRequests(reqs.filter((r: any) => r.status !== 'CLOSED'));
-        }
-      } catch {
-        // Fallback
-      } finally {
-        setLoading(false);
-      }
-    })();
+    assignmentService.mine()
+      .then((body) => setActiveRequests((body.tasks ?? []).filter((t) => t.requestStatus !== 'CLOSED')))
+      .catch(() => setActiveRequests([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const handleOpenToken = (e: React.FormEvent) => {
@@ -121,29 +112,29 @@ export default function NodalOfficerSubmission() {
         <div className="flex items-center gap-3">
           <Buildings weight="duotone" className="w-6 h-6 text-slate-blue-600" />
           <h2 className="text-xl font-bold tracking-tight text-zinc-900">
-            Open Institutional Data Cycles
+            My Open Data Requests
           </h2>
         </div>
 
         {loading ? (
           <p className="text-xs text-zinc-400">Loading open data requests...</p>
         ) : activeRequests.length === 0 ? (
-          <p className="text-xs text-zinc-500">No active institutional requests found.</p>
+          <p className="text-xs text-zinc-500">No open requests for your department.</p>
         ) : (
           <div className="space-y-3 pt-2">
             {activeRequests.map((req) => (
               <div
-                key={req.id}
+                key={`${req.requestId}-${req.unitId}`}
                 className="p-4 border border-slate-200/50 rounded-2xl bg-zinc-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-sage-100 text-sage-800 font-mono">
                     {req.framework} {req.cycleYear}
                   </span>
-                  <h3 className="font-semibold text-zinc-900 text-sm mt-1">{req.title}</h3>
+                  <h3 className="font-semibold text-zinc-900 text-sm mt-1">{req.requestTitle}</h3>
                   <p className="text-xs text-zinc-500 mt-0.5">
                     Deadline: {new Date(req.deadline).toLocaleDateString('en-IN')} &middot;{' '}
-                    {req.targets?.length || 0} unit sections
+                    {req.unitName} &middot; {req.status}
                   </p>
                 </div>
                 <span className="text-xs text-zinc-400 italic">

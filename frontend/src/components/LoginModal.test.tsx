@@ -1,30 +1,25 @@
 /**
- * LoginModal component – unit + interaction tests.
+ * LoginModal: real credential sign-in (Phase 3 RBAC).
  *
- * Tests:
- *  - Renders modal title
- *  - Renders email and password fields
- *  - Renders all 4 role preset buttons
- *  - Clicking a role preset updates the email field
- *  - Clicking close fires onClose
- *  - Submitting the form fires onLoginSuccess with correct user shape
- *  - Default selected role is "Super Admin"
+ * The role is decided by the server account, never chosen in the dialog.
  */
-
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { LoginModal } from '../components/LoginModal';
-import type { User } from '../types';
 
-const defaultProps = {
-  onClose: vi.fn(),
-  onLoginSuccess: vi.fn(),
-};
+const login = vi.fn();
+vi.mock('../services/api', () => ({
+  authService: { login: (...args: unknown[]) => login(...args) },
+}));
 
-function setup(props: Partial<typeof defaultProps> = {}) {
-  return render(<LoginModal {...{ ...defaultProps, ...props }} />);
+import { LoginModal } from './LoginModal';
+
+const onClose = vi.fn();
+const onLoginSuccess = vi.fn();
+
+function setup() {
+  return render(<LoginModal onClose={onClose} onLoginSuccess={onLoginSuccess} />);
 }
 
 beforeEach(() => {
@@ -32,70 +27,47 @@ beforeEach(() => {
 });
 
 describe('LoginModal', () => {
-  it('renders the modal title', () => {
+  it('offers credential fields and no role picker', () => {
     setup();
-    expect(screen.getByText('IIT Mandi Admin Login')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Username or institutional email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Password/i)).toHaveAttribute('type', 'password');
+    expect(screen.queryByText(/Super Admin/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Password/i)).toHaveValue('');
   });
 
-  it('renders "Institutional Email" and "Password" labels', () => {
+  it('signs in with what was typed and hands back the server user', async () => {
+    const user = { id: 3, username: 'ira', email: 'ira@iitmandi.ac.in', role: 'AUDITOR' };
+    login.mockResolvedValue({ access: 'a', refresh: 'r', user });
     setup();
-    expect(screen.getByText(/Institutional Email/i)).toBeInTheDocument();
-    expect(screen.getByText(/Password/i)).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(/Username or institutional email/i), ' ira@iitmandi.ac.in ');
+    await userEvent.type(screen.getByLabelText(/Password/i), 'Secret-1');
+    await userEvent.click(screen.getByRole('button', { name: /Sign in/i }));
+    await waitFor(() => expect(onLoginSuccess).toHaveBeenCalledWith(user));
+    expect(login).toHaveBeenCalledWith('ira@iitmandi.ac.in', 'Secret-1');
   });
 
-  it('renders all 4 role preset options', () => {
+  it('explains a rejected password without signing in', async () => {
+    login.mockRejectedValue({ response: { status: 401 } });
     setup();
-    expect(screen.getByText('Super Admin')).toBeInTheDocument();
-    expect(screen.getByText('Ranking Admin')).toBeInTheDocument();
-    expect(screen.getByText('Data Entry Operator')).toBeInTheDocument();
-    expect(screen.getByText('Viewer')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(/Username or institutional email/i), 'x');
+    await userEvent.type(screen.getByLabelText(/Password/i), 'y');
+    await userEvent.click(screen.getByRole('button', { name: /Sign in/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Incorrect/i);
+    expect(onLoginSuccess).not.toHaveBeenCalled();
   });
 
-  it('defaults to Super Admin role and shows director email', () => {
+  it('explains throttling', async () => {
+    login.mockRejectedValue({ response: { status: 429 } });
     setup();
-    const emailInput = screen.getByDisplayValue('director@iitmandi.ac.in');
-    expect(emailInput).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(/Username or institutional email/i), 'x');
+    await userEvent.type(screen.getByLabelText(/Password/i), 'y');
+    await userEvent.click(screen.getByRole('button', { name: /Sign in/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Too many attempts/i);
   });
 
-  it('updates email when a different role preset is selected', async () => {
+  it('closes', async () => {
     setup();
-    const rankingAdminBtn = screen.getByRole('button', { name: /Ranking Admin/i });
-    await userEvent.click(rankingAdminBtn);
-    expect(screen.getByDisplayValue('ranking.cell@iitmandi.ac.in')).toBeInTheDocument();
-  });
-
-  it('calls onClose when the X button is clicked', async () => {
-    const onClose = vi.fn();
-    setup({ onClose });
-    // Header close button has an X icon
-    const allButtons = screen.getAllByRole('button');
-    const xButton = allButtons.find((b) => b.querySelector('svg') && !b.textContent?.trim());
-    if (xButton) {
-      await userEvent.click(xButton);
-    } else {
-      await userEvent.click(allButtons[0]);
-    }
+    await userEvent.click(screen.getByRole('button', { name: /Close/i }));
     expect(onClose).toHaveBeenCalled();
-  });
-
-  it('calls onLoginSuccess with correct shape on form submit', async () => {
-    const onLoginSuccess = vi.fn();
-    setup({ onLoginSuccess });
-
-    const submitBtn = screen.getByRole('button', { name: /Sign In as Super Admin/i });
-    await userEvent.click(submitBtn);
-
-    expect(onLoginSuccess).toHaveBeenCalledOnce();
-    const user: User = onLoginSuccess.mock.calls[0][0];
-    expect(user.name).toBe('Prof. Director');
-    expect(user.email).toBe('director@iitmandi.ac.in');
-    expect(user.role).toBe('Super Admin');
-  });
-
-  it('updates submit button label when role changes', async () => {
-    setup();
-    const viewerBtn = screen.getByRole('button', { name: /Viewer/i });
-    await userEvent.click(viewerBtn);
-    expect(screen.getByRole('button', { name: /Sign In as Viewer/i })).toBeInTheDocument();
   });
 });

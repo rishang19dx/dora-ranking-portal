@@ -19,6 +19,9 @@ def generate_upl_id():
 def generate_del_id():
     return generate_id('del')
 
+def generate_rem_id():
+    return generate_id('rem')
+
 class RankingFramework(models.TextChoices):
     NIRF = 'NIRF', 'NIRF'
     QS = 'QS', 'QS'
@@ -62,6 +65,8 @@ class DataRequest(models.Model):
     created_by = models.CharField(max_length=255, default='DORA Admin')
     created_at = models.DateTimeField(auto_now_add=True)
     dispatched_at = models.DateTimeField(auto_now_add=True)
+    # Deadline-driven reminders (spec 2.5); the admin can pause them per request.
+    auto_remind = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -160,3 +165,37 @@ class RequestDelivery(models.Model):
     kind = models.CharField(max_length=32, choices=DeliveryKind.choices, default=DeliveryKind.DISPATCH)
     error = models.TextField(blank=True, null=True)
     sent_at = models.DateTimeField(auto_now_add=True)
+
+
+class ReminderOutcome(models.TextChoices):
+    SENT = 'SENT', 'Sent'
+    SKIPPED = 'SKIPPED', 'Skipped'
+
+
+class ScheduledReminder(models.Model):
+    """
+    One automated reminder milestone for one section of a request.
+
+    A milestone is a point on the request's deadline schedule ("T-7" = seven
+    days before, "OVERDUE-1" = first chase after the deadline). The unique
+    constraint is what makes the scheduler idempotent: however often it runs,
+    a section is reminded at most once per milestone.
+    """
+    id = models.CharField(max_length=64, primary_key=True, default=generate_rem_id)
+    request = models.ForeignKey(DataRequest, on_delete=models.CASCADE, related_name='scheduled_reminders')
+    target = models.ForeignKey(DataRequestTarget, on_delete=models.CASCADE, related_name='scheduled_reminders')
+    milestone = models.CharField(max_length=32)
+    due_at = models.DateTimeField()
+    outcome = models.CharField(max_length=16, choices=ReminderOutcome.choices)
+    detail = models.TextField(blank=True, default='')
+    deliveries = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['target', 'milestone'], name='uniq_reminder_milestone_per_target'),
+        ]
+
+    def __str__(self):
+        return f"{self.request.reference} {self.target.org_unit_id} {self.milestone} {self.outcome}"

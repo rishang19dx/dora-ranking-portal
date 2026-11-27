@@ -1,0 +1,185 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{lastpage}
+\usepackage{longtable}
+
+\definecolor{primary}{RGB}{0,75,141}
+\definecolor{secondary}{RGB}{204,85,0}
+\definecolor{lightbg}{RGB}{245,247,250}
+\hypersetup{colorlinks=true,linkcolor=primary,urlcolor=primary}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small Weekly Work Report -- Lokesh-102214}
+\fancyhead[R]{\small dora-ranking-portal}
+\fancyfoot[C]{\small Page \thepage\ of \pageref{LastPage}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+\begin{document}
+
+{\Large\bfseries Weekly Work Report}\\[4pt]
+{\large\bfseries\color{primary} DORA Ranking Portal -- Caching Architecture \& Institute Organogram Integration}\\[6pt]
+\begin{tabular}{@{}ll@{}}
+\textbf{Contributor:} & Lokesh-102214 \\
+\textbf{Original period:} & 19 August 2026 -- 9 September 2026 \\
+\textbf{Repository:} & \url{https://github.com/rishang19dx/dora-ranking-portal} \\
+\textbf{Original source commit:} & \texttt{93246} -- \textit{feat: integrate custom NIRF API caching and Institute Organogram} \\
+\textbf{Report update:} & 18 November 2026 -- frontend quality, public rankings, and CI follow-up
+\end{tabular}
+
+\section*{Basis of this report}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item \textbf{Original scope.} The first part of this report transcribes the work recorded in the supplied PDF: work authored by Lokesh-102214 in commit \texttt{93246}. Other contributors' commits and later work were excluded from the original report.
+  \item \textbf{Original commit record.} Commit \texttt{93246} was recorded as committed on 1 September 2026, with 15 files changed (+3,834 / $-$1 lines). The original report stated 7 estimated hours: 5 hours for the custom API and 2 hours for the organogram.
+  \item \textbf{Addendum scope.} The later sections document repository-wide frontend quality and public-ranking work supplied for this update, plus work completed on 18 November 2026. They are separated from the August--September estimate and must not be read as changing the historical hours stated in the original PDF.
+\end{itemize}
+
+\section*{Original Summary: 19 August -- 9 September 2026}
+\begin{table}[h]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{1.2cm}p{7.3cm}p{2.0cm}p{1.6cm}}
+\toprule
+\textbf{Week} & \textbf{Dates \& focus} & \textbf{Files changed} & \textbf{Est. effort (h)} \\
+\midrule
+1 & 19 Aug--9 Sep: three-layer caching, institute organogram, and integration documentation (commit dated 1 Sep) & 15 & 7 \\
+\midrule
+\textbf{Total} & \textbf{Caching, organogram, and documentation} & \textbf{15} & \textbf{7} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textit{The original record reports 3,834 lines added and 1 line removed, with 7 estimated hours for the period.}
+
+\section*{Original Detailed Breakdown}
+\subsection*{Custom API Build (5 hours, estimate)}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item \textbf{Backend API.} Added \texttt{custom\_api\_nirf/app.py}, a FastAPI wrapper serving NIRF rankings from local JSON files by year and category. It supports state and city filters, a result limit, a second-generation IIT endpoint, and lookup by rank.
+  \item \textbf{Layer 1 -- in-memory caching.} \texttt{load\_data} uses \texttt{@lru\_cache(maxsize=32)}, so each dataset is read from disk once. The cache is cleared after a successful scraper update.
+  \item \textbf{Layer 2 -- frontend caching.} \texttt{src/utils/api.ts} provided \texttt{fetchNirfRankings}, requesting data with a 24-hour revalidation window and the \texttt{nirf-data} cache tag.
+  \item \textbf{Layer 3 -- webhook invalidation.} \texttt{src/app/api/revalidate/route.ts} handled revalidation requests. After a successful scrape, \texttt{/api/v1/scraper/update} posted the tag to the route so stale frontend data could be dropped immediately. Webhook failures were logged without failing the scrape.
+  \item \textbf{Data and scraper.} Six JSON datasets for 2024 and 2025 (Engineering, Innovation, and Overall) were stored under \texttt{custom\_api\_nirf/data/}; \texttt{scraper.py} and \texttt{requirements.txt} supported their generation and refresh.
+\end{itemize}
+
+\subsection*{Institute Organogram (2 hours, estimate)}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item Added \texttt{Institute\_Organogram.md}, a Mermaid left-to-right flowchart covering the executive level, Director, ExeCom, Audit, Recruitment Cell, Deans, Registrar and sub-units, academic coordinators, schools, and centres.
+\end{itemize}
+
+\subsection*{Integration Documentation}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item Added \texttt{Integration\_Docs.md}, describing the three caching layers, data layout, organogram, file tracking summary, and development-time estimates.
+\end{itemize}
+
+\section*{Original Files Changed}
+\small
+\begin{longtable}{p{5.2cm}p{1.5cm}p{2cm}p{4.5cm}}
+\toprule
+\textbf{File} & \textbf{Status} & \textbf{Lines} & \textbf{Purpose} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{File} & \textbf{Status} & \textbf{Lines} & \textbf{Purpose} \\
+\midrule
+\endhead
+\texttt{Institute\_Organogram.md} & Added & 113 & Mermaid organogram of the institute \\
+\texttt{Integration\_Docs.md} & Added & 60 & Integration and caching documentation \\
+\texttt{custom\_api\_nirf/app.py} & Added & 131 & FastAPI wrapper, cache, and scraper endpoints \\
+\texttt{src/utils/api.ts} & Added & Not shown & \texttt{fetchNirfRankings} with cache tags \\
+\texttt{src/app/api/revalidate/route.ts} & Added & Not shown & Webhook revalidation \\
+\texttt{custom\_api\_nirf/scraper.py} & Added & Not shown & NIRF data scraper \\
+\texttt{custom\_api\_nirf/requirements.txt} & Added & Not shown & Python dependencies \\
+\texttt{package-lock.json} & Changed & Not shown & Node dependency lock \\
+\texttt{custom\_api\_nirf/data/*.json} (6 files) & Added & Not shown & NIRF 2024 and 2025 datasets \\
+\texttt{custom\_api\_nirf/\_\_pycache\_\_/app.cpython-312.pyc} & Added & Binary & Compiled bytecode, not source \\
+Other text files (11 files) & Added/changed & 3,530 combined & Remaining integration content \\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section*{Original Technical Decisions and Open Items}
+\begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
+  \item \textbf{Layered caching:} backend memory caching, server-side frontend caching with a 24-hour window, and tag-based webhook invalidation after a scrape.
+  \item \textbf{Tag-based revalidation:} revalidate by tag instead of waiting for time expiry, reducing the chance of users seeing stale rankings.
+  \item \textbf{Organogram in Markdown:} Mermaid source remains editable as text and renders on GitHub.
+\end{enumerate}
+The original report noted three follow-ups: make the revalidation webhook URL configurable instead of hard-coding localhost; remove committed Python bytecode through \texttt{.gitignore}; and add an end-to-end webhook test.
+
+\clearpage
+\section*{Subsequent Frontend Quality and CI Update}
+\textbf{Scope:} Active React 19 + Vite SPA in \texttt{frontend/}. The root-level \texttt{src/} and \texttt{tsconfig.json} are legacy Next.js artefacts from before the migration and were deliberately left untouched.
+
+\subsection*{Static Analysis and Type Checking}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item Added ESLint 9 flat configuration in \texttt{frontend/eslint.config.js}, including recommended \texttt{@typescript-eslint} rules, classic React Hooks rules (\texttt{rules-of-hooks} and \texttt{exhaustive-deps}), and React Refresh.
+  \item Did not enable the React-Compiler-readiness rules bundle: it reports idiomatic fetch-in-\texttt{useEffect} patterns across many views as errors and requires a separate adoption decision.
+  \item Extended TypeScript test types with \texttt{vitest/globals} and \texttt{@testing-library/jest-dom}. Strict TypeScript checking completed with zero errors.
+  \item Baseline lint state: zero errors and approximately 80--82 pre-existing warnings (unused imports, a small number of \texttt{any} usages, and one missing-dependency warning). Warnings remain non-blocking for later cleanup.
+\end{itemize}
+
+\subsection*{Testing}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item Installed and configured Vitest 3, \texttt{@vitest/coverage-v8}, React Testing Library 16, \texttt{jest-dom}, and \texttt{user-event}; \texttt{vitest.config.ts} uses jsdom, globals, V8 coverage, and automatic DOM cleanup.
+  \item Initial unit coverage included helpers, organogram and data-catalogue logic, plus \texttt{RankingCard} and \texttt{Footer} component behaviour. The supplied work reported 67 tests across five files, with 99.7\% line coverage for organogram logic and 100\% for the data catalogue, RankingCard, and Footer suites.
+  \item Component and integration coverage was extended with \texttt{OrgTree.test.tsx} (12 tests), \texttt{DashboardLayout.test.tsx} (9 tests), and \texttt{routes.integration.test.tsx} (27 tests). The integration suite covers routes, landing navigation, admin routes, data collection states, organogram and nodal-officer pages, and portal upload outcomes.
+  \item The supplied final testing status was 163 passing tests, clean TypeScript, zero ESLint errors, and statement coverage increased from 13.6\% to 52.5\%.
+  \item Fixed test-only issues in pre-existing untracked tests: fake timers that stalled toast exit animations, duplicate-text queries, and an overly narrow props type. These were test problems rather than application defects.
+\end{itemize}
+
+\subsection*{Scripts and Continuous Integration}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item Added frontend scripts for \texttt{typecheck}, \texttt{lint}, \texttt{lint:fix}, \texttt{test}, \texttt{test:watch}, \texttt{test:coverage}, and \texttt{validate}; \texttt{validate} runs type checking, linting, and tests.
+  \item Root scripts now expose \texttt{test:frontend}, \texttt{lint:frontend}, and \texttt{typecheck:frontend}.
+  \item The GitHub Actions frontend job runs lint, type checking, Vitest, and production build for pushes and pull requests.
+  \item The frontend production build was verified after the configuration changes.
+  \item \textbf{Lockfile follow-up:} dependencies were installed with npm, so \texttt{frontend/package-lock.json} changed while \texttt{bun.lock} remains stale. The workflow's non-frozen Bun-install fallback prevents this from blocking CI; run \texttt{bun install} on a Bun-enabled machine to refresh the lockfile.
+\end{itemize}
+
+\subsection*{Known Coverage Gaps}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item \texttt{AdminView.tsx} remains at zero coverage and appears unused by \texttt{routes.tsx}.
+  \item The composer, nodal-officer submission view, trends and comparative views, Axios interceptors/refresh flow, and CSV export have comparatively little coverage.
+  \item Nodal-officer and trends pages currently have mainly render-level checks.
+  \item Ranking-detail tests pass but emit React \texttt{act(...)} warnings, which should be cleaned up to reduce CI noise.
+\end{itemize}
+
+\section*{Work Completed on 18 November 2026}
+\subsection*{Public Rankings Experience}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item Added verified public records for QS Asia 2027, QS Southern Asia 2027, QS Sustainability 2026, THE World University Rankings 2027, THE Interdisciplinary Science Rankings 2026, THE Asia University Rankings 2026, and five India Today--MDRA 2026 categories.
+  \item Grouped the IIT Mandi ranking-summary cards by agency (NIRF, QS, Times Higher Education, and India Today--MDRA) with agency-specific headings, descriptions, record counts, and visual accents.
+  \item Added NIRF, QS, THE, and India Today--MDRA framework summaries and official external links to the public Agencies page.
+  \item Updated the CSV export flow: live NIRF rows use their own API schema, while the verified institutional summary exports agency, category, rank, verification, and source metadata. The export now uses safely escaped, UTF-8 BOM CSV downloads and disables when no rows are visible.
+\end{itemize}
+
+\subsection*{Local Verification and CI Repair}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item Started and verified the local Vite frontend and Django backend; confirmed live NIRF API responses for rankings and five-year trend categories.
+  \item Repaired a GitHub Actions failure introduced by the changed default rankings view. Integration tests now explicitly select \textit{NIRF Official Live} before expecting a live API request.
+  \item Verified the affected routing integration suite: 27/27 tests passed. The remaining React \texttt{act(...)} and React Router future-flag messages are warnings, not test failures.
+  \item Pushed CI repair commit \texttt{a88b856} (\textit{test: align NIRF live flow integration tests}) to branch \texttt{feature/qs-the-mdra-rankings}. The preceding public-rankings work is commit \texttt{27acc99}.
+\end{itemize}
+
+\subsection*{All-Agency Manual Ranking Workflow}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item Added database-backed \texttt{RankingRecord} and immutable \texttt{RankingAuditLog} models with proof-document uploads, agency, category, year, rank, source URL, review notes, and publication timestamps.
+  \item Added API workflow states: Draft, Pending Review, Verified, Published, and Rejected. Ranking Cell Nodal Officers create and submit their own records; Auditors verify or reject; Admins and Directors publish or unpublish verified results.
+  \item Added internal Ranking Results screens to both the Nodal Officer and Admin portals. The form supports all agencies (NIRF, QS, THE, India Today--MDRA, and Other), manual ranking entry, official evidence upload, and action buttons appropriate to the current role and workflow state.
+  \item Public ranking retrieval now includes only published workflow records, which are appended to the verified public ranking catalogue without exposing drafts, evidence, or review data.
+\end{itemize}
+
+\section*{Report Artefacts}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item Source PDF: \texttt{WorkReports/Weekly\_Work\_Report\_Lokesh-102214\_Aug19-Sep9.pdf}
+  \item This editable source: \texttt{WorkReports/Weekly\_Work\_Report\_Lokesh-102214\_Aug19-Sep9.tex}
+\end{itemize}
+
+\end{document}

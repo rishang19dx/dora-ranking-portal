@@ -27,10 +27,11 @@ import {
   BarChart,
   Bar,
   Cell,
+  ComposedChart,
 } from "recharts";
-import { RankingItem, RankingAgency, TrendsApiResponse, PeerInstituteTrend, MandiYearlyTrend } from "../types";
+import { RankingItem, RankingAgency, TrendsApiResponse, PeerInstituteTrend, MandiYearlyTrend, ParameterTrendsResponse } from "../types";
 import { calculateRankChange } from "../utils/helpers";
-import { rankingsService } from "../services/api";
+import { rankingsService, isStaffUser } from "../services/api";
 import { useToast } from "../components/ToastProvider";
 
 interface TrendsViewProps {
@@ -50,8 +51,18 @@ const PEER_COLORS: Record<string, string> = {
   "IIT Patna": "#64748b",        // Slate Gray
 };
 
+const PARAM_COLOURS: Record<string, string> = {
+  tlr: "#5a7359",
+  rpc: "#003366",
+  go: "#0284c7",
+  oi: "#b98a6b",
+  pr: "#8b5cf6",
+};
+
 export const TrendsView: React.FC<TrendsViewProps> = () => {
-  const [activeTab, setActiveTab] = useState<"individual" | "peer_comparison">("individual");
+  const [activeTab, setActiveTab] = useState<"individual" | "peer_comparison" | "parameters">("individual");
+  const [paramTrends, setParamTrends] = useState<ParameterTrendsResponse | null>(null);
+  const [paramRange, setParamRange] = useState<number>(5);
   const [selectedCategory, setSelectedCategory] = useState<string>("Engineering");
   const [trendsData, setTrendsData] = useState<TrendsApiResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -86,14 +97,43 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
     fetchTrends();
   }, []);
 
+  // Parameter sub-scores are published only for Engineering and Overall, so
+  // this is fetched separately from the rank trends and may legitimately be
+  // empty for Innovation.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await rankingsService.getParameterTrends(selectedCategory, {
+          last: paramRange,
+        });
+        if (!cancelled) setParamTrends(res);
+      } catch {
+        if (!cancelled) setParamTrends(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory, paramRange]);
+
+  // Fetching is a staff action; public visitors only see the data.
+  const canFetch = isStaffUser();
+
   const handleRefreshScraper = async () => {
     try {
       setRefreshing(true);
-      await rankingsService.updateScraper();
-      await fetchTrends();
-      showToast("NIRF rankings cache updated from official portal.", "success");
-    } catch {
-      showToast("Failed to trigger scraper update.", "error");
+      const report = await rankingsService.updateScraper();
+      if (report.fetched.length) await fetchTrends();
+      showToast(report.message, report.fetched.length ? "success" : "info");
+    } catch (err: any) {
+      const status = err?.response?.status;
+      showToast(
+        status === 409 ? "A fetch is already running. Try again in a minute."
+          : status === 401 || status === 403 ? "Only DORA staff can fetch new NIRF results."
+          : err?.response?.data?.message ?? "Could not reach the NIRF site.",
+        "error",
+      );
     } finally {
       setRefreshing(false);
     }
@@ -161,7 +201,15 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
     });
   }, [trendsData, peerList]);
 
-  // 2025 Current Standing Bar Chart Data (sorted by 2025 rank ascending)
+  // The window follows whichever cycles the backend has fetched - a newly
+  // published NIRF year appears here without a code change.
+  const trendYears: number[] = trendsData?.years ?? [];
+  const firstYear = trendYears[0];
+  const lastYear = trendYears[trendYears.length - 1];
+  const priorYears = trendYears.slice(0, -1);
+  const yearSpan = firstYear && lastYear ? `${firstYear} – ${lastYear}` : '';
+
+  // Latest-cycle standing bar chart data (sorted by latest rank ascending)
   const peerStanding2025Data = useMemo(() => {
     return peerList
       .filter((p) => p.latest_rank !== null && typeof p.latest_rank === "number")
@@ -173,6 +221,24 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
       }))
       .sort((a, b) => (Number(a.rank) || 999) - (Number(b.rank) || 999));
   }, [peerList]);
+
+  // Parameter-wise series: value per year plus its weighted contribution.
+  const paramSeries = paramTrends?.trends?.[selectedCategory]?.series ?? [];
+  const paramOrder = paramTrends?.parameterOrder ?? [];
+  const paramLabels = paramTrends?.labels ?? {};
+  const paramWeights = paramTrends?.weights ?? {};
+
+  const paramChartData = useMemo(() => {
+    return paramSeries.map((p) => {
+      const row: Record<string, any> = { year: String(p.year), score: p.score };
+      paramOrder.forEach((k) => {
+        row[k] = p.parameters?.[k]?.value ?? null;
+      });
+      return row;
+    });
+  }, [paramSeries, paramOrder]);
+
+  const paramNetMovement = paramTrends?.trends?.[selectedCategory]?.netMovement ?? null;
 
   const togglePeer = (name: string) => {
     setSelectedPeers((prev) => ({
@@ -267,7 +333,7 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
               5-Year Longitudinal NIRF Analytics
             </span>
             <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
-              2021 – 2025 Cycle
+              {yearSpan} Cycle
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#003366] font-serif tracking-tight">
@@ -278,18 +344,20 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
           </p>
         </div>
 
-        {/* Live Refresh and Action Buttons */}
+        {/* Explicit fetch: staff only */}
+        {canFetch && (
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefreshScraper}
             disabled={refreshing}
             className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl shadow-xs transition"
-            title="Re-scrape latest ranking data from official NIRF website"
+            title="Fetch any NIRF cycle published since the last check"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "Scraping..." : "Sync NIRF Data"}
+            {refreshing ? "Checking NIRF..." : "Fetch new NIRF results"}
           </button>
         </div>
+        )}
       </div>
 
       {/* Main Mode Tabs & Category Filter Bar */}
@@ -306,6 +374,17 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
           >
             <TrendingUp className="w-4 h-4 text-[#F58220]" />
             IIT Mandi Trajectory
+          </button>
+          <button
+            onClick={() => setActiveTab("parameters")}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition ${
+              activeTab === "parameters"
+                ? "bg-white text-[#003366] shadow-sm ring-1 ring-black/5"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 text-[#F58220]" />
+            Parameter Breakdown
           </button>
           <button
             onClick={() => setActiveTab("peer_comparison")}
@@ -346,6 +425,163 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
           <RefreshCw className="w-8 h-8 text-[#003366] animate-spin" />
           <p className="text-sm font-semibold text-slate-700">Loading 5-year NIRF longitudinal analytics...</p>
         </div>
+      ) : activeTab === "parameters" ? (
+        /* ==================== TAB: PARAMETER BREAKDOWN ==================== */
+        <div className="space-y-6">
+          {!paramSeries.length ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm">
+              <BarChart3 className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-slate-700">
+                NIRF publishes parameter sub-scores for Engineering and Overall only.
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                The {selectedCategory} category is released as ranks and bands.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-[#003366] font-serif">
+                    Parameter-wise Performance — {selectedCategory}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Each sub-score is out of 100. Weights: {paramOrder
+                      .map((k) => `${k.toUpperCase()} ${Math.round((paramWeights[k] ?? 0) * 100)}%`)
+                      .join(" · ")}.
+                  </p>
+                </div>
+                <div className="flex items-center p-1 bg-slate-100/80 rounded-xl">
+                  {[3, 5].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setParamRange(n)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        paramRange === n
+                          ? "bg-white text-[#003366] shadow-sm ring-1 ring-black/5"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      Last {n}y
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                <div className="h-[380px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={paramChartData} margin={{ top: 10, right: 16, left: -16, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} dy={8} />
+                      <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: 12, border: "1px solid rgba(226,232,240,0.9)" }}
+                        formatter={(v: any, k: any) => [v ?? "—", paramLabels[k] ?? k]}
+                      />
+                      <Legend iconType="circle" wrapperStyle={{ paddingTop: 12, fontSize: 12 }} formatter={(k) => paramLabels[k] ?? k} />
+                      {paramOrder.map((k) => (
+                        <Line
+                          key={k}
+                          type="monotone"
+                          dataKey={k}
+                          stroke={PARAM_COLOURS[k] ?? "#94a3b8"}
+                          strokeWidth={2.5}
+                          dot={{ r: 3 }}
+                          connectNulls
+                        />
+                      ))}
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {paramNetMovement && (
+                <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                  <h3 className="text-base font-bold text-[#003366] font-serif mb-1">
+                    Net movement, {paramNetMovement.fromYear} → {paramNetMovement.toYear}
+                  </h3>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Where the institute gained and lost points over the selected range.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {paramOrder.map((k) => {
+                      const delta = paramNetMovement.parameters?.[k];
+                      const up = (delta ?? 0) > 0;
+                      return (
+                        <div key={k} className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/60">
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                            {k.toUpperCase()}
+                          </div>
+                          <div className="text-xs text-slate-600 truncate" title={paramLabels[k] ?? k}>
+                            {(paramLabels[k] ?? k).split(/[,&]/)[0].trim()}
+                          </div>
+                          <div className={`mt-2 text-xl font-black flex items-center gap-1 ${
+                            delta === null || delta === undefined
+                              ? "text-slate-400"
+                              : up ? "text-emerald-700" : "text-rose-700"
+                          }`}>
+                            {delta === null || delta === undefined ? (
+                              "—"
+                            ) : (
+                              <>
+                                {up ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                                {up ? `+${delta.toFixed(2)}` : delta.toFixed(2)}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                <h3 className="text-base font-bold text-[#003366] font-serif mb-3">
+                  Weighted contribution to the total score
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[#003366] text-white font-semibold">
+                        <th className="p-3">Parameter (weight)</th>
+                        {paramSeries.map((p) => (
+                          <th key={p.year} className="p-3 text-center">{p.year}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {paramOrder.map((k) => (
+                        <tr key={k} className="hover:bg-slate-50">
+                          <td className="p-3 font-semibold text-gray-900">
+                            {paramLabels[k] ?? k}{" "}
+                            <span className="text-slate-400 font-normal">
+                              ({Math.round((paramWeights[k] ?? 0) * 100)}%)
+                            </span>
+                          </td>
+                          {paramSeries.map((p) => (
+                            <td key={p.year} className="p-3 text-center">
+                              {p.parameters?.[k]?.weightedContribution?.toFixed(2) ?? "—"}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                      <tr className="bg-amber-50 font-bold">
+                        <td className="p-3">Total score</td>
+                        {paramSeries.map((p) => (
+                          <td key={p.year} className="p-3 text-center text-[#003366]">
+                            {p.score ?? "—"}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       ) : activeTab === "individual" ? (
         /* ==================== TAB 1: INDIVIDUAL IIT MANDI TRAJECTORY ==================== */
         <div className="space-y-6">
@@ -355,7 +591,7 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
               {/* Latest Rank */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                  Latest 2025 Standing
+                  Latest {lastYear} Standing
                 </span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-black text-[#003366]">#{mandiProgression.endRank}</span>
@@ -376,7 +612,7 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
                   <span className="text-xs font-bold text-slate-500">Peak Standing</span>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2">
-                  Highest institutional rank secured during the 2021–2025 cycle.
+                  Highest institutional rank secured during the {yearSpan} cycle.
                 </p>
               </div>
 
@@ -405,7 +641,7 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
               {/* Latest Score & Metrics */}
               <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                  2025 Evaluated Score
+                  {lastYear} Evaluated Score
                 </span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-black text-slate-800">
@@ -601,7 +837,7 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
                   2nd Generation IITs 5-Year Trajectory ({selectedCategory})
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Comparative longitudinal rank positions (2021 – 2025). Inverted axis: Top line indicates premier rank.
+                  Comparative longitudinal rank positions ({yearSpan}). Inverted axis: Top line indicates premier rank.
                 </p>
               </div>
               <span className="self-start sm:self-auto bg-blue-50 text-[#003366] text-xs font-bold px-3 py-1 rounded-full border border-blue-100">
@@ -648,14 +884,14 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
             </div>
           </div>
 
-          {/* 2025 Current Standing Peer Rank Distribution */}
+          {/* Latest-cycle peer rank distribution */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
             <h3 className="text-lg font-bold text-[#003366] font-serif mb-2 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-[#003366]" />
-              2025 Standing Among 2nd Generation IITs ({selectedCategory})
+              {lastYear} Standing Among 2nd Generation IITs ({selectedCategory})
             </h3>
             <p className="text-xs text-slate-500 mb-6">
-              Official national rank standing in the 2025 evaluation cycle (shorter bar represents superior national rank).
+              Official national rank standing in the {lastYear} evaluation cycle (shorter bar represents superior national rank).
             </p>
 
             <div className="h-64 w-full">
@@ -683,11 +919,11 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
             </div>
           </div>
 
-          {/* 5-Year Comparative Matrix Table */}
+          {/* Multi-year comparative matrix table */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm">
             <h3 className="text-lg font-bold text-[#003366] font-serif mb-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-slate-600" />
-              5-Year Peer Comparison Matrix (2021 – 2025)
+              {trendYears.length}-Year Peer Comparison Matrix ({yearSpan})
             </h3>
 
             <div className="overflow-x-auto">
@@ -695,20 +931,19 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
                 <thead>
                   <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                     <th className="p-3.5">Institution</th>
-                    <th className="p-3.5 text-center">2021</th>
-                    <th className="p-3.5 text-center">2022</th>
-                    <th className="p-3.5 text-center">2023</th>
-                    <th className="p-3.5 text-center">2024</th>
-                    <th className="p-3.5 text-center">2025 Rank</th>
-                    <th className="p-3.5 text-center">2025 Score</th>
-                    <th className="p-3.5 text-center">5-Yr Net Trend</th>
+                    {priorYears.map((y) => (
+                      <th key={y} className="p-3.5 text-center">{y}</th>
+                    ))}
+                    <th className="p-3.5 text-center">{lastYear} Rank</th>
+                    <th className="p-3.5 text-center">{lastYear} Score</th>
+                    <th className="p-3.5 text-center">{trendYears.length}-Yr Net Trend</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {peerList.map((peer) => {
                     const isTarget = peer.is_target;
-                    const r21 = peer.ranks["2021"];
-                    const r25 = peer.ranks["2025"];
+                    const r21 = peer.ranks[String(firstYear)];
+                    const r25 = peer.ranks[String(lastYear)];
                     const diff =
                       typeof r21 === "number" && typeof r25 === "number"
                         ? r21 - r25
@@ -737,23 +972,16 @@ export const TrendsView: React.FC<TrendsViewProps> = () => {
                             )}
                           </div>
                         </td>
-                        <td className="p-3.5 text-center font-medium text-slate-600">
-                          {peer.ranks["2021"] ? `#${peer.ranks["2021"]}` : "—"}
-                        </td>
-                        <td className="p-3.5 text-center font-medium text-slate-600">
-                          {peer.ranks["2022"] ? `#${peer.ranks["2022"]}` : "—"}
-                        </td>
-                        <td className="p-3.5 text-center font-medium text-slate-600">
-                          {peer.ranks["2023"] ? `#${peer.ranks["2023"]}` : "—"}
-                        </td>
-                        <td className="p-3.5 text-center font-medium text-slate-600">
-                          {peer.ranks["2024"] ? `#${peer.ranks["2024"]}` : "—"}
-                        </td>
+                        {priorYears.map((y) => (
+                          <td key={y} className="p-3.5 text-center font-medium text-slate-600">
+                            {peer.ranks[String(y)] ? `#${peer.ranks[String(y)]}` : "—"}
+                          </td>
+                        ))}
                         <td className="p-3.5 text-center font-extrabold text-[#003366] text-sm">
-                          {peer.ranks["2025"] ? `#${peer.ranks["2025"]}` : "—"}
+                          {peer.ranks[String(lastYear)] ? `#${peer.ranks[String(lastYear)]}` : "—"}
                         </td>
                         <td className="p-3.5 text-center font-semibold text-emerald-800">
-                          {peer.scores["2025"] ? `${peer.scores["2025"]}` : "—"}
+                          {peer.scores[String(lastYear)] ? `${peer.scores[String(lastYear)]}` : "—"}
                         </td>
                         <td className="p-3.5 text-center">
                           {diff !== null ? (

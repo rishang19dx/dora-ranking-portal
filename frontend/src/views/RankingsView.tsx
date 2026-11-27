@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import { RankingItem, RankingAgency } from "../types";
 import { RankingCard } from "../components/RankingCard";
-import { exportToCSV } from "../utils/helpers";
-import { rankingsService } from "../services/api";
+import { exportNirfRankingsToCSV, exportToCSV } from "../utils/helpers";
+import { rankingRecordsService, rankingsService } from "../services/api";
 
 const DEFAULT_RANKINGS: RankingItem[] = [
   {
@@ -70,18 +70,187 @@ const DEFAULT_RANKINGS: RankingItem[] = [
     id: "r4",
     agency_id: "qs",
     agency_name: "QS World",
-    ranking_name: "QS World University Rankings 2025",
-    category: "Global",
-    year: 2025,
-    rank: "701-750",
-    previous_rank: "801-850",
+    ranking_name: "QS Asia University Rankings 2027",
+    category: "Asia",
+    year: 2027,
+    rank: 601,
     status: "Published",
     verified: true,
-    remarks: "Advanced 100 bands globally in academic reputation.",
-    created_at: "2025-06-15",
-    updated_at: "2025-06-15",
+    source_url: "https://www.topuniversities.com/asia-university-rankings?search=Indian%20Institute%20of%20Technology%20Mandi",
+    remarks: "QS Asia University Rankings result for IIT Mandi.",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
+  },
+  {
+    id: "r5",
+    agency_id: "qs",
+    agency_name: "QS World",
+    ranking_name: "QS Asian University Rankings – Southern Asia 2027",
+    category: "Southern Asia",
+    year: 2027,
+    rank: 161,
+    status: "Published",
+    verified: true,
+    source_url: "https://www.topuniversities.com/asia-university-rankings/southern-asia?search=mandi",
+    remarks: "QS Southern Asia regional result for IIT Mandi.",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
+  },
+  {
+    id: "r6",
+    agency_id: "qs",
+    agency_name: "QS World",
+    ranking_name: "QS Sustainability Rankings 2026",
+    category: "Sustainability",
+    year: 2026,
+    rank: "1501+",
+    status: "Published",
+    verified: true,
+    source_url: "https://www.topuniversities.com/sustainability-rankings?search=Indian%20Institute%20of%20Technology%20Mandi",
+    remarks: "QS Sustainability result for IIT Mandi.",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
+  },
+  {
+    id: "r7",
+    agency_id: "the",
+    agency_name: "Times Higher Education",
+    ranking_name: "World University Rankings 2027",
+    category: "World",
+    year: 2027,
+    rank: "801–1000",
+    status: "Published",
+    verified: true,
+    source_url: "https://www.timeshighereducation.com/world-university-rankings/indian-institute-technology-mandi",
+    remarks: "THE World University Rankings result for IIT Mandi.",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
+  },
+  {
+    id: "r8",
+    agency_id: "the",
+    agency_name: "Times Higher Education",
+    ranking_name: "Interdisciplinary Science Rankings 2026",
+    category: "Interdisciplinary Science",
+    year: 2026,
+    rank: "401–500",
+    status: "Published",
+    verified: true,
+    source_url: "https://www.timeshighereducation.com/world-university-rankings/interdisciplinary-science-rankings",
+    remarks: "THE Interdisciplinary Science Rankings result for IIT Mandi.",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
+  },
+  {
+    id: "r9",
+    agency_id: "the",
+    agency_name: "Times Higher Education",
+    ranking_name: "Asia University Rankings 2026",
+    category: "Asia",
+    year: 2026,
+    rank: "401–500",
+    status: "Published",
+    verified: true,
+    source_url: "https://www.timeshighereducation.com/world-university-rankings/2026/regional-ranking",
+    remarks: "THE Asia University Rankings result for IIT Mandi.",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
+  },
+  {
+    id: "r10",
+    agency_id: "india-today-mdra",
+    agency_name: "India Today–MDRA",
+    ranking_name: "Best Technical University Rankings 2026",
+    category: "Technical University",
+    year: 2026,
+    rank: 7,
+    status: "Published",
+    verified: true,
+    source_url: "https://bestcolleges.indiatoday.in/",
+    remarks: "IIT Mandi ranks #7 in the Best Technical University category.",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
+  },
+  {
+    id: "r11",
+    agency_id: "india-today-mdra",
+    agency_name: "India Today–MDRA",
+    ranking_name: "Best Govt. Engineering College Rankings 2026",
+    category: "Engineering",
+    year: 2026,
+    rank: 10,
+    status: "Published",
+    verified: true,
+    source_url: "https://bestcolleges.indiatoday.in/",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
+  },
+  {
+    id: "r12",
+    agency_id: "india-today-mdra",
+    agency_name: "India Today–MDRA",
+    ranking_name: "Best Engineering College Rankings 2026",
+    category: "Engineering",
+    year: 2026,
+    rank: 11,
+    status: "Published",
+    verified: true,
+    source_url: "https://bestcolleges.indiatoday.in/",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
+  },
+  {
+    id: "r13",
+    agency_id: "india-today-mdra",
+    agency_name: "India Today–MDRA",
+    ranking_name: "Best Emerging Govt. Engineering College Rankings 2026",
+    category: "Engineering",
+    year: 2026,
+    rank: 3,
+    status: "Published",
+    verified: true,
+    source_url: "https://bestcolleges.indiatoday.in/",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
+  },
+  {
+    id: "r14",
+    agency_id: "india-today-mdra",
+    agency_name: "India Today–MDRA",
+    ranking_name: "Most Improved Colleges in Engineering (Govt.) 2026",
+    category: "Engineering",
+    year: 2026,
+    rank: 6,
+    status: "Published",
+    verified: true,
+    source_url: "https://bestcolleges.indiatoday.in/",
+    created_at: "2026-11-18",
+    updated_at: "2026-11-18",
   },
 ];
+
+const AGENCY_PRESENTATION: Record<string, { label: string; description: string; accent: string }> = {
+  "NIRF India": {
+    label: "National Institutional Ranking Framework",
+    description: "India’s official national institutional rankings.",
+    accent: "border-l-sage-600 bg-sage-50/70",
+  },
+  "QS World": {
+    label: "QS World University Rankings",
+    description: "International university rankings by Quacquarelli Symonds.",
+    accent: "border-l-blue-600 bg-blue-50/70",
+  },
+  "Times Higher Education": {
+    label: "Times Higher Education Rankings",
+    description: "Global, regional, and interdisciplinary performance rankings.",
+    accent: "border-l-violet-600 bg-violet-50/70",
+  },
+  "India Today–MDRA": {
+    label: "India Today–MDRA Rankings",
+    description: "National recognition across technical-university and engineering categories.",
+    accent: "border-l-orange-500 bg-orange-50/70",
+  },
+};
 
 interface RankingsViewProps {
   rankings?: RankingItem[];
@@ -101,12 +270,14 @@ export const RankingsView: React.FC<RankingsViewProps> = ({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
-  const [dataSource, setDataSource] = useState<"institute" | "nirf_live">("nirf_live");
+  // Lead with IIT Mandi's published records; the complete NIRF table remains one click away.
+  const [dataSource, setDataSource] = useState<"institute" | "nirf_live">("institute");
   const [nirfYear, setNirfYear] = useState<number>(2025);
   const [nirfCategory, setNirfCategory] = useState<string>("overall");
   const [secondGenOnly, setSecondGenOnly] = useState<boolean>(false);
   const [nirfData, setNirfData] = useState<any[]>([]);
   const [nirfLoading, setNirfLoading] = useState<boolean>(false);
+  const [publishedRecords, setPublishedRecords] = useState<RankingItem[]>([]);
 
   // Fetch real NIRF ranking data from Django API
   useEffect(() => {
@@ -123,7 +294,19 @@ export const RankingsView: React.FC<RankingsViewProps> = ({
     }
   }, [dataSource, nirfYear, nirfCategory, secondGenOnly]);
 
-  const activeRankings = rankings.length ? rankings : DEFAULT_RANKINGS;
+  useEffect(() => {
+    rankingRecordsService.getPublished().then((records) => {
+      setPublishedRecords(records.map((record: any) => ({
+        id: record.id, agency_id: record.agency.toLowerCase(), agency_name: record.agency.replace(/_/g, ' '),
+        ranking_name: `${record.agency.replace(/_/g, ' ')} ${record.category}`, category: record.category,
+        year: record.year, rank: record.rank, status: 'Published', verified: true,
+        source_url: record.source_url, remarks: record.remarks, created_at: record.created_at, updated_at: record.updated_at,
+      })));
+    }).catch(() => {});
+  }, []);
+
+  // Keep the existing verified catalogue visible while newly approved workflow records appear immediately.
+  const activeRankings = [...(rankings.length ? rankings : DEFAULT_RANKINGS), ...publishedRecords];
 
   const filteredRankings = useMemo(() => {
     return activeRankings.filter((r) => {
@@ -151,6 +334,25 @@ export const RankingsView: React.FC<RankingsViewProps> = ({
     );
   }, [nirfData, search]);
 
+  const rankingGroups = useMemo(() => {
+    const groups = new Map<string, RankingItem[]>();
+    filteredRankings.forEach((ranking) => {
+      const current = groups.get(ranking.agency_name) || [];
+      current.push(ranking);
+      groups.set(ranking.agency_name, current);
+    });
+    return Array.from(groups.entries());
+  }, [filteredRankings]);
+
+  const exportRows = dataSource === "nirf_live" ? filteredNirfData : filteredRankings;
+  const handleExport = () => {
+    if (dataSource === "nirf_live") {
+      exportNirfRankingsToCSV(filteredNirfData, nirfYear, nirfCategory);
+      return;
+    }
+    exportToCSV(filteredRankings, "IIT_Mandi_Verified_Rankings.csv");
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -166,7 +368,7 @@ export const RankingsView: React.FC<RankingsViewProps> = ({
             Official Ranking Intelligence
           </h1>
           <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-            Directly connected to the Django NIRF API engine with real-time IIT Mandi & 2nd generation IIT comparisons.
+            Browse official NIRF data or IIT Mandi’s verified QS, THE, and India Today–MDRA results.
           </p>
         </div>
 
@@ -192,11 +394,13 @@ export const RankingsView: React.FC<RankingsViewProps> = ({
           </div>
 
           <button
-            onClick={() => exportToCSV(dataSource === "nirf_live" ? filteredNirfData : filteredRankings)}
-            className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-xs transition"
+            onClick={handleExport}
+            disabled={exportRows.length === 0}
+            title={exportRows.length === 0 ? "There are no visible ranking records to export." : "Download the visible ranking records as a CSV file."}
+            className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 disabled:bg-zinc-300 disabled:cursor-not-allowed text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-xs transition"
           >
             <Download className="w-4 h-4" />
-            <span>Export</span>
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
@@ -258,6 +462,11 @@ export const RankingsView: React.FC<RankingsViewProps> = ({
                 <option value="Overall">Overall</option>
                 <option value="Innovation">Innovation</option>
                 <option value="Global">Global</option>
+                <option value="Asia">Asia</option>
+                <option value="Southern Asia">Southern Asia</option>
+                <option value="Sustainability">Sustainability</option>
+                <option value="World">World</option>
+                <option value="Technical University">Technical University</option>
               </select>
             </div>
           )}
@@ -342,14 +551,42 @@ export const RankingsView: React.FC<RankingsViewProps> = ({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredRankings.map((ranking) => (
-            <RankingCard
-              key={ranking.id}
-              ranking={ranking}
-              onSelect={(r) => onSelectRanking && onSelectRanking(r)}
-            />
-          ))}
+        <div className="space-y-8">
+          {rankingGroups.map(([agencyName, rankings]) => {
+            const presentation = AGENCY_PRESENTATION[agencyName] || {
+              label: agencyName,
+              description: "Verified institutional ranking records.",
+              accent: "border-l-slate-500 bg-slate-50/70",
+            };
+            return (
+              <section key={agencyName} aria-labelledby={`agency-${agencyName.replace(/[^a-z0-9]/gi, "-")}`}>
+                <div className={`border-l-4 ${presentation.accent} rounded-r-2xl px-5 py-4 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2`}>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Ranking Agency</p>
+                    <h2 id={`agency-${agencyName.replace(/[^a-z0-9]/gi, "-")}`} className="text-lg font-bold text-zinc-900">{presentation.label}</h2>
+                    <p className="text-sm text-zinc-600 mt-0.5">{presentation.description}</p>
+                  </div>
+                  <span className="self-start sm:self-auto bg-white/90 border border-white text-zinc-700 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+                    {rankings.length} {rankings.length === 1 ? "ranking" : "rankings"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {rankings.map((ranking) => (
+                    <RankingCard
+                      key={ranking.id}
+                      ranking={ranking}
+                      onSelect={(r) => onSelectRanking && onSelectRanking(r)}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+          {rankingGroups.length === 0 && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center text-sm text-zinc-500">
+              No ranking records match the current filters.
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -46,7 +46,8 @@ def test_jwt_auth_flow(api_client, admin_user):
     assert me_res.data['email'] == 'testadmin@iitmandi.ac.in'
 
 @pytest.mark.django_db
-def test_organogram_and_officers(api_client, seeded_db):
+def test_organogram_and_officers(api_client, seeded_db, admin_user):
+    api_client.force_authenticate(user=admin_user)
     # Get organogram tree
     res = api_client.get('/api/organogram/')
     assert res.status_code == 200
@@ -109,7 +110,8 @@ def test_organogram_and_officers(api_client, seeded_db):
     assert invite_res.data['officer']['lastInvitedAt'] is not None
 
 @pytest.mark.django_db
-def test_data_request_dispatch_and_portal_upload(api_client, seeded_db):
+def test_data_request_dispatch_and_portal_upload(api_client, seeded_db, admin_user):
+    api_client.force_authenticate(user=admin_user)
     # Dispatch a new request
     payload = {
         'title': 'NIRF 2026 Data Collection',

@@ -153,6 +153,7 @@ def test_audit_log_immutability_and_pii_safety(seeded_db):
 
 @pytest.mark.django_db
 def test_portal_flow_and_rollup(api_client, seeded_db, admin_user):
+    api_client.force_authenticate(user=admin_user)
     # 1. Dispatch NIRF 2027 request with sections for SCEE
     payload = {
         'title': 'NIRF 2027 Institutional Data Call',
@@ -452,6 +453,7 @@ def test_faculty_import_and_unit_confirmation_workflow(api_client, seeded_db, ad
         ],
         'categories': ['OVERALL']
     }
+    api_client.force_authenticate(user=admin_user)
     dispatch_res = api_client.post('/api/data-requests/', payload, format='json')
     assert dispatch_res.status_code == 201
     grants = dispatch_res.data['issuedGrants']

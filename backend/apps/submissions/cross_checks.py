@@ -6,6 +6,25 @@ from typing import List, Dict, Any
 from .models import SectionSubmission, RecordVerification, VerificationStatus, SubmissionStatus
 from apps.organogram.models import OrgUnit
 
+def _grid_rows(grid) -> List[Dict[str, Any]]:
+    """
+    A grid payload as a list of row dicts carrying their 'id'.
+
+    The form stores grids keyed by row id ({"amountReceived": {"2025-26": ...}})
+    while the unit roll-up and older payloads use a list of rows. Year-keyed
+    rows come back newest first, so `[0]` is the latest year.
+    """
+    if isinstance(grid, dict):
+        return [
+            {'id': key, **row}
+            for key, row in sorted(grid.items(), key=lambda kv: str(kv[0]), reverse=True)
+            if isinstance(row, dict)
+        ]
+    if isinstance(grid, list):
+        return [r for r in grid if isinstance(r, dict)]
+    return []
+
+
 def run_cross_checks(request_id: str, cycle_year: int) -> List[Dict[str, Any]]:
     """
     Evaluates all 8 defined cross-checks for a DataRequest.
@@ -30,7 +49,7 @@ def run_cross_checks(request_id: str, cycle_year: int) -> List[Dict[str, Any]]:
     # Compare sponsored-research (central) vs sponsored-project-register (unit records)
     sric_sub = next((s for s in sub_by_sec.get('sponsored-research', []) if not s.not_applicable), None)
     if sric_sub and sric_sub.payload:
-        sponsored_grid = sric_sub.payload.get('sponsored', [])
+        sponsored_grid = _grid_rows(sric_sub.payload.get('sponsored'))
         # Get amountReceived row
         rec_row = next((r for r in sponsored_grid if r.get('id') == 'amountReceived'), None)
         # Check against register records
@@ -67,8 +86,8 @@ def run_cross_checks(request_id: str, cycle_year: int) -> List[Dict[str, Any]]:
     green_sub = next((s for s in sub_by_sec.get('sdg-green-coverage', []) if not s.not_applicable), None)
     health_sub = next((s for s in sub_by_sec.get('sdg-health-wellbeing', []) if not s.not_applicable), None)
     if green_sub and health_sub:
-        green_annual = green_sub.payload.get('annual', [])
-        health_annual = health_sub.payload.get('annual', [])
+        green_annual = _grid_rows(green_sub.payload.get('annual'))
+        health_annual = _grid_rows(health_sub.payload.get('annual'))
         if green_annual and health_annual:
             g_row = green_annual[0]
             h_row = health_annual[0]
@@ -94,7 +113,7 @@ def run_cross_checks(request_id: str, cycle_year: int) -> List[Dict[str, Any]]:
     water_sub = next((s for s in sub_by_sec.get('sdg-water', []) if not s.not_applicable), None)
     if water_sub:
         water_practices = water_sub.payload.get('practices', {})
-        water_annual = water_sub.payload.get('annual', [])
+        water_annual = _grid_rows(water_sub.payload.get('annual'))
         is_rwh = water_practices.get('rainwaterHarvesting') is True
         if is_rwh:
             rwh_area = 0.0
@@ -181,7 +200,7 @@ def run_cross_checks(request_id: str, cycle_year: int) -> List[Dict[str, Any]]:
         subs = sub_by_sec.get(sec_id, [])
         covered_units = {
             s.org_unit_id for s in subs
-            if s.status == SubmissionStatus.APPROVED or s.not_applicable
+            if s.status == SubmissionStatus.APPROVED
         }
         missing = active_unit_ids - covered_units
         if missing:

@@ -1,16 +1,31 @@
+# Production-style stack: PostgreSQL + Django (gunicorn) + Nginx-served SPA,
+# plus two background workers (NIRF publication fetcher, deadline reminders).
+# Secrets come from ./.env.production (copy .env.production.example and fill
+# it in) and are passed with `docker compose --env-file .env.production up`.
+# Nothing secret is committed here (security audit SEC-08).
+
+x-app-env: &app-env
+  DATABASE_URL: postgres://${POSTGRES_USER:-dora_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-dora_db}
+  # Mail outbox, shared by the backend and the reminders worker.
+  PORTAL_DATA_DIR: /app/.data
+
 services:
   db:
     image: postgres:16-alpine
     container_name: dora_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: dora_db
-      POSTGRES_USER: dora_user
-      POSTGRES_PASSWORD: dora_password
+      POSTGRES_DB: ${POSTGRES_DB:-dora_db}
+      POSTGRES_USER: ${POSTGRES_USER:-dora_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.production}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Not published on the host: only the app containers talk to it.
 
   backend:
     build:
@@ -18,18 +33,82 @@ services:
       dockerfile: Dockerfile
     container_name: dora_backend
     restart: unless-stopped
+    env_file: .env.production
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      DJANGO_SECRET_KEY: "django-insecure-production-secret-key-change-me-dora-portal"
-      DJANGO_DEBUG: "False"
-      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,backend"
-      CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
-      DATABASE_URL: "postgres://dora_user:dora_password@db:5432/dora_db"
-    ports:
-      - "8000:8000"
+      <<: *app-env
+      BACKUP_DIR: /backups
     volumes:
-      - ./backend/media:/app/media
+      - media_data:/app/media
+      - backup_data:/backups
+      - portal_data:/app/.data
+      # Shared with the scheduler, which saves newly published NIRF cycles
+      # here. Docker seeds an empty named volume from the image's files, so
+      # the cycles bundled with the code carry over on first start. After
+      # that the volume is authoritative: to rewrite cycles already in it
+      # (e.g. after a scraper change), run `manage.py refresh_rankings --full`.
+      - rankings_data:/app/apps/rankings/data
+    expose:
+      - "8000"
+
+  # Checks NIRF once a day and fetches any cycle published since the last
+  # run; the web workers pick the new year up on their next read.
+  # Workers bypass the backend's migrate/seed entrypoint and start only once
+  # the backend (which runs migrations) is healthy.
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dora_scheduler
+    restart: unless-stopped
+    env_file: .env.production
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      <<: *app-env
+      REFRESH_INTERVAL_SECONDS: "86400"
+    entrypoint: ["sh", "-c"]
+    command:
+      - >
+        while true; do
+          python manage.py refresh_rankings || echo 'refresh_rankings failed; retrying next cycle';
+          sleep $${REFRESH_INTERVAL_SECONDS};
+        done
+    healthcheck:
+      disable: true
+    volumes:
+      - rankings_data:/app/apps/rankings/data
+
+  # Sends the deadline reminders that have fallen due (spec 2.5). Each section
+  # gets each milestone at most once, so the interval only bounds how late a
+  # reminder can be. Uses the same database and mail settings as the backend.
+  reminders:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dora_reminders
+    restart: unless-stopped
+    env_file: .env.production
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      <<: *app-env
+      REMINDER_INTERVAL_SECONDS: "3600"
+    entrypoint: ["sh", "-c"]
+    command:
+      - >
+        while true; do
+          python manage.py send_reminders || echo 'send_reminders failed; retrying next cycle';
+          sleep $${REMINDER_INTERVAL_SECONDS};
+        done
+    healthcheck:
+      disable: true
+    volumes:
+      - portal_data:/app/.data
 
   frontend:
     build:
@@ -40,7 +119,11 @@ services:
     depends_on:
       - backend
     ports:
-      - "3000:80"
+      - "${HTTP_PORT:-3000}:80"
 
 volumes:
   postgres_data:
+  media_data:
+  backup_data:
+  portal_data:
+  rankings_data:

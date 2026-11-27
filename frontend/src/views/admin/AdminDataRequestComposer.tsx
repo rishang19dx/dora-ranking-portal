@@ -36,6 +36,7 @@ import {
   unitLabel,
 } from '../../lib/organogram';
 import type { NodalOfficer } from '../../lib/types';
+import { authFetch } from '../../lib/authFetch';
 
 const spring = { type: 'spring' as const, stiffness: 100, damping: 20 };
 
@@ -187,7 +188,7 @@ function NewDataRequest() {
   useEffect(() => {
     (async () => {
       try {
-        const response = await fetch('/api/nodal-officers/');
+        const response = await authFetch('/api/nodal-officers/');
         if (!response.ok) throw new Error('Unable to load nodal officers.');
         const raw = await response.json();
         const officersList: NodalOfficer[] = Array.isArray(raw) ? raw : (raw.officers ?? []);
@@ -327,7 +328,7 @@ function NewDataRequest() {
         };
       });
 
-      const response = await fetch('/api/data-requests/', {
+      const response = await authFetch('/api/data-requests/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

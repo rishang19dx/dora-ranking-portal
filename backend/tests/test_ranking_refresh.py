@@ -192,3 +192,86 @@ def test_unreachable_site_is_a_failure_not_a_crash(db, data_dir):
         res = _client('ADMIN', 'down_admin').post('/api/v1/scraper/update/')
     assert res.status_code == 502
     assert res.json()['failed'] and 'Could not reach' in res.json()['message']
+
+
+def test_fetch_lock_can_be_reacquired_after_release(data_dir):
+    with scraper.fetch_lock() as first:
+        assert first is True
+    with scraper.fetch_lock() as second:
+        assert second is True
+
+
+def test_fetch_lock_windows_msvcrt_path(data_dir, monkeypatch):
+    """Exercise the Windows msvcrt.locking fallback across any host OS."""
+    import builtins
+    import types
+
+    calls = []
+    real_import = builtins.__import__
+    fake_msvcrt = types.SimpleNamespace(
+        LK_NBLCK=2,
+        LK_UNLCK=0,
+        locking=lambda fd, mode, nbytes: calls.append((mode, nbytes)),
+    )
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == 'fcntl':
+            raise ImportError('No fcntl on Windows')
+        if name == 'msvcrt':
+            return fake_msvcrt
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, '__import__', fake_import)
+    with scraper.fetch_lock() as acquired:
+        assert acquired is True
+    assert calls == [(2, 1), (0, 1)]
+
+    def contended(fd, mode, nbytes):
+        raise PermissionError('Already locked')
+
+    fake_msvcrt.locking = contended
+    with scraper.fetch_lock() as acquired:
+        assert acquired is False
+
+
+def test_fetch_lock_posix_fcntl_path(data_dir, monkeypatch):
+    """Exercise the POSIX fcntl.flock path across any host OS."""
+    import builtins
+    import types
+
+    calls = []
+    real_import = builtins.__import__
+    fake_fcntl = types.SimpleNamespace(
+        LOCK_EX=2,
+        LOCK_NB=4,
+        LOCK_UN=8,
+        flock=lambda handle, flags: calls.append(flags),
+    )
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == 'fcntl':
+            return fake_fcntl
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, '__import__', fake_import)
+    with scraper.fetch_lock() as acquired:
+        assert acquired is True
+    assert calls == [6, 8]
+
+    def contended(handle, flags):
+        raise BlockingIOError('Resource temporarily unavailable')
+
+    fake_fcntl.flock = contended
+    with scraper.fetch_lock() as acquired:
+        assert acquired is False
+
+
+def test_refresh_rankings_command_skips_when_lock_held(data_dir):
+    from io import StringIO
+    from django.core.management import call_command
+
+    out = StringIO()
+    with scraper.fetch_lock() as held:
+        assert held is True
+        call_command('refresh_rankings', stdout=out)
+    assert 'Another ranking fetch is running' in out.getvalue()

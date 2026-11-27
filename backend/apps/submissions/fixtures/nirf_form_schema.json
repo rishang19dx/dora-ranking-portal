@@ -1,0 +1,4762 @@
+{
+  "$schemaVersion": "1.0.0",
+  "id": "nirf-dcs",
+  "framework": "NIRF",
+  "title": "NIRF Data Capturing System - form schema for IIT Mandi (Overall, Engineering, Innovation, SDG)",
+  "generatedOn": "2026-10-31",
+  "defaultCycleYear": 2027,
+  "derivedFrom": {
+    "primary": [
+      "http://iitmandi.ac.in/pdf/nirf/Indian_Institute_of_Technology_Mandi20260219_Overall.pdf",
+      "http://iitmandi.ac.in/pdf/nirf/Indian_Institute_of_Technology_Mandi20260219.pdf",
+      "http://iitmandi.ac.in/pdf/nirf/NIRF_Innovation_2026_submitted.pdf",
+      "http://iitmandi.ac.in/pdf/nirf/NIRF_SDG_2026.pdf",
+      "http://iitmandi.ac.in/pdf/nirf/NIRF%202025-%20Overall-2.pdf"
+    ],
+    "orgAndSchools": "https://iitmandi.ac.in/nirf (menu: Schools, Centers)",
+    "caveat": "Structure is reverse-engineered from IIT Mandi's SUBMITTED 2026 data, not from the blank NIRF template. Dropdown option lists that only show the selected value are flagged optionsComplete=false / provisional. Diff against the official 2027 DCS when it opens (an unofficial consultancy page expects Nov-Dec 2026; unconfirmed)."
+  },
+  "yearModel": {
+    "summary": "All year columns are relative to the latest completed academic year (LAY) of the cycle, so the same schema works for every cycle.",
+    "formulas": {
+      "latestAcademicYearStart": "cycleYear - 2",
+      "latestFinancialYearStart": "cycleYear - 2",
+      "latestCalendarYear": "cycleYear - 2",
+      "nextAcademicYearStart": "cycleYear - 1",
+      "academicYearLabel": "f'{s}-{(s+1)%100:02d}'",
+      "financialYearLabel": "same as academicYearLabel"
+    },
+    "series": "{kind, count} -> newest first: offsets 0, -1, ... -(count-1) from the latest year of that kind.",
+    "verifiedExamples": {
+      "2026": {
+        "academicYears(3)": [
+          "2024-25",
+          "2023-24",
+          "2022-23"
+        ],
+        "academicYears(6)": [
+          "2024-25",
+          "2023-24",
+          "2022-23",
+          "2021-22",
+          "2020-21",
+          "2019-20"
+        ],
+        "calendarYears(3)": [
+          2024,
+          2023,
+          2022
+        ],
+        "nextAcademicYear": "2025-26",
+        "source": "IIT Mandi NIRF 2026 PDFs (matches the formulas)"
+      },
+      "2027": {
+        "academicYears(3)": [
+          "2025-26",
+          "2024-25",
+          "2023-24"
+        ],
+        "calendarYears(3)": [
+          2025,
+          2024,
+          2023
+        ],
+        "nextAcademicYear": "2026-27",
+        "source": "Derived by the formulas; the official 2027 DCS has not been published yet"
+      }
+    },
+    "placementBatchRule": {
+      "UG4": "entry AY = graduation AY - 3; lateral-entry AY = graduation AY - 2",
+      "PG2": "entry AY = graduation AY - 1",
+      "verifiedAgainst": "IIT Mandi NIRF 2026 Overall PDF (e.g. UG: intake 2019-20, lateral 2020-21, graduating 2022-23)"
+    },
+    "overridable": "DataRequest/cycle config may override latestAcademicYearStart if NIRF changes the reference window."
+  },
+  "types": {
+    "integer": "Whole number >= min (default 0).",
+    "decimal": "Number with up to 3 decimals >= min.",
+    "currencyInr": "Rupees, decimal(16,2), >= 0. UI shows Indian grouping (12,34,567).",
+    "percent": "0-100.",
+    "text": "Single-line string (maxLength default 255).",
+    "longText": "Multi-line string.",
+    "boolean": "Yes/No (tri-state in UI: unanswered / yes / no; required means answered).",
+    "date": "ISO date.",
+    "year": "4-digit year.",
+    "yearLabel": "Pick from a resolved year series (e.g. 2024-25) - series is on the field.",
+    "enum": "Single choice from schema.enums[enum]; allowOther adds a free-text 'Other'.",
+    "multiEnum": "Multiple choice from schema.enums[enum].",
+    "orgUnit": "Reference to an OrgUnit id, restricted by eligibleUnitKinds.",
+    "recordRef": "Reference to a row of another records block in the same section: {block, key, label}.",
+    "derived": "Fields with 'derive' are computed server- and client-side and are read-only."
+  },
+  "dsl": {
+    "block.kind": [
+      "grid",
+      "questionnaire",
+      "records"
+    ],
+    "grid.rowAxis.type": {
+      "fixed": "explicit rows[]",
+      "programme": "one row per active Programme of the submitting unit; roll-up groups by programme.nirfLevel",
+      "programmeBatch": "programme x graduating batch (batchSeries, entryBeforeGraduation, lateralBeforeGraduation)",
+      "levelBatch": "nirfLevel x graduating batch; institute-level (central) use",
+      "years": "one row per resolved year (series)"
+    },
+    "grid.columnAxis.type": {
+      "fields": "heterogeneous typed columns",
+      "years": "one homogeneous cell type repeated per year (series, cell)"
+    },
+    "row overrides": "rows[].type / usedBy (subset of section.usedBy) / labelByCategory / ownerUnitIds / derive",
+    "validations.rule.op": [
+      "sumEquals(target, parts, tolerancePct?)",
+      "lte(left, right, axis?)",
+      "lteSum(leftParts, rightParts)",
+      "requiredIf(field, when{field,eq})",
+      "dateOrder(start, end)"
+    ],
+    "validations.severity": "error blocks Submit; warning requires an explanatory note before Submit.",
+    "derive.fn": [
+      "sum(of[])",
+      "lookup(section, block, row, col)",
+      "amountInWordsInr(of)",
+      "rowNumber",
+      "submittingUnit"
+    ],
+    "flags": {
+      "carryForward": "prefill from previous cycle's APPROVED data (overlapping years shift by one)",
+      "snapshot": "no year dimension",
+      "optional": "section/block not needed for submission",
+      "allowEmpty": "records block may be empty but the officer must tick 'Nothing to report'",
+      "defaultNotApplicable": "section starts as Not Applicable",
+      "pii": "personal data: no logging, mask in lists",
+      "internal": "not exported to NIRF",
+      "readOnly": "derived or looked up"
+    },
+    "ownership.submitBy": {
+      "unit": "each eligible SCHOOL/CENTRE submits its own rows; institute value = roll-up sum",
+      "central": "one primary owner unit submits the institute-wide values"
+    }
+  },
+  "enums": {
+    "designation": {
+      "options": [
+        {
+          "value": "professor",
+          "label": "Professor"
+        },
+        {
+          "value": "associate_professor",
+          "label": "Associate Professor"
+        },
+        {
+          "value": "assistant_professor",
+          "label": "Assistant Professor"
+        },
+        {
+          "value": "dean_principal_director_vice_chancellor",
+          "label": "Dean / Principal / Director / Vice Chancellor"
+        },
+        {
+          "value": "associate_dean",
+          "label": "Associate Dean"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ],
+      "optionsComplete": true
+    },
+    "gender": {
+      "options": [
+        {
+          "value": "male",
+          "label": "Male"
+        },
+        {
+          "value": "female",
+          "label": "Female"
+        }
+      ],
+      "optionsComplete": true,
+      "note": "DCS shows Male/Female only; keep unless the 2027 DCS adds a value."
+    },
+    "associationType": {
+      "options": [
+        {
+          "value": "regular",
+          "label": "Regular"
+        },
+        {
+          "value": "adhoc_contractual",
+          "label": "Adhoc / Contractual"
+        },
+        {
+          "value": "other",
+          "label": "Other"
+        }
+      ],
+      "optionsComplete": true
+    },
+    "phdMode": {
+      "options": [
+        {
+          "value": "full_time",
+          "label": "Full Time"
+        },
+        {
+          "value": "part_time",
+          "label": "Part Time"
+        }
+      ],
+      "optionsComplete": true
+    },
+    "pcsCoverage": {
+      "options": [
+        {
+          "value": "no",
+          "label": "No",
+          "provisional": true
+        },
+        {
+          "value": "yes_less_than_40_of_the_buildings",
+          "label": "Yes, less than 40% of the buildings",
+          "observedInInstitutes": 1
+        },
+        {
+          "value": "yes_40_to_80_of_the_buildings",
+          "label": "Yes, 40% to 80% of the buildings",
+          "provisional": true
+        },
+        {
+          "value": "yes_more_than_80_of_the_buildings",
+          "label": "Yes, more than 80% of the buildings",
+          "observedInInstitutes": 3
+        }
+      ],
+      "optionsComplete": false,
+      "note": "Observed in 3 sampled submissions (IIT Mandi, IIT Delhi, PHCET 2026): 'Yes, more than 80% of the buildings' (3 of 3) and 'Yes, less than 40% of the buildings' (1 of 3). 'No' and the middle band are NOT yet observed - provisional until more institutes are sampled or the live DCS list is pasted in."
+    },
+    "trlStage": {
+      "options": [
+        {
+          "value": "basic_principles_observed_and_reported",
+          "label": "Basic principles observed and reported"
+        },
+        {
+          "value": "technology_concept_and_or_application_formulated",
+          "label": "Technology concept and/or application formulated"
+        },
+        {
+          "value": "analytical_and_experimental_critical_function_and_or_characteristic_proof_of_concept",
+          "label": "Analytical and experimental critical function and/or characteristic proof-of-concept"
+        },
+        {
+          "value": "component_and_or_breadboard_validation_in_a_laboratory_environment",
+          "label": "Component and/or breadboard validation in a laboratory environment"
+        },
+        {
+          "value": "system_subsystem_model_or_prototype_demonstration_in_a_laboratory_environment",
+          "label": "System/subsystem model or prototype demonstration in a laboratory environment"
+        },
+        {
+          "value": "system_subsystem_model_or_prototype_demonstration_in_a_relevant_environment",
+          "label": "System/subsystem model or prototype demonstration in a relevant environment"
+        },
+        {
+          "value": "system_prototype_demonstration_in_an_operational_environment",
+          "label": "System prototype demonstration in an operational environment"
+        },
+        {
+          "value": "actual_system_completed_and_qualified_through_test_and_demonstration",
+          "label": "Actual system completed and qualified through test and demonstration"
+        },
+        {
+          "value": "actual_system_proven_through_successful_mission_operations",
+          "label": "Actual system proven through successful mission operations"
+        }
+      ],
+      "optionsComplete": true,
+      "note": "Technology Readiness Level scale; also used for 'Achievement Level' columns."
+    },
+    "vcInvestmentType": {
+      "options": [
+        {
+          "value": "equity",
+          "label": "Equity"
+        },
+        {
+          "value": "ccps",
+          "label": "CCPS"
+        },
+        {
+          "value": "ccd",
+          "label": "CCD"
+        }
+      ],
+      "optionsComplete": false,
+      "allowOther": true
+    },
+    "seedFundingType": {
+      "options": [
+        {
+          "value": "grant",
+          "label": "Grant"
+        },
+        {
+          "value": "investment",
+          "label": "Investment"
+        }
+      ],
+      "optionsComplete": false
+    },
+    "fdiInvestmentType": {
+      "options": [
+        {
+          "value": "priced_amount",
+          "label": "Priced Amount"
+        },
+        {
+          "value": "price_round",
+          "label": "Price Round"
+        },
+        {
+          "value": "equity",
+          "label": "Equity"
+        }
+      ],
+      "optionsComplete": false,
+      "allowOther": true
+    },
+    "courseType": {
+      "options": [
+        {
+          "value": "core_course",
+          "label": "Core Course"
+        },
+        {
+          "value": "elective_course",
+          "label": "Elective Course"
+        }
+      ],
+      "optionsComplete": false
+    },
+    "courseLevel": {
+      "options": [
+        {
+          "value": "ug",
+          "label": "UG"
+        },
+        {
+          "value": "pg",
+          "label": "PG"
+        },
+        {
+          "value": "ug_pg_ph_d",
+          "label": "UG/PG/Ph.D"
+        },
+        {
+          "value": "pg_ph_d",
+          "label": "PG/Ph.D"
+        }
+      ],
+      "optionsComplete": false
+    },
+    "patentStatus": {
+      "options": [
+        {
+          "value": "filed",
+          "label": "Filed"
+        },
+        {
+          "value": "published",
+          "label": "Published"
+        },
+        {
+          "value": "granted",
+          "label": "Granted"
+        },
+        {
+          "value": "commercialised_technology_transferred",
+          "label": "Commercialised / Technology transferred"
+        }
+      ],
+      "optionsComplete": true,
+      "note": "Portal-defined (not an NIRF dropdown); used only for the optional patent register."
+    },
+    "singleUsePlastic": {
+      "options": [
+        {
+          "value": "ban_on_single_use_plastic_items_e_g_straws_cutlery_plates",
+          "label": "Ban on single-use plastic items (e.g., straws, cutlery, plates)",
+          "observedInInstitutes": 1
+        },
+        {
+          "value": "on_campus_recycling_stations_for_plastic_waste",
+          "label": "On-campus recycling stations for plastic waste",
+          "observedInInstitutes": 2
+        }
+      ],
+      "optionsComplete": false,
+      "allowOther": true
+    },
+    "carbonActions": {
+      "options": [
+        {
+          "value": "energy_efficient_buildings",
+          "label": "Energy-efficient buildings",
+          "observedInInstitutes": 3
+        },
+        {
+          "value": "renewable_energy_installations",
+          "label": "Renewable energy installations",
+          "observedInInstitutes": 1
+        }
+      ],
+      "optionsComplete": false,
+      "allowOther": true
+    },
+    "recyclingInfra": {
+      "options": [
+        {
+          "value": "comprehensive_infrastructure_bins_awareness_collection_systems",
+          "label": "Comprehensive infrastructure (bins, awareness, collection systems)",
+          "observedInInstitutes": 3
+        }
+      ],
+      "optionsComplete": false,
+      "allowOther": true
+    },
+    "rwhType": {
+      "options": [
+        {
+          "value": "rooftop_rainwater_harvesting_system",
+          "label": "Rooftop Rainwater Harvesting System",
+          "observedInInstitutes": 3
+        },
+        {
+          "value": "surface_runoff_harvesting_system",
+          "label": "Surface Runoff Harvesting System",
+          "observedInInstitutes": 1
+        },
+        {
+          "value": "percolation_pit_system",
+          "label": "Percolation Pit System",
+          "observedInInstitutes": 2
+        },
+        {
+          "value": "recharge_wells",
+          "label": "Recharge Wells",
+          "observedInInstitutes": 1
+        },
+        {
+          "value": "storage_tank_system",
+          "label": "Storage Tank System",
+          "observedInInstitutes": 2
+        }
+      ],
+      "optionsComplete": false,
+      "allowOther": true,
+      "note": "Multi-select in practice (IIT Delhi and PHCET each ticked several)."
+    },
+    "renewableSources": {
+      "options": [
+        {
+          "value": "solar_panels",
+          "label": "Solar Panels",
+          "observedInInstitutes": 3
+        }
+      ],
+      "optionsComplete": false,
+      "allowOther": true
+    },
+    "foodWaste": {
+      "options": [
+        {
+          "value": "composting_systems",
+          "label": "Composting systems",
+          "observedInInstitutes": 3
+        },
+        {
+          "value": "food_donation_programs",
+          "label": "Food donation programs",
+          "observedInInstitutes": 2
+        },
+        {
+          "value": "sustainable_food_procurement",
+          "label": "Sustainable food procurement",
+          "observedInInstitutes": 1
+        }
+      ],
+      "optionsComplete": false,
+      "allowOther": true,
+      "note": "Multi-select in practice (IIT Delhi and PHCET each ticked several)."
+    },
+    "nirfLevel": {
+      "options": [
+        {
+          "value": "ug_4_years_program_s",
+          "label": "UG [4 Years Program(s)]"
+        },
+        {
+          "value": "pg_2_year_program_s",
+          "label": "PG [2 Year Program(s)]"
+        }
+      ],
+      "optionsComplete": true,
+      "note": "See programmeRegistry.nirfLevels."
+    }
+  },
+  "orgModel": {
+    "summary": "Align the organogram with the 9 schools and the research centres listed on iitmandi.ac.in. Keep existing ids wherever the acronym matches so no data migration of ids is needed.",
+    "unitKinds": [
+      "SCHOOL",
+      "CENTRE",
+      "OFFICE"
+    ],
+    "unitKindRule": "OrgUnit.kind is a new field. Only SCHOOL and CENTRE units can submit 'unit'-scope sections. Default for every existing unit is OFFICE.",
+    "schools": [
+      {
+        "id": "sbs",
+        "name": "School of Biosciences and Bioengineering",
+        "shortName": "SBBE",
+        "change": "keep id; display acronym is SBBE on iitmandi.ac.in",
+        "kind": "SCHOOL",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "sbs-faculty-body"
+      },
+      {
+        "id": "scee",
+        "name": "School of Computing and Electrical Engineering",
+        "shortName": "SCEE",
+        "change": "rename only (repo wrongly said Civil & Environmental)",
+        "kind": "SCHOOL",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "scee-faculty-body"
+      },
+      {
+        "id": "scene",
+        "name": "School of Civil and Environmental Engineering",
+        "shortName": "SCENE",
+        "change": "rename only (repo wrongly said Chemical Sciences & Energy)",
+        "kind": "SCHOOL",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "scene-faculty-body"
+      },
+      {
+        "id": "shss",
+        "name": "School of Humanities and Social Sciences",
+        "shortName": "SHSS",
+        "change": "unchanged",
+        "kind": "SCHOOL",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "shss-faculty-body"
+      },
+      {
+        "id": "smss",
+        "name": "School of Mathematical and Statistical Sciences",
+        "shortName": "SMSS",
+        "change": "unchanged",
+        "kind": "SCHOOL",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "smss-faculty-body"
+      },
+      {
+        "id": "som",
+        "name": "School of Management",
+        "shortName": "SM",
+        "change": "keep id; display acronym is SM on iitmandi.ac.in",
+        "kind": "SCHOOL",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "som-faculty-body"
+      },
+      {
+        "id": "smme",
+        "name": "School of Mechanical and Materials Engineering",
+        "shortName": "SMME",
+        "change": "NEW (replaces retired 'se')",
+        "kind": "SCHOOL",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "smme-faculty-body"
+      },
+      {
+        "id": "scs",
+        "name": "School of Chemical Sciences",
+        "shortName": "SCS",
+        "change": "NEW",
+        "kind": "SCHOOL",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "scs-faculty-body"
+      },
+      {
+        "id": "sps",
+        "name": "School of Physical Sciences",
+        "shortName": "SPS",
+        "change": "NEW",
+        "kind": "SCHOOL",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "sps-faculty-body"
+      }
+    ],
+    "centres": [
+      {
+        "id": "cqst",
+        "name": "Centre for Quantum Science and Technologies",
+        "shortName": "CQST",
+        "change": "existing",
+        "kind": "CENTRE",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "cqst-faculty-body"
+      },
+      {
+        "id": "amrc",
+        "name": "Advanced Materials Research Centre",
+        "shortName": "AMRC",
+        "change": "existing",
+        "kind": "CENTRE",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "amrc-faculty-body"
+      },
+      {
+        "id": "iksmha",
+        "name": "Indian Knowledge System and Mental Health Applications Centre",
+        "shortName": "IKSMHA",
+        "change": "NEW",
+        "kind": "CENTRE",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "iksmha-faculty-body"
+      },
+      {
+        "id": "c3dar",
+        "name": "Centre for Climate Change and Disaster Management",
+        "shortName": "C3DAR",
+        "change": "NEW",
+        "kind": "CENTRE",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "c3dar-faculty-body"
+      },
+      {
+        "id": "c4dfed",
+        "name": "Centre for Design & Fabrication of Electronic Device",
+        "shortName": "C4DFED",
+        "change": "NEW",
+        "kind": "CENTRE",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "c4dfed-faculty-body"
+      },
+      {
+        "id": "cair",
+        "name": "Centre for Artificial Intelligence and Robotics",
+        "shortName": "CAIR",
+        "change": "NEW",
+        "kind": "CENTRE",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "cair-faculty-body"
+      },
+      {
+        "id": "chci",
+        "name": "Centre for Human-Computer Interaction",
+        "shortName": "CHCi",
+        "change": "NEW",
+        "kind": "CENTRE",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "chci-faculty-body"
+      },
+      {
+        "id": "biox",
+        "name": "BioX Centre",
+        "shortName": "BioX",
+        "change": "NEW",
+        "kind": "CENTRE",
+        "parentId": "dean-academics",
+        "facultyBodyChildId": "biox-faculty-body"
+      }
+    ],
+    "newOffices": [
+      {
+        "id": "catalyst",
+        "name": "IIT Mandi Catalyst",
+        "shortName": "Catalyst",
+        "parentId": "dean-sric",
+        "kind": "OFFICE",
+        "type": "FUNCTIONAL",
+        "note": "Incubator; parent assumed SRIC - confirm."
+      },
+      {
+        "id": "ihub",
+        "name": "IIT Mandi iHub and HCI Foundation",
+        "shortName": "iHub",
+        "parentId": "dean-sric",
+        "kind": "OFFICE",
+        "type": "FUNCTIONAL",
+        "note": "Parent assumed SRIC - confirm."
+      },
+      {
+        "id": "cnp-cell",
+        "name": "CnP Cell (Career and Placement)",
+        "shortName": "CnP",
+        "parentId": "dean-students",
+        "kind": "OFFICE",
+        "type": "FUNCTIONAL",
+        "note": "Exists: students.iitmandi.ac.in/cnpcell. Parent and the expansion of 'CnP' need confirmation."
+      },
+      {
+        "id": "ranking-cell",
+        "name": "Ranking Cell",
+        "shortName": "RC",
+        "parentId": "director",
+        "kind": "OFFICE",
+        "functionalParent": "DORA",
+        "type": "ADMINISTRATIVE",
+        "note": "Functionally under DORA (confirmed by product owner). The DORA/Dean DORA node is deliberately not in the organogram yet, so it hangs off the Director's office until that node is added."
+      },
+      {
+        "id": "reservation-cell",
+        "name": "Reservation Cell",
+        "shortName": "Reservation Cell",
+        "parentId": "registrar",
+        "kind": "OFFICE",
+        "type": "FUNCTIONAL",
+        "note": "Exists (iitmandi.ac.in/reservationcell). Parent assumed."
+      },
+      {
+        "id": "grievance-redressal-committee",
+        "name": "Grievances Redressal Committee",
+        "shortName": "GRC",
+        "parentId": "registrar",
+        "kind": "OFFICE",
+        "type": "GOVERNANCE",
+        "note": "Exists (iitmandi.ac.in/grc). Parent assumed."
+      },
+      {
+        "id": "womens-cell",
+        "name": "Women's Cell",
+        "shortName": "Women's Cell",
+        "parentId": "dean-students",
+        "kind": "OFFICE",
+        "type": "FUNCTIONAL",
+        "note": "Exists (iitmandi.ac.in/womencell). Parent assumed."
+      }
+    ],
+    "retireUnits": [
+      "se",
+      "se-faculty-body"
+    ],
+    "retireNote": "'se' (School of Engineering) has no mailbox and is not on the website's school list; it is superseded by smme. Verify no NodalOfficer/grant references it, then delete.",
+    "emailPolicy": "Never invent mailboxes. New units get email = null; the existing coverage warning then tells DORA to assign nodal officers.",
+    "dataScopeAdditions": {
+      "estate-works": [
+        "pcs-facilities",
+        "sustainability-practices"
+      ],
+      "dean-infra": [
+        "sustainability-practices"
+      ],
+      "hostels": [
+        "sustainability-practices"
+      ],
+      "dean-students": [
+        "pcs-facilities",
+        "health-wellbeing-community"
+      ],
+      "sports": [
+        "health-wellbeing-community"
+      ],
+      "medical-services": [
+        "health-wellbeing-community"
+      ],
+      "cultural-activities": [
+        "health-wellbeing-community"
+      ],
+      "dean-academics": [
+        "nep-iks-governance",
+        "institute-profile"
+      ],
+      "jee-gate-admissions": [
+        "nep-iks-governance"
+      ],
+      "registrar": [
+        "nep-iks-governance"
+      ],
+      "iksmha": [
+        "nep-iks-governance"
+      ],
+      "grievance-redressal-committee": [
+        "nep-iks-governance"
+      ],
+      "reservation-cell": [
+        "diversity"
+      ],
+      "womens-cell": [
+        "diversity"
+      ],
+      "continuing-education": [
+        "innovation-education"
+      ],
+      "dean-faculty": [
+        "innovation-education"
+      ],
+      "academic-courses-research": [
+        "placement-higher-studies"
+      ],
+      "library": [
+        "capital-expenditure"
+      ],
+      "catalyst": [
+        "entrepreneurship"
+      ],
+      "ihub": [
+        "entrepreneurship"
+      ],
+      "cnp-cell": [
+        "placement-higher-studies",
+        "graduation-outcomes"
+      ],
+      "SCHOOLS_AND_CENTRES": [
+        "innovation-education"
+      ]
+    },
+    "dataScopeAdditionsNote": "'SCHOOLS_AND_CENTRES' means every unit with kind SCHOOL or CENTRE.",
+    "touchPoints": [
+      "backend/apps/organogram/fixtures/org_units.json (flat list; uses parentId)",
+      "backend/apps/organogram/fixtures/organogram_tree.json (nested tree served to the UI)",
+      "backend/apps/organogram/fixtures/data_catalogue.json",
+      "frontend/src/lib/organogram.ts and frontend/src/lib/data-catalogue.ts (typed copies - keep in sync or switch the UI to /api/organogram/)",
+      "backend/tests/test_backend.py (asserts 28 catalogue items and >= 50 units)"
+    ]
+  },
+  "programmeRegistry": {
+    "purpose": "Rows for 'programme'-axis grids come from a Programme registry owned by each school/centre. The registry is DATA, not schema - seed it empty and let the Academic Section fill it via an admin page / CSV import.",
+    "nirfLevels": [
+      {
+        "id": "UG4",
+        "dcsLabel": "UG [4 Years Program(s)]",
+        "enabled": true
+      },
+      {
+        "id": "PG2",
+        "dcsLabel": "PG [2 Year Program(s)]",
+        "enabled": true
+      },
+      {
+        "id": "UG5",
+        "dcsLabel": "UG [5 Years Program(s)]",
+        "enabled": false
+      },
+      {
+        "id": "UG3",
+        "dcsLabel": "UG [3 Years Program(s)]",
+        "enabled": false
+      },
+      {
+        "id": "PG3",
+        "dcsLabel": "PG [3 Year Program(s)]",
+        "enabled": false
+      },
+      {
+        "id": "PGI",
+        "dcsLabel": "PG-Integrated",
+        "enabled": false
+      }
+    ],
+    "fields": [
+      "id",
+      "unitId",
+      "name",
+      "nirfLevel",
+      "active",
+      "startAcademicYear",
+      "endAcademicYear"
+    ],
+    "rules": [
+      "A unit with no active programmes sees 'programme'-axis sections pre-marked Not Applicable.",
+      "Roll-up groups programme rows by nirfLevel, then sums.",
+      "Only enabled levels produce DCS rows; disabled levels are kept so future cycles can switch them on.",
+      "Ph.D is not a programme level; it has its own section."
+    ]
+  },
+  "catalogueAdditions": [
+    {
+      "id": "pcs-facilities",
+      "label": "Facilities for Physically Challenged Students",
+      "group": "OI",
+      "frameworks": [
+        "NIRF"
+      ],
+      "description": "Lifts/ramps, mobility aids and accessible toilets across campus buildings.",
+      "proofFormats": [
+        "PDF",
+        "DOCX"
+      ]
+    },
+    {
+      "id": "nep-iks-governance",
+      "label": "NEP, Indian Knowledge System & Governance Practices",
+      "group": "INSTITUTIONAL",
+      "frameworks": [
+        "NIRF"
+      ],
+      "description": "Multiple entry/exit, Indian-language and IKS courses, grievance cell, entrance-exam admissions.",
+      "proofFormats": [
+        "PDF",
+        "DOCX"
+      ]
+    },
+    {
+      "id": "sustainability-practices",
+      "label": "Sustainability: Energy, Water, Waste & Green Coverage",
+      "group": "INSTITUTIONAL",
+      "frameworks": [
+        "NIRF",
+        "THE"
+      ],
+      "description": "Sustainable living practices plus annual energy, water, waste and green-cover data.",
+      "proofFormats": [
+        "PDF",
+        "XLSX",
+        "CSV"
+      ]
+    },
+    {
+      "id": "health-wellbeing-community",
+      "label": "Health, Well-Being & Community Engagement",
+      "group": "OI",
+      "frameworks": [
+        "NIRF",
+        "THE"
+      ],
+      "description": "Wellness areas, yoga/fitness participation and community initiatives.",
+      "proofFormats": [
+        "PDF",
+        "XLSX",
+        "DOCX"
+      ]
+    },
+    {
+      "id": "innovation-education",
+      "label": "Innovation Education & Faculty Development",
+      "group": "RPC",
+      "frameworks": [
+        "NIRF"
+      ],
+      "description": "Innovation/entrepreneurship/IPR courses and faculty development programmes.",
+      "proofFormats": [
+        "PDF",
+        "XLSX",
+        "CSV"
+      ]
+    }
+  ],
+  "notCollectedViaDcs": [
+    {
+      "nirfParameter": "PU / QP (publications and citations)",
+      "reason": "Not present in IIT Mandi's 2025 or 2026 DCS submissions; NIRF retrieves these from third-party databases. Also carries a retracted-paper penalty (reported for 2026 by unofficial sources)."
+    },
+    {
+      "nirfParameter": "PREMP (perception)",
+      "reason": "Survey-based; not entered by the institute in the DCS."
+    },
+    {
+      "nirfParameter": "OE (online education)",
+      "reason": "Listed (15 marks) in the 2024 parameter table on iitmandi.ac.in but absent from the 2025 and 2026 submitted PDFs. Re-check when the 2027 DCS opens."
+    }
+  ],
+  "optionsEvidence": {
+    "method": "Submitted NIRF PDFs only show the option(s) an institute selected, so the dropdown lists are reconstructed from the union of values seen across institutes. Accept an option once seen in >= 2 institutes; anything seen in 1 stays flagged until confirmed against the live DCS.",
+    "institutesSampled": [
+      "IIT Mandi 2026 (Overall, SDG)",
+      "IIT Delhi 2026 (Overall)",
+      "PHCET 2026 (Overall)"
+    ],
+    "sampleSize": 3,
+    "targetSampleSize": 5,
+    "notYetSampled": [
+      "IIT Madras Overall 2026",
+      "IIT Tirupati Overall 2026",
+      "NIT Kurukshetra Overall 2026",
+      "VIT Overall 2026",
+      "IIT Madras / IISc / VIT Innovation 2026 (for investment-type, achievement-level, course-type and course-level dropdowns)"
+    ],
+    "blocked": [
+      "CUSAT (robots.txt)",
+      "Ashoka (fetch error)"
+    ],
+    "stillUnconfirmed": [
+      "pcsCoverage middle band and 'No'",
+      "vcInvestmentType / seedFundingType / fdiInvestmentType",
+      "courseType / courseLevel"
+    ]
+  },
+  "crossChecks": [
+    {
+      "id": "intake-feeds-placement",
+      "severity": "info",
+      "description": "placement-outcomes.intake is read-only and looked up from sanctioned-intake by programme and entry academic year."
+    },
+    {
+      "id": "sponsored-register-vs-totals",
+      "severity": "warning",
+      "description": "Sum of sponsored-project-register receipts per financial year (all units) should be within 1% of sponsored-research.amountReceived; show a reconciliation panel to DORA."
+    },
+    {
+      "id": "green-land-vs-campus-area",
+      "severity": "warning",
+      "description": "sdg-green-coverage.landAreaAcres and sdg-health-wellbeing.totalCampusAreaAcres should agree for the same year. IIT Mandi's 2026 SDG PDF shows 56 vs 503 acres - the portal must flag this."
+    },
+    {
+      "id": "rwh-consistency",
+      "severity": "warning",
+      "description": "If sdg-water rainwaterHarvesting = true (or sustainable-living rainwaterHarvesting is set) then rwhConnectedAreaSqft should be > 0. The 2026 SDG PDF reports 0."
+    },
+    {
+      "id": "student-strength-vs-intake",
+      "severity": "warning",
+      "description": "UG4 total students should not exceed about 4x the largest sanctioned intake in the last 4 years (+ lateral entry); PG2 about 2x."
+    },
+    {
+      "id": "faculty-unit-confirmation",
+      "severity": "error",
+      "description": "faculty-details cannot be APPROVED until every school/centre that owns at least one faculty row has a CONFIRMED RecordVerification."
+    },
+    {
+      "id": "faculty-reference-period",
+      "severity": "warning",
+      "description": "Flag faculty whose leavingDate is before the start of the earliest reference year, or joiningDate after the end of the latest reference year."
+    },
+    {
+      "id": "unit-coverage-for-rollup",
+      "severity": "error",
+      "description": "An institute roll-up for a 'unit'-scope section is complete only when every active SCHOOL/CENTRE unit has an APPROVED or Not-Applicable submission."
+    }
+  ],
+  "categories": [
+    {
+      "id": "OVERALL",
+      "label": "Overall",
+      "dcsTitle": "Data Capturing System: OVERALL",
+      "dcsCode": "IR-O",
+      "instituteCode": "IR-O-U-0184",
+      "sections": [
+        "sanctioned-intake",
+        "student-strength",
+        "placement-outcomes",
+        "placement-median-salary",
+        "phd-details",
+        "pg-medical",
+        "capital-expenditure",
+        "operational-expenditure",
+        "ipr-patents",
+        "sponsored-research",
+        "consultancy",
+        "edp-mdp",
+        "pcs-facilities",
+        "naac-accreditation",
+        "entry-exit-iks",
+        "sustainable-living",
+        "faculty-details"
+      ],
+      "exportOrder": [
+        "sanctioned-intake",
+        "student-strength",
+        "placement-outcomes",
+        "placement-median-salary",
+        "phd-details",
+        "pg-medical",
+        "capital-expenditure",
+        "operational-expenditure",
+        "ipr-patents",
+        "sponsored-research",
+        "consultancy",
+        "edp-mdp",
+        "pcs-facilities",
+        "naac-accreditation",
+        "entry-exit-iks",
+        "sustainable-living",
+        "faculty-details"
+      ]
+    },
+    {
+      "id": "ENGINEERING",
+      "label": "Engineering",
+      "dcsTitle": "Data Capturing System: ENGINEERING",
+      "dcsCode": "IR-E",
+      "instituteCode": "IR-E-U-0184",
+      "sections": [
+        "sanctioned-intake",
+        "student-strength",
+        "placement-outcomes",
+        "placement-median-salary",
+        "phd-details",
+        "capital-expenditure",
+        "operational-expenditure",
+        "ipr-patents",
+        "sponsored-research",
+        "consultancy",
+        "pcs-facilities",
+        "faculty-details"
+      ],
+      "exportOrder": [
+        "sanctioned-intake",
+        "student-strength",
+        "placement-outcomes",
+        "placement-median-salary",
+        "phd-details",
+        "capital-expenditure",
+        "operational-expenditure",
+        "ipr-patents",
+        "sponsored-research",
+        "consultancy",
+        "pcs-facilities",
+        "faculty-details"
+      ]
+    },
+    {
+      "id": "INNOVATION",
+      "label": "Innovation",
+      "dcsTitle": "Data Capturing System: INNOVATION",
+      "dcsCode": null,
+      "instituteCode": null,
+      "sections": [
+        "sanctioned-intake",
+        "student-strength",
+        "startup-ecosystem",
+        "ipr-patents",
+        "incubation-activities",
+        "innovation-fdp",
+        "innovation-courses",
+        "faculty-details"
+      ],
+      "exportOrder": [
+        "sanctioned-intake",
+        "student-strength",
+        "startup-ecosystem/dpiit-recognised",
+        "startup-ecosystem/vc-investment",
+        "startup-ecosystem/seed-funding",
+        "startup-ecosystem/fdi-investment",
+        "startup-ecosystem/innovation-grants",
+        "ipr-patents",
+        "startup-ecosystem/innovations-trl",
+        "startup-ecosystem/alumni-founders",
+        "startup-ecosystem/ventures-turnover",
+        "incubation-activities",
+        "innovation-fdp",
+        "innovation-courses",
+        "faculty-details"
+      ]
+    },
+    {
+      "id": "SDG",
+      "label": "SDG (Sustainable Institutions)",
+      "dcsTitle": "Data Capturing System: Sustainable Institutions",
+      "dcsCode": null,
+      "instituteCode": null,
+      "sections": [
+        "sanctioned-intake",
+        "student-strength",
+        "phd-details",
+        "ipr-patents",
+        "sponsored-research",
+        "consultancy",
+        "pcs-facilities",
+        "sdg-energy",
+        "sdg-water",
+        "sdg-waste",
+        "sdg-green-coverage",
+        "sdg-health-wellbeing",
+        "sdg-community",
+        "faculty-details"
+      ],
+      "exportOrder": [
+        "sanctioned-intake",
+        "student-strength",
+        "phd-details",
+        "ipr-patents",
+        "sponsored-research",
+        "consultancy",
+        "pcs-facilities",
+        "sdg-energy",
+        "sdg-water",
+        "sdg-waste",
+        "sdg-green-coverage",
+        "sdg-health-wellbeing",
+        "sdg-community",
+        "faculty-details"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "sanctioned-intake",
+      "title": "Sanctioned (Approved) Intake",
+      "dcsHeading": "Sanctioned (Approved) Intake",
+      "catalogueItemIds": [
+        "student-intake"
+      ],
+      "nirfParameters": [
+        "TLR.SS"
+      ],
+      "ownership": {
+        "submitBy": "unit",
+        "eligibleUnitKinds": [
+          "SCHOOL",
+          "CENTRE"
+        ],
+        "domainVerifierUnitIds": [
+          "jee-gate-admissions",
+          "academic-courses-research"
+        ],
+        "rollup": {
+          "strategy": "sum"
+        },
+        "allowNotApplicable": true
+      },
+      "blocks": [
+        {
+          "id": "intake",
+          "kind": "grid",
+          "title": "Sanctioned intake by programme and academic year",
+          "rowAxis": {
+            "type": "programme"
+          },
+          "columnAxis": {
+            "type": "years",
+            "series": {
+              "kind": "academic",
+              "count": 6
+            },
+            "cell": {
+              "type": "integer",
+              "min": 0
+            }
+          },
+          "carryForward": true,
+          "help": "Senate-approved seats for each programme and year. One row per active programme of the school/centre."
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "CSV",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Senate-approved intake / seat matrix for each year"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING",
+        "INNOVATION",
+        "SDG"
+      ]
+    },
+    {
+      "id": "student-strength",
+      "title": "Total Actual Student Strength (all programmes, all years)",
+      "dcsHeading": "Total Actual Student Strength (all programmes, all years)",
+      "catalogueItemIds": [
+        "student-intake",
+        "diversity"
+      ],
+      "nirfParameters": [
+        "TLR.SS",
+        "OI.RD",
+        "OI.WD",
+        "OI.ESCS"
+      ],
+      "ownership": {
+        "submitBy": "unit",
+        "eligibleUnitKinds": [
+          "SCHOOL",
+          "CENTRE"
+        ],
+        "domainVerifierUnitIds": [
+          "academic-courses-research",
+          "jee-gate-admissions",
+          "reservation-cell"
+        ],
+        "rollup": {
+          "strategy": "sum"
+        },
+        "allowNotApplicable": true
+      },
+      "blocks": [
+        {
+          "id": "strength",
+          "kind": "grid",
+          "title": "Actual strength by programme",
+          "rowAxis": {
+            "type": "programme"
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "male",
+                "label": "No. of Male Students",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "female",
+                "label": "No. of Female Students",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "total",
+                "label": "Total Students",
+                "type": "integer",
+                "min": 0,
+                "derive": {
+                  "fn": "sum",
+                  "of": [
+                    "male",
+                    "female"
+                  ]
+                },
+                "readOnly": true
+              },
+              {
+                "id": "withinState",
+                "label": "Within State (including male & female)",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "outsideState",
+                "label": "Outside State (including male & female)",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "outsideCountry",
+                "label": "Outside Country (including male & female)",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "economicallyBackward",
+                "label": "Economically Backward (including male & female)",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "sociallyChallenged",
+                "label": "Socially Challenged (SC+ST+OBC) (including male & female)",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "reimbGovt",
+                "label": "Students receiving full tuition fee reimbursement from State and Central Government",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "reimbInstitution",
+                "label": "Students receiving full tuition fee reimbursement from Institution Funds",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "reimbPrivate",
+                "label": "Students receiving full tuition fee reimbursement from Private Bodies",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "noReimb",
+                "label": "Students not receiving full tuition fee reimbursement",
+                "type": "integer",
+                "min": 0
+              }
+            ]
+          },
+          "snapshot": true,
+          "carryForward": false,
+          "validations": [
+            {
+              "id": "state-split",
+              "severity": "error",
+              "rule": {
+                "op": "sumEquals",
+                "target": "total",
+                "parts": [
+                  "withinState",
+                  "outsideState",
+                  "outsideCountry"
+                ]
+              },
+              "message": "Within State + Outside State + Outside Country must equal Total Students."
+            },
+            {
+              "id": "reimb-split",
+              "severity": "error",
+              "rule": {
+                "op": "sumEquals",
+                "target": "total",
+                "parts": [
+                  "reimbGovt",
+                  "reimbInstitution",
+                  "reimbPrivate",
+                  "noReimb"
+                ]
+              },
+              "message": "The four fee-reimbursement groups must add up to Total Students."
+            },
+            {
+              "id": "eb-le-total",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "economicallyBackward",
+                "right": "total"
+              },
+              "message": "economicallyBackward cannot exceed total."
+            },
+            {
+              "id": "sc-le-total",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "sociallyChallenged",
+                "right": "total"
+              },
+              "message": "sociallyChallenged cannot exceed total."
+            }
+          ],
+          "help": "Students enrolled across all years of the programme. Feeds SS and the Outreach & Inclusivity metrics (RD, WD, ESCS) - do not leave category columns blank."
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "CSV",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Enrolment register / category-wise student list (anonymised)"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING",
+        "INNOVATION",
+        "SDG"
+      ]
+    },
+    {
+      "id": "placement-outcomes",
+      "title": "Placement & Higher Studies (counts)",
+      "dcsHeading": "Placement & Higher Studies",
+      "catalogueItemIds": [
+        "placement-higher-studies",
+        "graduation-outcomes"
+      ],
+      "nirfParameters": [
+        "GO.GUE"
+      ],
+      "ownership": {
+        "submitBy": "unit",
+        "eligibleUnitKinds": [
+          "SCHOOL",
+          "CENTRE"
+        ],
+        "domainVerifierUnitIds": [
+          "academic-courses-research",
+          "cnp-cell"
+        ],
+        "rollup": {
+          "strategy": "sum"
+        },
+        "allowNotApplicable": true
+      },
+      "blocks": [
+        {
+          "id": "ug",
+          "kind": "grid",
+          "title": "UG [4 Years Program(s)] - previous 3 graduating batches",
+          "rowAxis": {
+            "type": "programmeBatch",
+            "level": "UG4",
+            "batchSeries": {
+              "kind": "academic",
+              "count": 3
+            },
+            "anchor": "graduation",
+            "entryBeforeGraduation": 3,
+            "lateralBeforeGraduation": 2
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "intake",
+                "label": "No. of first year students intake in the year",
+                "type": "integer",
+                "min": 0,
+                "derive": {
+                  "fn": "lookup",
+                  "section": "sanctioned-intake",
+                  "block": "intake",
+                  "row": "$programme",
+                  "col": "$entryAcademicYear"
+                },
+                "readOnly": true
+              },
+              {
+                "id": "admitted",
+                "label": "No. of first year students admitted in the year",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "lateralEntry",
+                "label": "No. of students admitted through Lateral entry",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "graduated",
+                "label": "No. of students graduating in minimum stipulated time",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "placed",
+                "label": "No. of students placed",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "higherStudies",
+                "label": "No. of students selected for Higher Studies",
+                "type": "integer",
+                "min": 0
+              }
+            ]
+          },
+          "validations": [
+            {
+              "id": "placed-le-grad",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "placed",
+                "right": "graduated"
+              },
+              "message": "placed cannot exceed graduated."
+            },
+            {
+              "id": "higher-le-grad",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "higherStudies",
+                "right": "graduated"
+              },
+              "message": "higherStudies cannot exceed graduated."
+            },
+            {
+              "id": "placed-plus-higher",
+              "severity": "warning",
+              "rule": {
+                "op": "lteSum",
+                "leftParts": [
+                  "placed",
+                  "higherStudies"
+                ],
+                "rightParts": [
+                  "graduated"
+                ]
+              },
+              "message": "Placed + Higher Studies exceeds graduating students - confirm there is no double counting."
+            }
+          ],
+          "help": "One row per UG programme per graduating batch. Entry year = graduation year minus 3; lateral-entry year = graduation year minus 2. 'Intake' is pre-filled from Sanctioned Intake."
+        },
+        {
+          "id": "pg",
+          "kind": "grid",
+          "title": "PG [2 Year Program(s)] - previous 3 graduating batches",
+          "rowAxis": {
+            "type": "programmeBatch",
+            "level": "PG2",
+            "batchSeries": {
+              "kind": "academic",
+              "count": 3
+            },
+            "anchor": "graduation",
+            "entryBeforeGraduation": 1
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "intake",
+                "label": "No. of first year students intake in the year",
+                "type": "integer",
+                "min": 0,
+                "derive": {
+                  "fn": "lookup",
+                  "section": "sanctioned-intake",
+                  "block": "intake",
+                  "row": "$programme",
+                  "col": "$entryAcademicYear"
+                },
+                "readOnly": true
+              },
+              {
+                "id": "admitted",
+                "label": "No. of first year students admitted in the year",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "graduated",
+                "label": "No. of students graduating in minimum stipulated time",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "placed",
+                "label": "No. of students placed",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "higherStudies",
+                "label": "No. of students selected for Higher Studies",
+                "type": "integer",
+                "min": 0
+              }
+            ]
+          },
+          "validations": [
+            {
+              "id": "placed-le-grad",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "placed",
+                "right": "graduated"
+              },
+              "message": "placed cannot exceed graduated."
+            },
+            {
+              "id": "higher-le-grad",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "higherStudies",
+                "right": "graduated"
+              },
+              "message": "higherStudies cannot exceed graduated."
+            },
+            {
+              "id": "placed-plus-higher",
+              "severity": "warning",
+              "rule": {
+                "op": "lteSum",
+                "leftParts": [
+                  "placed",
+                  "higherStudies"
+                ],
+                "rightParts": [
+                  "graduated"
+                ]
+              },
+              "message": "Placed + Higher Studies exceeds graduating students - confirm there is no double counting."
+            }
+          ],
+          "help": "Entry year = graduation year minus 1. No lateral-entry column for PG."
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "CSV",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Placement / higher-studies report for each graduating batch"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING"
+      ]
+    },
+    {
+      "id": "placement-median-salary",
+      "title": "Placement & Higher Studies (median salary)",
+      "dcsHeading": "Placement & Higher Studies",
+      "catalogueItemIds": [
+        "placement-higher-studies"
+      ],
+      "nirfParameters": [
+        "GO.GUE"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "cnp-cell",
+        "contributorUnitIds": [
+          "academic-courses-research"
+        ],
+        "domainVerifierUnitIds": [],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "median",
+          "kind": "grid",
+          "title": "Median salary of placed graduates (Rs. per annum)",
+          "rowAxis": {
+            "type": "levelBatch",
+            "levels": [
+              "UG4",
+              "PG2"
+            ],
+            "batchSeries": {
+              "kind": "academic",
+              "count": 3
+            }
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "medianSalaryInr",
+                "label": "Median salary of placed graduates (Amount in Rs.)",
+                "type": "currencyInr",
+                "min": 0
+              }
+            ]
+          },
+          "help": "Compute the median from the full institute-wide list of placed graduates of the batch. Never average school-level medians. Same figure feeds every NIRF category that asks for placement."
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Placement statistics report signed by the placement office"
+      },
+      "exportMergeWith": "placement-outcomes",
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING"
+      ]
+    },
+    {
+      "id": "phd-details",
+      "title": "Ph.D Student Details (including Integrated Ph.D)",
+      "dcsHeading": "Ph.D Student Details (including Integrated Ph.D)",
+      "catalogueItemIds": [
+        "phd-awarded",
+        "student-intake"
+      ],
+      "nirfParameters": [
+        "GO.GPHD",
+        "TLR.SS"
+      ],
+      "ownership": {
+        "submitBy": "unit",
+        "eligibleUnitKinds": [
+          "SCHOOL",
+          "CENTRE"
+        ],
+        "domainVerifierUnitIds": [
+          "academic-courses-research"
+        ],
+        "rollup": {
+          "strategy": "sum"
+        },
+        "allowNotApplicable": true
+      },
+      "blocks": [
+        {
+          "id": "enrolment",
+          "kind": "grid",
+          "title": "Total Ph.D students (current)",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "fullTime",
+                "label": "Full Time"
+              },
+              {
+                "id": "partTime",
+                "label": "Part Time"
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "total",
+                "label": "Total Students",
+                "type": "integer",
+                "min": 0
+              }
+            ]
+          },
+          "help": "Do not include students admitted in {{nextAcademicYear}}."
+        },
+        {
+          "id": "graduated",
+          "kind": "grid",
+          "title": "No. of Ph.D students graduated",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "fullTime",
+                "label": "Full Time"
+              },
+              {
+                "id": "partTime",
+                "label": "Part Time"
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "years",
+            "series": {
+              "kind": "academic",
+              "count": 3
+            },
+            "cell": {
+              "type": "integer",
+              "min": 0
+            }
+          },
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "CSV",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Ph.D scholar register and convocation / award list"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING",
+        "SDG"
+      ]
+    },
+    {
+      "id": "pg-medical",
+      "title": "PG (MD/MS/DNB) Details",
+      "dcsHeading": "PG (MD/MS/DNB) Details",
+      "catalogueItemIds": [
+        "student-intake"
+      ],
+      "nirfParameters": [],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "academic-courses-research",
+        "contributorUnitIds": [],
+        "domainVerifierUnitIds": [],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "pursuing",
+          "kind": "grid",
+          "title": "Students pursuing PG (MD/MS/DNB)",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "count",
+                "label": "Number of students pursuing PG (MD/MS/DNB) program"
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "total",
+                "label": "Number of students",
+                "type": "integer",
+                "min": 0
+              }
+            ]
+          }
+        },
+        {
+          "id": "graduated",
+          "kind": "grid",
+          "title": "No. of students graduating in PG (MD/MS/DNB) program",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "count",
+                "label": "No. of students graduating"
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "years",
+            "series": {
+              "kind": "academic",
+              "count": 3
+            },
+            "cell": {
+              "type": "integer",
+              "min": 0
+            }
+          }
+        }
+      ],
+      "proof": {
+        "required": false,
+        "accept": [
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Not required when Not Applicable"
+      },
+      "help": "IIT Mandi has no medical programmes, so this section is pre-marked Not Applicable (all zeros). Keep it so the Overall export stays complete.",
+      "defaultNotApplicable": true,
+      "usedBy": [
+        "OVERALL"
+      ]
+    },
+    {
+      "id": "capital-expenditure",
+      "title": "Financial Resources: Utilised Amount for Capital Expenditure",
+      "dcsHeading": "Financial Resources: Utilised Amount for Capital Expenditure",
+      "catalogueItemIds": [
+        "capital-expenditure"
+      ],
+      "nirfParameters": [
+        "TLR.FRU"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "budget",
+        "contributorUnitIds": [
+          "stores-purchase",
+          "library",
+          "estate-works",
+          "accounts"
+        ],
+        "domainVerifierUnitIds": [
+          "audit"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "capex",
+          "kind": "grid",
+          "title": "Annual Capital Expenditure on Academic Activities and Resources (excluding buildings)",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "library",
+                "label": "Library (Books, Journals and e-Resources)",
+                "ownerUnitIds": [
+                  "library"
+                ],
+                "labelByCategory": {
+                  "OVERALL": "Library",
+                  "ENGINEERING": "Library (Books, Journals and e-Resources only)"
+                }
+              },
+              {
+                "id": "labEquipment",
+                "label": "New Equipment (and software) for Laboratories",
+                "ownerUnitIds": [
+                  "stores-purchase"
+                ],
+                "labelByCategory": {
+                  "OVERALL": "New Equipment for Laboratories",
+                  "ENGINEERING": "New Equipment and software for Laboratories"
+                }
+              },
+              {
+                "id": "engineeringWorkshops",
+                "label": "Engineering Workshops",
+                "ownerUnitIds": [
+                  "stores-purchase"
+                ]
+              },
+              {
+                "id": "studios",
+                "label": "Studios",
+                "usedBy": [
+                  "OVERALL"
+                ],
+                "ownerUnitIds": [
+                  "stores-purchase"
+                ],
+                "help": "Row exists only in the Overall DCS. Confirm where studio capex goes for Engineering (see openItems)."
+              },
+              {
+                "id": "otherCapitalAssets",
+                "label": "Other expenditure on creation of Capital Assets (excluding Land and Building)",
+                "ownerUnitIds": [
+                  "stores-purchase",
+                  "estate-works"
+                ],
+                "labelByCategory": {
+                  "ENGINEERING": "Other expenditure on creation of Capital Assets (classrooms, seminar hall, conference hall, library, Lab, Engg workshops, excluding Land and Building)"
+                }
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "years",
+            "series": {
+              "kind": "academic",
+              "count": 3
+            },
+            "cell": {
+              "type": "currencyInr",
+              "min": 0
+            }
+          },
+          "carryForward": false,
+          "help": "Utilised (actually spent) amount in Rs., not sanctioned or budgeted."
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Audited statement / utilisation certificate / expenditure ledger extract"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING"
+      ]
+    },
+    {
+      "id": "operational-expenditure",
+      "title": "Financial Resources: Utilised Amount for Operational Expenditure",
+      "dcsHeading": "Financial Resources: Utilised Amount for Operational Expenditure",
+      "catalogueItemIds": [
+        "operational-expenditure"
+      ],
+      "nirfParameters": [
+        "TLR.FRU"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "accounts",
+        "contributorUnitIds": [
+          "budget",
+          "library"
+        ],
+        "domainVerifierUnitIds": [
+          "audit"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "opex",
+          "kind": "grid",
+          "title": "Annual Operational Expenditure",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "salaries",
+                "label": "Salaries (Teaching and Non Teaching staff)"
+              },
+              {
+                "id": "maintenance",
+                "label": "Maintenance of Academic Infrastructure or consumables and other running expenditures (excluding hostels and allied services, building rent, depreciation, etc.)"
+              },
+              {
+                "id": "seminars",
+                "label": "Seminars/Conferences/Workshops"
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "years",
+            "series": {
+              "kind": "academic",
+              "count": 3
+            },
+            "cell": {
+              "type": "currencyInr",
+              "min": 0
+            }
+          },
+          "help": "Utilised amount in Rs. Exclude hostel & allied services, building rent and depreciation."
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Audited statement / expenditure ledger extract"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING"
+      ]
+    },
+    {
+      "id": "ipr-patents",
+      "title": "IPR (Patents)",
+      "dcsHeading": "IPR (Patents)",
+      "catalogueItemIds": [
+        "patents"
+      ],
+      "nirfParameters": [
+        "RP.IPR"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "ipr-entrepreneurship",
+        "contributorUnitIds": [],
+        "domainVerifierUnitIds": [
+          "dean-sric"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "ipr",
+          "kind": "grid",
+          "title": "Patents by calendar year",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "published",
+                "label": "No. of Patents Published"
+              },
+              {
+                "id": "granted",
+                "label": "No. of Patents Granted"
+              },
+              {
+                "id": "commercialised",
+                "label": "Patents Commercialized & Technology Transferred",
+                "usedBy": [
+                  "INNOVATION"
+                ]
+              },
+              {
+                "id": "techTransferIncome",
+                "label": "Income from Technology Transferred (in Rupees)",
+                "usedBy": [
+                  "INNOVATION"
+                ],
+                "type": "currencyInr"
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "years",
+            "series": {
+              "kind": "calendar",
+              "count": 3
+            },
+            "cell": {
+              "type": "integer",
+              "min": 0
+            }
+          },
+          "carryForward": true,
+          "validations": [
+            {
+              "id": "commercialised-le-granted",
+              "severity": "warning",
+              "rule": {
+                "op": "lte",
+                "left": "commercialised",
+                "right": "granted",
+                "axis": "row"
+              },
+              "message": "Commercialised patents normally cannot exceed granted patents for the year."
+            }
+          ]
+        },
+        {
+          "id": "patent-register",
+          "kind": "records",
+          "title": "Patent register (optional evidence list)",
+          "fields": [
+            {
+              "id": "applicationNo",
+              "label": "Application number",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "title",
+              "label": "Title",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "inventors",
+              "label": "Inventors",
+              "type": "text"
+            },
+            {
+              "id": "unitId",
+              "label": "School / centre",
+              "type": "orgUnit",
+              "eligibleUnitKinds": [
+                "SCHOOL",
+                "CENTRE"
+              ]
+            },
+            {
+              "id": "filingDate",
+              "label": "Filing date",
+              "type": "date"
+            },
+            {
+              "id": "publicationDate",
+              "label": "Publication date",
+              "type": "date"
+            },
+            {
+              "id": "grantDate",
+              "label": "Grant date",
+              "type": "date"
+            },
+            {
+              "id": "status",
+              "label": "Status",
+              "type": "enum",
+              "enum": "patentStatus",
+              "required": true
+            }
+          ],
+          "optional": true,
+          "allowEmpty": true,
+          "validations": [
+            {
+              "id": "filing-before-publication",
+              "severity": "error",
+              "rule": {
+                "op": "dateOrder",
+                "start": "filingDate",
+                "end": "publicationDate"
+              },
+              "message": "Publication date cannot be before filing date."
+            },
+            {
+              "id": "publication-before-grant",
+              "severity": "error",
+              "rule": {
+                "op": "dateOrder",
+                "start": "publicationDate",
+                "end": "grantDate"
+              },
+              "message": "Grant date cannot be before publication date."
+            }
+          ],
+          "importFormats": [
+            "XLSX",
+            "CSV"
+          ],
+          "help": "Not an NIRF table. Provides provenance for the counts above."
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Patent office publication / grant notices"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING",
+        "INNOVATION",
+        "SDG"
+      ]
+    },
+    {
+      "id": "sponsored-research",
+      "title": "Sponsored Research Details",
+      "dcsHeading": "Sponsored Research Details",
+      "catalogueItemIds": [
+        "sponsored-projects"
+      ],
+      "nirfParameters": [
+        "RP.FPPP"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "sponsored-research",
+        "contributorUnitIds": [],
+        "domainVerifierUnitIds": [
+          "dean-sric"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "sponsored",
+          "kind": "grid",
+          "title": "Sponsored research by financial year",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "projects",
+                "label": "Total no. of Sponsored Projects"
+              },
+              {
+                "id": "agencies",
+                "label": "Total no. of Funding Agencies"
+              },
+              {
+                "id": "amountReceived",
+                "label": "Total Amount Received (Amount in Rupees)",
+                "type": "currencyInr"
+              },
+              {
+                "id": "amountInWords",
+                "label": "Amount Received in Words",
+                "type": "text",
+                "derive": {
+                  "fn": "amountInWordsInr",
+                  "of": "amountReceived"
+                },
+                "readOnly": true
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "years",
+            "series": {
+              "kind": "financial",
+              "count": 3
+            },
+            "cell": {
+              "type": "integer",
+              "min": 0
+            }
+          },
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "SRIC receipts statement / sanction letters summary"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING",
+        "SDG"
+      ]
+    },
+    {
+      "id": "sponsored-project-register",
+      "title": "Sponsored Projects - school/centre register (supporting)",
+      "dcsHeading": "Sponsored Projects - school/centre register (supporting)",
+      "catalogueItemIds": [
+        "sponsored-projects-school"
+      ],
+      "nirfParameters": [],
+      "ownership": {
+        "submitBy": "unit",
+        "eligibleUnitKinds": [
+          "SCHOOL",
+          "CENTRE"
+        ],
+        "domainVerifierUnitIds": [
+          "sponsored-research"
+        ],
+        "rollup": {
+          "strategy": "sum"
+        },
+        "allowNotApplicable": true
+      },
+      "blocks": [
+        {
+          "id": "projects",
+          "kind": "records",
+          "title": "Projects attributable to this school/centre",
+          "fields": [
+            {
+              "id": "title",
+              "label": "Project title",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "piName",
+              "label": "Principal Investigator",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "fundingAgency",
+              "label": "Funding agency",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "sanctionOrderNo",
+              "label": "Sanction order no.",
+              "type": "text"
+            },
+            {
+              "id": "startDate",
+              "label": "Start date",
+              "type": "date"
+            },
+            {
+              "id": "endDate",
+              "label": "End date",
+              "type": "date"
+            },
+            {
+              "id": "sanctionedAmountInr",
+              "label": "Sanctioned amount (Rs.)",
+              "type": "currencyInr",
+              "min": 0
+            },
+            {
+              "id": "receivedFy0",
+              "label": "Received in latest FY (Rs.)",
+              "type": "currencyInr",
+              "min": 0,
+              "yearSlot": {
+                "kind": "financial",
+                "offset": 0
+              }
+            },
+            {
+              "id": "receivedFy1",
+              "label": "Received in previous FY (Rs.)",
+              "type": "currencyInr",
+              "min": 0,
+              "yearSlot": {
+                "kind": "financial",
+                "offset": -1
+              }
+            },
+            {
+              "id": "receivedFy2",
+              "label": "Received two FYs ago (Rs.)",
+              "type": "currencyInr",
+              "min": 0,
+              "yearSlot": {
+                "kind": "financial",
+                "offset": -2
+              }
+            }
+          ],
+          "allowEmpty": true,
+          "importFormats": [
+            "XLSX",
+            "CSV"
+          ],
+          "validations": [
+            {
+              "id": "start-before-end",
+              "severity": "error",
+              "rule": {
+                "op": "dateOrder",
+                "start": "startDate",
+                "end": "endDate"
+              },
+              "message": "End date cannot be before start date."
+            }
+          ],
+          "help": "Powers school-wise research analytics and reconciliation against the SRIC totals; not an NIRF table."
+        }
+      ],
+      "proof": {
+        "required": false,
+        "accept": [
+          "XLSX",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Optional sanction letters"
+      },
+      "optional": true,
+      "exportToNirf": false,
+      "usedBy": []
+    },
+    {
+      "id": "consultancy",
+      "title": "Consultancy Project Details",
+      "dcsHeading": "Consultancy Project Details",
+      "catalogueItemIds": [
+        "consultancy"
+      ],
+      "nirfParameters": [
+        "RP.FPPP"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "consultancy",
+        "contributorUnitIds": [],
+        "domainVerifierUnitIds": [
+          "dean-sric"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "consultancy",
+          "kind": "grid",
+          "title": "Consultancy by financial year",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "projects",
+                "label": "Total no. of Consultancy Projects"
+              },
+              {
+                "id": "clients",
+                "label": "Total no. of Client Organizations"
+              },
+              {
+                "id": "amountReceived",
+                "label": "Total Amount Received (Amount in Rupees)",
+                "type": "currencyInr"
+              },
+              {
+                "id": "amountInWords",
+                "label": "Amount Received in Words",
+                "type": "text",
+                "derive": {
+                  "fn": "amountInWordsInr",
+                  "of": "amountReceived"
+                },
+                "readOnly": true
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "years",
+            "series": {
+              "kind": "financial",
+              "count": 3
+            },
+            "cell": {
+              "type": "integer",
+              "min": 0
+            }
+          },
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Consultancy receipts statement / work orders summary"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING",
+        "SDG"
+      ]
+    },
+    {
+      "id": "edp-mdp",
+      "title": "Executive Development Program / Management Development Programs",
+      "dcsHeading": "Executive Development Program / Management Development Programs",
+      "catalogueItemIds": [
+        "outreach-programmes"
+      ],
+      "nirfParameters": [
+        "RP.FPPP"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "continuing-education",
+        "contributorUnitIds": [
+          "sponsored-research"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-sric"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "edp",
+          "kind": "grid",
+          "title": "EDP / MDP by financial year",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "programmes",
+                "label": "Total no. of Executive Development Programs/Management Development Programs"
+              },
+              {
+                "id": "participants",
+                "label": "Total no. of Participants"
+              },
+              {
+                "id": "earnings",
+                "label": "Total Annual Earnings (Amount in Rupees) (Excluding Lodging & Boarding Charges)",
+                "type": "currencyInr"
+              },
+              {
+                "id": "earningsInWords",
+                "label": "Total Annual Earnings in Words",
+                "type": "text",
+                "derive": {
+                  "fn": "amountInWordsInr",
+                  "of": "earnings"
+                },
+                "readOnly": true
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "years",
+            "series": {
+              "kind": "financial",
+              "count": 3
+            },
+            "cell": {
+              "type": "integer",
+              "min": 0
+            }
+          },
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Programme-wise participants and fee receipts"
+      },
+      "usedBy": [
+        "OVERALL"
+      ]
+    },
+    {
+      "id": "pcs-facilities",
+      "title": "PCS Facilities: Facilities of physically challenged students",
+      "dcsHeading": "PCS Facilities: Facilities of physically challenged students",
+      "catalogueItemIds": [
+        "pcs-facilities"
+      ],
+      "nirfParameters": [
+        "OI.PCS"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "estate-works",
+        "contributorUnitIds": [
+          "dean-students"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-infra"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "pcs",
+          "kind": "questionnaire",
+          "title": "Physically challenged students",
+          "questions": [
+            {
+              "id": "liftsRamps",
+              "label": "Do your institution buildings have Lifts/Ramps?",
+              "type": "enum",
+              "enum": "pcsCoverage",
+              "required": true,
+              "ownerUnitIds": [
+                "estate-works"
+              ]
+            },
+            {
+              "id": "mobilityAids",
+              "label": "Do your institution have provision for walking aids, including wheelchairs and transportation from one building to another for handicapped students?",
+              "type": "boolean",
+              "required": true,
+              "ownerUnitIds": [
+                "dean-students"
+              ]
+            },
+            {
+              "id": "toilets",
+              "label": "Do your institution buildings have specially designed toilets for handicapped students?",
+              "type": "enum",
+              "enum": "pcsCoverage",
+              "required": true,
+              "ownerUnitIds": [
+                "estate-works"
+              ]
+            }
+          ],
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "DOCX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Photographs / Estate & Works certificate supporting the coverage claimed"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING",
+        "SDG"
+      ]
+    },
+    {
+      "id": "naac-accreditation",
+      "title": "Accreditation: NAAC Accreditation",
+      "dcsHeading": "Accreditation: NAAC Accreditation",
+      "catalogueItemIds": [
+        "institute-profile"
+      ],
+      "nirfParameters": [],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "dean-academics",
+        "contributorUnitIds": [],
+        "domainVerifierUnitIds": [
+          "registrar"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "naac",
+          "kind": "questionnaire",
+          "title": "NAAC",
+          "questions": [
+            {
+              "id": "validNaac",
+              "label": "Does your institute have a valid NAAC Accreditation?",
+              "type": "boolean",
+              "required": true
+            }
+          ],
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": false,
+        "accept": [
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "NAAC grade certificate (required only when answer is Yes)",
+        "requiredIf": {
+          "question": "validNaac",
+          "eq": true
+        }
+      },
+      "usedBy": [
+        "OVERALL"
+      ]
+    },
+    {
+      "id": "entry-exit-iks",
+      "title": "Multiple Entry/Exit and Indian Knowledge System",
+      "dcsHeading": "Multiple Entry/Exit and Indian Knowledge System",
+      "catalogueItemIds": [
+        "nep-iks-governance"
+      ],
+      "nirfParameters": [],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "dean-academics",
+        "contributorUnitIds": [
+          "iksmha",
+          "grievance-redressal-committee",
+          "jee-gate-admissions"
+        ],
+        "domainVerifierUnitIds": [
+          "registrar"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "nep",
+          "kind": "questionnaire",
+          "title": "NEP-aligned practices",
+          "questions": [
+            {
+              "id": "multipleEntryExit",
+              "label": "Has your institution implemented multiple entry/exit in your institution?",
+              "type": "boolean",
+              "required": true,
+              "ownerUnitIds": [
+                "dean-academics"
+              ]
+            },
+            {
+              "id": "indianLanguages",
+              "label": "Has your institution been teaching courses in Indian Languages?",
+              "type": "boolean",
+              "required": true,
+              "ownerUnitIds": [
+                "dean-academics"
+              ]
+            },
+            {
+              "id": "iksCourses",
+              "label": "Has your institution introduced courses on Indian Knowledge System?",
+              "type": "boolean",
+              "required": true,
+              "ownerUnitIds": [
+                "iksmha",
+                "dean-academics"
+              ]
+            },
+            {
+              "id": "grievanceCell",
+              "label": "Has your institution established the Grievance Redressal Cell?",
+              "type": "boolean",
+              "required": true,
+              "ownerUnitIds": [
+                "grievance-redressal-committee"
+              ]
+            },
+            {
+              "id": "nationalEntrance",
+              "label": "Is your institution admitting students through National and State Level entrance exam?",
+              "type": "boolean",
+              "required": true,
+              "ownerUnitIds": [
+                "jee-gate-admissions"
+              ]
+            }
+          ],
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "DOCX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Senate minutes / ordinance / circular supporting each 'Yes' answer"
+      },
+      "usedBy": [
+        "OVERALL"
+      ]
+    },
+    {
+      "id": "sustainable-living",
+      "title": "Sustainable Living Practices",
+      "dcsHeading": "Sustainable Living Practices",
+      "catalogueItemIds": [
+        "sustainability-practices"
+      ],
+      "nirfParameters": [],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "estate-works",
+        "contributorUnitIds": [
+          "dean-infra",
+          "hostels"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-infra"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "sustainability",
+          "kind": "questionnaire",
+          "title": "Sustainable living on campus",
+          "questions": [
+            {
+              "id": "singleUsePlastic",
+              "label": "What specific programs does the institution/university have in place to reduce or eliminate single-use plastics on campus?",
+              "type": "enum",
+              "enum": "singleUsePlastic",
+              "required": true
+            },
+            {
+              "id": "carbonFootprint",
+              "label": "What actions has the institution/university taken to reduce its carbon footprint? (Select all that apply)",
+              "type": "multiEnum",
+              "enum": "carbonActions",
+              "required": true
+            },
+            {
+              "id": "recyclingInfra",
+              "label": "What is the level of recycling infrastructure available on your campus?",
+              "type": "enum",
+              "enum": "recyclingInfra",
+              "required": true
+            },
+            {
+              "id": "rainwaterHarvesting",
+              "label": "What type of rainwater harvesting system has been implemented at your institution/university? (multiple may apply)",
+              "type": "multiEnum",
+              "enum": "rwhType",
+              "required": true
+            },
+            {
+              "id": "renewableEnergy",
+              "label": "Which renewable energy sources are installed on your institution/university campus? (Please select all that apply)",
+              "type": "multiEnum",
+              "enum": "renewableSources",
+              "required": true
+            },
+            {
+              "id": "foodWaste",
+              "label": "What is the institution's approach to minimizing food waste? (multiple may apply)",
+              "type": "multiEnum",
+              "enum": "foodWaste",
+              "required": true
+            }
+          ],
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "DOCX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Circulars, photographs, installation records supporting the options selected"
+      },
+      "usedBy": [
+        "OVERALL"
+      ]
+    },
+    {
+      "id": "faculty-details",
+      "title": "Faculty Details",
+      "dcsHeading": "Faculty Details",
+      "catalogueItemIds": [
+        "faculty-roster"
+      ],
+      "nirfParameters": [
+        "TLR.FSR",
+        "TLR.FQE"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "faculty-service-matters",
+        "contributorUnitIds": [
+          "recruitment-cell"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-faculty"
+        ],
+        "rollup": {
+          "strategy": "none"
+        },
+        "unitConfirmation": {
+          "eligibleUnitKinds": [
+            "SCHOOL",
+            "CENTRE"
+          ],
+          "via": "record.unitId"
+        }
+      },
+      "blocks": [
+        {
+          "id": "faculty",
+          "kind": "records",
+          "title": "Faculty roster for the reference period",
+          "fields": [
+            {
+              "id": "srNo",
+              "label": "Srno",
+              "type": "integer",
+              "min": 0,
+              "readOnly": true,
+              "derive": {
+                "fn": "rowNumber"
+              }
+            },
+            {
+              "id": "name",
+              "label": "Name",
+              "type": "text",
+              "required": true,
+              "pii": true,
+              "maxLength": 120
+            },
+            {
+              "id": "designation",
+              "label": "Designation",
+              "type": "enum",
+              "enum": "designation",
+              "required": true
+            },
+            {
+              "id": "gender",
+              "label": "Gender",
+              "type": "enum",
+              "enum": "gender",
+              "required": true,
+              "pii": true
+            },
+            {
+              "id": "qualification",
+              "label": "Qualification",
+              "type": "text",
+              "required": true,
+              "suggestions": [
+                "Ph.D",
+                "M.Tech / M.E.",
+                "M.Sc",
+                "M.A.",
+                "MBA",
+                "Other"
+              ],
+              "help": "Highest qualification. The Ph.D share drives the FQE metric - use 'Ph.D' exactly."
+            },
+            {
+              "id": "experienceMonths",
+              "label": "Experience (In Months)",
+              "type": "integer",
+              "min": 0,
+              "required": true
+            },
+            {
+              "id": "currentlyWorking",
+              "label": "Currently working with institution?",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "joiningDate",
+              "label": "Joining Date",
+              "type": "date",
+              "required": true
+            },
+            {
+              "id": "leavingDate",
+              "label": "Leaving Date",
+              "type": "date"
+            },
+            {
+              "id": "associationType",
+              "label": "Association type",
+              "type": "enum",
+              "enum": "associationType",
+              "required": true
+            },
+            {
+              "id": "unitId",
+              "label": "School / centre (internal)",
+              "type": "orgUnit",
+              "required": true,
+              "internal": true,
+              "eligibleUnitKinds": [
+                "SCHOOL",
+                "CENTRE"
+              ],
+              "help": "Single-school rule: a faculty member belongs to exactly one school/centre."
+            },
+            {
+              "id": "employeeId",
+              "label": "Employee ID (internal)",
+              "type": "text",
+              "required": true,
+              "internal": true,
+              "pii": true,
+              "unique": true
+            },
+            {
+              "id": "email",
+              "label": "Institute email (internal)",
+              "type": "text",
+              "internal": true,
+              "pii": true
+            }
+          ],
+          "minRows": 1,
+          "importFormats": [
+            "XLSX",
+            "CSV"
+          ],
+          "rowKey": "employeeId",
+          "validations": [
+            {
+              "id": "leaving-date-required",
+              "severity": "error",
+              "rule": {
+                "op": "requiredIf",
+                "field": "leavingDate",
+                "when": {
+                  "field": "currentlyWorking",
+                  "eq": false
+                }
+              },
+              "message": "Leaving Date is required when the faculty member is no longer working."
+            },
+            {
+              "id": "join-before-leave",
+              "severity": "error",
+              "rule": {
+                "op": "dateOrder",
+                "start": "joiningDate",
+                "end": "leavingDate"
+              },
+              "message": "Leaving Date cannot be before Joining Date."
+            }
+          ],
+          "help": "Include everyone who was on the rolls at any time in the reference period, including those who left. One row per person. Each school/centre confirms its own faculty rows before approval."
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Establishment roster extract (e.g. from Samarth) signed by Faculty Affairs"
+      },
+      "usedBy": [
+        "OVERALL",
+        "ENGINEERING",
+        "INNOVATION",
+        "SDG"
+      ]
+    },
+    {
+      "id": "startup-ecosystem",
+      "title": "Startups, Funding and Innovation Outcomes",
+      "dcsHeading": "Startups, Funding and Innovation Outcomes",
+      "catalogueItemIds": [
+        "entrepreneurship"
+      ],
+      "nirfParameters": [
+        "INNOVATION"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "catalyst",
+        "contributorUnitIds": [
+          "ipr-entrepreneurship",
+          "ihub"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-sric"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "dpiit-recognised",
+          "kind": "records",
+          "title": "Start-ups recognised by DPIIT / Startup India",
+          "fields": [
+            {
+              "id": "ventureName",
+              "label": "Name of Venture",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "recognitionYear",
+              "label": "Year of recognition by DPIIT/startup India",
+              "type": "year",
+              "required": true
+            },
+            {
+              "id": "dpiitNo",
+              "label": "DPIIT/Start up India Registration No.",
+              "type": "text",
+              "required": true,
+              "unique": true
+            }
+          ],
+          "allowEmpty": true,
+          "importFormats": [
+            "XLSX",
+            "CSV"
+          ]
+        },
+        {
+          "id": "vc-investment",
+          "kind": "records",
+          "title": "Start-ups that received VC investment (previous 3 years)",
+          "fields": [
+            {
+              "id": "startupRef",
+              "label": "Name of startup",
+              "type": "recordRef",
+              "ref": {
+                "block": "dpiit-recognised",
+                "key": "dpiitNo",
+                "label": "ventureName"
+              },
+              "required": true
+            },
+            {
+              "id": "amount",
+              "label": "Amount received",
+              "type": "currencyInr",
+              "min": 0,
+              "required": true
+            },
+            {
+              "id": "organisation",
+              "label": "Organisation Name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "year",
+              "label": "Year of receiving VC investment",
+              "type": "yearLabel",
+              "series": {
+                "kind": "financial",
+                "count": 3
+              },
+              "required": true
+            },
+            {
+              "id": "achievementLevel",
+              "label": "Achievement Level",
+              "type": "enum",
+              "enum": "trlStage",
+              "required": true
+            },
+            {
+              "id": "investmentType",
+              "label": "Type of Investment",
+              "type": "enum",
+              "enum": "vcInvestmentType",
+              "required": true
+            }
+          ],
+          "allowEmpty": true
+        },
+        {
+          "id": "seed-funding",
+          "kind": "records",
+          "title": "Seed funding (previous 3 years)",
+          "fields": [
+            {
+              "id": "startupRef",
+              "label": "Name of the Start-up",
+              "type": "recordRef",
+              "ref": {
+                "block": "dpiit-recognised",
+                "key": "dpiitNo",
+                "label": "ventureName"
+              },
+              "required": true
+            },
+            {
+              "id": "amount",
+              "label": "Seed funding received (in Rupees)",
+              "type": "currencyInr",
+              "min": 0,
+              "required": true
+            },
+            {
+              "id": "govtOrganisation",
+              "label": "Name of Government Organization providing Seed Funding",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "year",
+              "label": "Year of Receiving the Fund",
+              "type": "yearLabel",
+              "series": {
+                "kind": "financial",
+                "count": 3
+              },
+              "required": true
+            },
+            {
+              "id": "achievementLevel",
+              "label": "Achievement Level",
+              "type": "enum",
+              "enum": "trlStage",
+              "required": true
+            },
+            {
+              "id": "investmentType",
+              "label": "Type of Investment",
+              "type": "enum",
+              "enum": "seedFundingType",
+              "required": true
+            }
+          ],
+          "allowEmpty": true
+        },
+        {
+          "id": "fdi-investment",
+          "kind": "records",
+          "title": "FDI investment (previous 3 years)",
+          "fields": [
+            {
+              "id": "startupRef",
+              "label": "Name of startup",
+              "type": "recordRef",
+              "ref": {
+                "block": "dpiit-recognised",
+                "key": "dpiitNo",
+                "label": "ventureName"
+              },
+              "required": true
+            },
+            {
+              "id": "amount",
+              "label": "FDI investment received (in Rupees)",
+              "type": "currencyInr",
+              "min": 0,
+              "required": true
+            },
+            {
+              "id": "organisation",
+              "label": "Organization Name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "year",
+              "label": "Year of receiving FDI investment",
+              "type": "yearLabel",
+              "series": {
+                "kind": "financial",
+                "count": 3
+              },
+              "required": true
+            },
+            {
+              "id": "achievementLevel",
+              "label": "Achievement Level",
+              "type": "enum",
+              "enum": "trlStage",
+              "required": true
+            },
+            {
+              "id": "investmentType",
+              "label": "Type of Investment",
+              "type": "enum",
+              "enum": "fdiInvestmentType",
+              "required": true
+            }
+          ],
+          "allowEmpty": true
+        },
+        {
+          "id": "innovation-grants",
+          "kind": "records",
+          "title": "Innovation grants from government organisations (previous 3 years)",
+          "fields": [
+            {
+              "id": "govtOrganisation",
+              "label": "Name of Government organisation from which grant is received",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "programme",
+              "label": "Name of the Program or Scheme",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "amount",
+              "label": "Amount of Grant received",
+              "type": "currencyInr",
+              "min": 0,
+              "required": true
+            },
+            {
+              "id": "year",
+              "label": "Year of receiving grant",
+              "type": "yearLabel",
+              "series": {
+                "kind": "financial",
+                "count": 3
+              },
+              "required": true
+            }
+          ],
+          "allowEmpty": true
+        },
+        {
+          "id": "innovations-trl",
+          "kind": "records",
+          "title": "Innovations at various Technology Readiness Levels",
+          "fields": [
+            {
+              "id": "startupRef",
+              "label": "Name of the Start-up",
+              "type": "recordRef",
+              "ref": {
+                "block": "dpiit-recognised",
+                "key": "dpiitNo",
+                "label": "ventureName"
+              },
+              "required": true
+            },
+            {
+              "id": "innovationName",
+              "label": "Innovation Name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "stage",
+              "label": "Stage of technology",
+              "type": "enum",
+              "enum": "trlStage",
+              "required": true
+            }
+          ],
+          "allowEmpty": true
+        },
+        {
+          "id": "alumni-founders",
+          "kind": "records",
+          "title": "Alumni who are founders of Forbes/Fortune 500 companies",
+          "fields": [
+            {
+              "id": "alumniName",
+              "label": "Name of the Alumni",
+              "type": "text",
+              "required": true,
+              "pii": true
+            },
+            {
+              "id": "programme",
+              "label": "Program passed from",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "yearOfPassing",
+              "label": "Year of passing",
+              "type": "year",
+              "required": true
+            },
+            {
+              "id": "company",
+              "label": "Founder of company",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "yearListed",
+              "label": "Year in which company appeared in Forbes / Fortune 500",
+              "type": "year",
+              "required": true
+            }
+          ],
+          "allowEmpty": true
+        },
+        {
+          "id": "ventures-turnover",
+          "kind": "records",
+          "title": "Ventures/start-ups grown to turnover of Rs. 50 lakh",
+          "fields": [
+            {
+              "id": "startupRef",
+              "label": "Name of startup",
+              "type": "recordRef",
+              "ref": {
+                "block": "dpiit-recognised",
+                "key": "dpiitNo",
+                "label": "ventureName"
+              },
+              "required": true
+            },
+            {
+              "id": "turnover",
+              "label": "Company's Turnover",
+              "type": "currencyInr",
+              "min": 5000000,
+              "required": true
+            }
+          ],
+          "allowEmpty": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "DPIIT certificates, investment / grant sanction letters, turnover statements"
+      },
+      "help": "Every table may legitimately be empty: tick 'Nothing to report' instead of leaving it blank. Start-up names are picked from the DPIIT list so DPIIT numbers are typed once.",
+      "usedBy": [
+        "INNOVATION"
+      ]
+    },
+    {
+      "id": "incubation-activities",
+      "title": "Pre-incubation and Incubation Activities",
+      "dcsHeading": "Pre-incubation and Incubation Activities",
+      "catalogueItemIds": [
+        "entrepreneurship"
+      ],
+      "nirfParameters": [
+        "INNOVATION"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "catalyst",
+        "contributorUnitIds": [
+          "ihub"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-sric"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "incubation",
+          "kind": "grid",
+          "title": "Pre-incubation and incubation by financial year",
+          "rowAxis": {
+            "type": "fixed",
+            "rows": [
+              {
+                "id": "preParticipants",
+                "label": "Number of participants in Pre-incubation activities"
+              },
+              {
+                "id": "preExpenditure",
+                "label": "Expenditure on pre-incubation activities",
+                "type": "currencyInr"
+              },
+              {
+                "id": "incParticipants",
+                "label": "Number of participants Incubated"
+              },
+              {
+                "id": "incExpenditure",
+                "label": "Expenditure on incubation activities",
+                "type": "currencyInr"
+              },
+              {
+                "id": "incIncome",
+                "label": "Income generated by institution through incubation activities",
+                "type": "currencyInr"
+              }
+            ]
+          },
+          "columnAxis": {
+            "type": "years",
+            "series": {
+              "kind": "financial",
+              "count": 3
+            },
+            "cell": {
+              "type": "integer",
+              "min": 0
+            }
+          },
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "XLSX",
+          "PDF"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Incubator cohort lists (anonymised) and expenditure statements"
+      },
+      "usedBy": [
+        "INNOVATION"
+      ]
+    },
+    {
+      "id": "innovation-fdp",
+      "title": "Faculty Development Programmes (Innovation, Entrepreneurship, IPR)",
+      "dcsHeading": "Faculty Development Programmes (Innovation, Entrepreneurship, IPR)",
+      "catalogueItemIds": [
+        "innovation-education"
+      ],
+      "nirfParameters": [
+        "INNOVATION"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "continuing-education",
+        "contributorUnitIds": [
+          "dean-faculty",
+          "catalyst"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-sric"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "fdp",
+          "kind": "records",
+          "title": "FDPs conducted (previous 3 academic years)",
+          "fields": [
+            {
+              "id": "academicYear",
+              "label": "Academic year",
+              "type": "yearLabel",
+              "series": {
+                "kind": "academic",
+                "count": 3
+              },
+              "required": true
+            },
+            {
+              "id": "title",
+              "label": "Title of Course",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "coordinator",
+              "label": "Program Coordinator (PC)",
+              "type": "text",
+              "required": true,
+              "pii": true
+            },
+            {
+              "id": "coordinatorContact",
+              "label": "Contact Details of (PC)",
+              "type": "text",
+              "required": true,
+              "pii": true
+            },
+            {
+              "id": "participants",
+              "label": "No. of Participants",
+              "type": "integer",
+              "min": 0,
+              "required": true
+            },
+            {
+              "id": "expenditure",
+              "label": "Expenditure",
+              "type": "currencyInr",
+              "min": 0,
+              "required": true
+            },
+            {
+              "id": "startDate",
+              "label": "Program Start Date",
+              "type": "date",
+              "required": true
+            },
+            {
+              "id": "endDate",
+              "label": "Program End Date",
+              "type": "date",
+              "required": true
+            }
+          ],
+          "allowEmpty": true,
+          "importFormats": [
+            "XLSX",
+            "CSV"
+          ],
+          "validations": [
+            {
+              "id": "fdp-dates",
+              "severity": "error",
+              "rule": {
+                "op": "dateOrder",
+                "start": "startDate",
+                "end": "endDate"
+              },
+              "message": "End date cannot be before start date."
+            }
+          ]
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Programme brochures / attendance summaries"
+      },
+      "usedBy": [
+        "INNOVATION"
+      ]
+    },
+    {
+      "id": "innovation-courses",
+      "title": "Academic Courses in Innovation, Entrepreneurship and IPR",
+      "dcsHeading": "Academic Courses in Innovation, Entrepreneurship and IPR",
+      "catalogueItemIds": [
+        "innovation-education"
+      ],
+      "nirfParameters": [
+        "INNOVATION"
+      ],
+      "ownership": {
+        "submitBy": "unit",
+        "eligibleUnitKinds": [
+          "SCHOOL",
+          "CENTRE"
+        ],
+        "domainVerifierUnitIds": [
+          "academic-courses-research"
+        ],
+        "rollup": {
+          "strategy": "sum"
+        },
+        "allowNotApplicable": true
+      },
+      "blocks": [
+        {
+          "id": "courses",
+          "kind": "records",
+          "title": "Courses offered in the latest academic year",
+          "fields": [
+            {
+              "id": "academicYear",
+              "label": "Academic year",
+              "type": "yearLabel",
+              "series": {
+                "kind": "academic",
+                "count": 1
+              },
+              "required": true
+            },
+            {
+              "id": "title",
+              "label": "Title of Course",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "courseCode",
+              "label": "Course Code",
+              "type": "text",
+              "required": true
+            },
+            {
+              "id": "courseType",
+              "label": "Type of Course",
+              "type": "enum",
+              "enum": "courseType",
+              "required": true
+            },
+            {
+              "id": "level",
+              "label": "Level of Course (UG/PG/PhD)",
+              "type": "enum",
+              "enum": "courseLevel",
+              "required": true
+            },
+            {
+              "id": "offeringUnit",
+              "label": "Course Offering Department/Centre/Unit Name",
+              "type": "orgUnit",
+              "required": true,
+              "derive": {
+                "fn": "submittingUnit"
+              },
+              "readOnly": true
+            },
+            {
+              "id": "credits",
+              "label": "Total Credit Score",
+              "type": "decimal",
+              "min": 0,
+              "required": true
+            }
+          ],
+          "allowEmpty": true,
+          "importFormats": [
+            "XLSX",
+            "CSV"
+          ],
+          "help": "List only courses whose content is substantially innovation, entrepreneurship or IPR."
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Course catalogue / Senate-approved syllabus"
+      },
+      "usedBy": [
+        "INNOVATION"
+      ]
+    },
+    {
+      "id": "sdg-energy",
+      "title": "SDG - Energy Generated & Consumed",
+      "dcsHeading": "SDG - Energy Generated & Consumed",
+      "catalogueItemIds": [
+        "sustainability-practices"
+      ],
+      "nirfParameters": [
+        "SDG"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "estate-works",
+        "contributorUnitIds": [
+          "dean-infra"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-infra"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "practices",
+          "kind": "questionnaire",
+          "title": "Electricity questionnaire",
+          "questions": [
+            {
+              "id": "avoidMisuse",
+              "label": "Practices to avoid misuse of electricity",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "ledPct",
+              "label": "LED Replacement Percentage",
+              "type": "percent",
+              "min": 0,
+              "max": 100,
+              "required": true
+            },
+            {
+              "id": "bldcPct",
+              "label": "BLDC Fan Replacement Percentage",
+              "type": "percent",
+              "min": 0,
+              "max": 100,
+              "required": true
+            },
+            {
+              "id": "coolingHeatingNorms",
+              "label": "Defined norms for cooling/heating",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "renewableProcurement",
+              "label": "Renewable electricity procurement",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "additionalActivity",
+              "label": "Additional energy reduction activity",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "activityDetails",
+              "label": "Activity Details",
+              "type": "longText"
+            }
+          ],
+          "validations": [
+            {
+              "id": "activity-details-required",
+              "severity": "error",
+              "rule": {
+                "op": "requiredIf",
+                "field": "activityDetails",
+                "when": {
+                  "field": "additionalActivity",
+                  "eq": true
+                }
+              },
+              "message": "Describe the additional activity."
+            }
+          ],
+          "carryForward": true
+        },
+        {
+          "id": "annual",
+          "kind": "grid",
+          "title": "Annual energy data",
+          "rowAxis": {
+            "type": "years",
+            "series": {
+              "kind": "academic",
+              "count": 3
+            }
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "electricityKwh",
+                "label": "Total Electricity Consumed (kWh)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "renewableInstalledKwp",
+                "label": "Total Renewable Energy Installed (kWp)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "renewableGeneratedKwh",
+                "label": "Total Renewable Energy Generated (kWh)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "builtUpAreaSqft",
+                "label": "Total Built-up Area (Sq. ft.)",
+                "type": "decimal",
+                "min": 0
+              }
+            ]
+          },
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Electricity bills / solar generation meter logs"
+      },
+      "usedBy": [
+        "SDG"
+      ]
+    },
+    {
+      "id": "sdg-water",
+      "title": "SDG - Water Management",
+      "dcsHeading": "SDG - Water Management",
+      "catalogueItemIds": [
+        "sustainability-practices"
+      ],
+      "nirfParameters": [
+        "SDG"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "estate-works",
+        "contributorUnitIds": [
+          "dean-infra"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-infra"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "practices",
+          "kind": "questionnaire",
+          "title": "Water questionnaire",
+          "questions": [
+            {
+              "id": "conservation",
+              "label": "Water conservation practices",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "rainwaterHarvesting",
+              "label": "Rainwater harvesting system",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "wastewaterTreatmentPct",
+              "label": "Wastewater treatment system",
+              "type": "percent",
+              "min": 0,
+              "max": 100,
+              "required": true
+            },
+            {
+              "id": "waterAudit",
+              "label": "Water audit conducted",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "lowFlowFixtures",
+              "label": "Low-flow fixtures installed",
+              "type": "boolean",
+              "required": true
+            }
+          ],
+          "carryForward": true
+        },
+        {
+          "id": "annual",
+          "kind": "grid",
+          "title": "Annual water data",
+          "rowAxis": {
+            "type": "years",
+            "series": {
+              "kind": "academic",
+              "count": 3
+            }
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "pumpPowerHp",
+                "label": "Total Pump Power (HP)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "rwhConnectedAreaSqft",
+                "label": "RWH Connected Area (Sq.ft.)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "wastewaterTreatedPct",
+                "label": "Wastewater Treated (%)",
+                "type": "percent",
+                "min": 0,
+                "max": 100
+              },
+              {
+                "id": "totalTaps",
+                "label": "Total Taps",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "lowFlowTaps",
+                "label": "Low-Flow Taps",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "rooftopAreaSqft",
+                "label": "Total Rooftop Area (Sq.ft.)",
+                "type": "decimal",
+                "min": 0
+              }
+            ]
+          },
+          "validations": [
+            {
+              "id": "lowflow-le-total",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "lowFlowTaps",
+                "right": "totalTaps"
+              },
+              "message": "lowFlowTaps cannot exceed totalTaps."
+            },
+            {
+              "id": "rwh-le-rooftop",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "rwhConnectedAreaSqft",
+                "right": "rooftopAreaSqft"
+              },
+              "message": "rwhConnectedAreaSqft cannot exceed rooftopAreaSqft."
+            }
+          ],
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Water audit report / RWH drawings / pump inventory"
+      },
+      "usedBy": [
+        "SDG"
+      ]
+    },
+    {
+      "id": "sdg-waste",
+      "title": "SDG - Waste Management",
+      "dcsHeading": "SDG - Waste Management",
+      "catalogueItemIds": [
+        "sustainability-practices"
+      ],
+      "nirfParameters": [
+        "SDG"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "estate-works",
+        "contributorUnitIds": [
+          "dean-infra",
+          "hostels"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-infra"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "practices",
+          "kind": "questionnaire",
+          "title": "Waste management questionnaire",
+          "questions": [
+            {
+              "id": "segregation",
+              "label": "Does your institute have a waste segregation system?",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "composting",
+              "label": "Does the institute practice composting?",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "hazardousHandled",
+              "label": "Are hazardous wastes handled properly?",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "ewasteSystem",
+              "label": "Does the institute have an e-waste management system?",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "plasticInitiatives",
+              "label": "Are there initiatives for reducing single-use plastics?",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "additionalReduction",
+              "label": "Any additional waste reduction activities?",
+              "type": "boolean",
+              "required": true
+            }
+          ],
+          "carryForward": true
+        },
+        {
+          "id": "annual",
+          "kind": "grid",
+          "title": "Annual waste data",
+          "rowAxis": {
+            "type": "years",
+            "series": {
+              "kind": "financial",
+              "count": 3
+            }
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "totalSolidTons",
+                "label": "Total Solid Waste (Tons)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "horticultureTons",
+                "label": "Horticulture Waste (Tons)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "dryTons",
+                "label": "Dry Waste (Tons)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "wetTons",
+                "label": "Wet Waste (Tons)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "dryRecycledTons",
+                "label": "Dry Waste Recycled (Tons)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "bioFoodProcessedTons",
+                "label": "Bio/Food Waste Processed (Tons)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "eWasteKg",
+                "label": "Electronic Waste (Kg)",
+                "type": "decimal",
+                "min": 0
+              }
+            ]
+          },
+          "validations": [
+            {
+              "id": "solid-split",
+              "severity": "warning",
+              "rule": {
+                "op": "sumEquals",
+                "target": "totalSolidTons",
+                "parts": [
+                  "dryTons",
+                  "wetTons"
+                ],
+                "tolerancePct": 2
+              },
+              "message": "Total solid waste is normally dry + wet waste; check the split."
+            },
+            {
+              "id": "recycled-le-dry",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "dryRecycledTons",
+                "right": "dryTons"
+              },
+              "message": "dryRecycledTons cannot exceed dryTons."
+            },
+            {
+              "id": "processed-le-wet",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "bioFoodProcessedTons",
+                "right": "wetTons"
+              },
+              "message": "bioFoodProcessedTons cannot exceed wetTons."
+            }
+          ],
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Waste weighment logs / vendor manifests / e-waste disposal certificates"
+      },
+      "usedBy": [
+        "SDG"
+      ]
+    },
+    {
+      "id": "sdg-green-coverage",
+      "title": "SDG - Green Coverage",
+      "dcsHeading": "SDG - Green Coverage",
+      "catalogueItemIds": [
+        "sustainability-practices"
+      ],
+      "nirfParameters": [
+        "SDG"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "estate-works",
+        "contributorUnitIds": [
+          "dean-infra"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-infra"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "practices",
+          "kind": "questionnaire",
+          "title": "Green coverage questionnaire",
+          "questions": [
+            {
+              "id": "landAreaProvided",
+              "label": "Total land area of the campus",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "greenAreaProvided",
+              "label": "Total green area in the campus",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "treesProvided",
+              "label": "Number of trees planted in the campus",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "greenInitiatives",
+              "label": "Initiatives for improving green coverage (e.g., saplings planted, gardens, rooftop gardens)",
+              "type": "boolean",
+              "required": true
+            }
+          ],
+          "help": "The DCS records these as Yes/No even though the table below takes the quantities.",
+          "carryForward": true
+        },
+        {
+          "id": "annual",
+          "kind": "grid",
+          "title": "Annual green coverage",
+          "rowAxis": {
+            "type": "years",
+            "series": {
+              "kind": "financial",
+              "count": 3
+            }
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "landAreaAcres",
+                "label": "Total Land Area (Acres)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "greenAreaAcres",
+                "label": "Green Area (Acres)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "trees",
+                "label": "Number of Trees",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "saplingsPlanted",
+                "label": "Number of Saplings Planted",
+                "type": "integer",
+                "min": 0
+              }
+            ]
+          },
+          "validations": [
+            {
+              "id": "green-le-land",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "greenAreaAcres",
+                "right": "landAreaAcres"
+              },
+              "message": "greenAreaAcres cannot exceed landAreaAcres."
+            }
+          ],
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Land records / tree census / plantation drive records"
+      },
+      "usedBy": [
+        "SDG"
+      ]
+    },
+    {
+      "id": "sdg-health-wellbeing",
+      "title": "SDG - Health & Well-Being",
+      "dcsHeading": "SDG - Health & Well-Being",
+      "catalogueItemIds": [
+        "health-wellbeing-community"
+      ],
+      "nirfParameters": [
+        "SDG"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "dean-students",
+        "contributorUnitIds": [
+          "sports",
+          "medical-services"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-students"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "practices",
+          "kind": "questionnaire",
+          "title": "Health & well-being questionnaire",
+          "questions": [
+            {
+              "id": "pedestrianAreas",
+              "label": "Availability of pedestrian-friendly areas on campus",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "sportsAccessible",
+              "label": "Sports facilities and areas accessible to students and staff",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "wellnessArea",
+              "label": "Total campus area dedicated to health and wellness activities",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "yogaParticipation",
+              "label": "Number of students participating in yoga or fitness programs",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "additionalInitiatives",
+              "label": "Additional initiatives promoting health and well-being",
+              "type": "boolean",
+              "required": true
+            }
+          ],
+          "carryForward": true
+        },
+        {
+          "id": "annual",
+          "kind": "grid",
+          "title": "Annual health & well-being data",
+          "rowAxis": {
+            "type": "years",
+            "series": {
+              "kind": "financial",
+              "count": 3
+            }
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "pedestrianAreaAcres",
+                "label": "Pedestrian Area (Acres)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "sportsAreaAcres",
+                "label": "Sports Area (Acres)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "totalCampusAreaAcres",
+                "label": "Total Campus Area (Acres)",
+                "type": "decimal",
+                "min": 0
+              },
+              {
+                "id": "yogaTwiceWeekly",
+                "label": "Yoga (Twice per Week) - students",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "yogaWeekly",
+                "label": "Yoga (Weekly) - students",
+                "type": "integer",
+                "min": 0
+              }
+            ]
+          },
+          "validations": [
+            {
+              "id": "pedestrian-le-campus",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "pedestrianAreaAcres",
+                "right": "totalCampusAreaAcres"
+              },
+              "message": "pedestrianAreaAcres cannot exceed totalCampusAreaAcres."
+            },
+            {
+              "id": "sports-le-campus",
+              "severity": "error",
+              "rule": {
+                "op": "lte",
+                "left": "sportsAreaAcres",
+                "right": "totalCampusAreaAcres"
+              },
+              "message": "sportsAreaAcres cannot exceed totalCampusAreaAcres."
+            }
+          ],
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Campus map areas / yoga and fitness programme attendance"
+      },
+      "usedBy": [
+        "SDG"
+      ]
+    },
+    {
+      "id": "sdg-community",
+      "title": "SDG - Sustainable Communities and Partnership",
+      "dcsHeading": "SDG - Sustainable Communities and Partnership",
+      "catalogueItemIds": [
+        "health-wellbeing-community"
+      ],
+      "nirfParameters": [
+        "SDG"
+      ],
+      "ownership": {
+        "submitBy": "central",
+        "primaryOwnerUnitId": "dean-students",
+        "contributorUnitIds": [
+          "cultural-activities"
+        ],
+        "domainVerifierUnitIds": [
+          "dean-students"
+        ],
+        "rollup": {
+          "strategy": "none"
+        }
+      },
+      "blocks": [
+        {
+          "id": "practices",
+          "kind": "questionnaire",
+          "title": "Community questionnaire",
+          "questions": [
+            {
+              "id": "communityEngagement",
+              "label": "Initiatives undertaken by the institute for community engagement",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "studentSocialPrograms",
+              "label": "Programs promoting student participation in social initiatives",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "studentSustainability",
+              "label": "Measures taken to involve students in planting, cleanliness, and sustainability activities",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "ngoPartnerships",
+              "label": "Partnerships with local communities or NGOs",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "welfareEvents",
+              "label": "Events organized for community welfare",
+              "type": "boolean",
+              "required": true
+            },
+            {
+              "id": "otherSupport",
+              "label": "Any other community support activities undertaken by the institute",
+              "type": "boolean",
+              "required": true
+            }
+          ],
+          "carryForward": true
+        },
+        {
+          "id": "annual",
+          "kind": "grid",
+          "title": "Annual community data",
+          "rowAxis": {
+            "type": "years",
+            "series": {
+              "kind": "financial",
+              "count": 3
+            }
+          },
+          "columnAxis": {
+            "type": "fields",
+            "fields": [
+              {
+                "id": "activeInitiatives",
+                "label": "Active Initiatives",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "studentsTreePlantation",
+                "label": "Students - Tree Plantation",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "studentsOtherActivities",
+                "label": "Students - Other Activities",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "studentsOutsideCampus",
+                "label": "Students - Outside Campus Events",
+                "type": "integer",
+                "min": 0
+              },
+              {
+                "id": "eventsOrganized",
+                "label": "Events Organized",
+                "type": "integer",
+                "min": 0
+              }
+            ]
+          },
+          "carryForward": true
+        }
+      ],
+      "proof": {
+        "required": true,
+        "accept": [
+          "PDF",
+          "XLSX"
+        ],
+        "maxSizeMb": 25,
+        "hint": "Event reports / MoUs with NGOs / participation lists"
+      },
+      "usedBy": [
+        "SDG"
+      ]
+    }
+  ]
+}

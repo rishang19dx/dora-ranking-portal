@@ -1,0 +1,264 @@
+name: CI — DORA Ranking Portal
+
+on:
+  push:
+    branches:
+      - main
+      - "phase-2/**"
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+      - "phase-2/**"
+
+# Cancel in-progress CI runs when a new commit is pushed to the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Job 1: Django Backend Tests ─────────────────────────────────────────
+  backend-tests:
+    name: Backend · Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      # Run with SQLite (no DATABASE_URL → settings.py falls back to SQLite)
+      - name: Run Django migrations (SQLite)
+        env:
+          DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
+          DJANGO_DEBUG: "True"
+        run: python manage.py migrate --no-input
+
+      # Keeps the organogram seeder and schema loader honest: both run on
+      # every deploy, so a regression here breaks production, not just CI.
+      - name: Verify seeders run clean on a fresh database
+        env:
+          DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
+          DJANGO_DEBUG: "True"
+        run: |
+          python manage.py seed_organogram
+          python manage.py load_form_schema
+
+      - name: Run unit & integration tests with coverage
+        env:
+          DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
+          DJANGO_DEBUG: "True"
+        run: |
+          pytest \
+            --tb=short \
+            --cov=apps \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            -q
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-py${{ matrix.python-version }}
+          path: backend/coverage.xml
+          if-no-files-found: warn
+
+  # ─── Job 2: Django Lint / Static Analysis ────────────────────────────────
+  backend-lint:
+    name: Backend · Lint & Type Check
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies + lint tools
+        run: |
+          pip install -r requirements.txt
+          pip install ruff
+
+      - name: Lint with Ruff
+        run: ruff check apps/ dora_backend/ tests/ --output-format=github
+
+      - name: Check Django system checks
+        env:
+          DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
+          DJANGO_DEBUG: "True"
+        run: python manage.py check --deploy --fail-level WARNING 2>&1 | grep -v "WARNINGS:" || true
+
+      - name: Check for missing migrations
+        env:
+          DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
+          DJANGO_DEBUG: "True"
+        run: python manage.py makemigrations --check --dry-run
+
+  # ─── Job 3: Frontend Build ────────────────────────────────────────────────
+  frontend-build:
+    name: Frontend · Lint, Typecheck, Test & Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit & integration tests (Vitest)
+        run: npm run test
+
+      - name: Build (Vite)
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          if-no-files-found: warn
+          retention-days: 7
+
+  # ─── Job 4: Integration Tests with PostgreSQL ─────────────────────────────
+  backend-integration-postgres:
+    name: Backend · Integration (PostgreSQL)
+    runs-on: ubuntu-latest
+    # Only run on push to main or PRs targeting main to save CI minutes
+    if: github.ref == 'refs/heads/main' || github.base_ref == 'main'
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: dora_test
+          POSTGRES_USER: dora
+          POSTGRES_PASSWORD: dora_test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run migrations against PostgreSQL
+        env:
+          DATABASE_URL: postgresql://dora:dora_test_pass@localhost:5432/dora_test
+          DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
+          DJANGO_DEBUG: "True"
+        run: python manage.py migrate --no-input
+
+      - name: Run full test suite against PostgreSQL
+        env:
+          DATABASE_URL: postgresql://dora:dora_test_pass@localhost:5432/dora_test
+          DJANGO_SECRET_KEY: ci-test-secret-key-not-for-production
+          DJANGO_DEBUG: "True"
+        run: |
+          pytest \
+            --tb=short \
+            --cov=apps \
+            --cov-report=xml:coverage-postgres.xml \
+            -q
+
+      - name: Upload PostgreSQL coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-postgres
+          path: backend/coverage-postgres.xml
+          if-no-files-found: warn
+
+  # ─── Job 5: Docker Build ─────────────────────────────────────────────────
+  docker-build:
+    name: Docker · Build Images
+    runs-on: ubuntu-latest
+    # Only run on push (not PRs) to avoid building on every PR commit
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          tags: dora-backend:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          tags: dora-frontend:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+

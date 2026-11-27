@@ -61,6 +61,7 @@ export interface DataRequest {
   message: string;
   deadline: string;
   dataItemIds: string[];
+  categories?: string[] | null;
   targets: DataRequestTarget[];
   deliveries: DeliveryRecord[];
   status: RequestStatus;

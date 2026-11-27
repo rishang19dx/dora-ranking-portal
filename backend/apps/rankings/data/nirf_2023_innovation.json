@@ -1,0 +1,138 @@
+[
+    {
+        "institute_id": "ARI-I-1075",
+        "name": "INDIAN INSTITUTE OF TECHNOLOGY KANPUR",
+        "city": "",
+        "state": "UTTAR PRADESH",
+        "score": null,
+        "rank": 1
+    },
+    {
+        "institute_id": "ARI-U-0456",
+        "name": "INDIAN INSTITUTE OF TECHNOLOGY MADRAS",
+        "city": "",
+        "state": "TAMIL NADU",
+        "score": null,
+        "rank": 2
+    },
+    {
+        "institute_id": "ARI-U-0013",
+        "name": "Indian Institute of Technology Hyderabad",
+        "city": "",
+        "state": "TELANGANA",
+        "score": null,
+        "rank": 3
+    },
+    {
+        "institute_id": "ARI-I-1074",
+        "name": "INDIAN INSTITUTE OF TECHNOLOGY DELHI",
+        "city": "",
+        "state": "DELHI",
+        "score": null,
+        "rank": 4
+    },
+    {
+        "institute_id": "ARI-U-0560",
+        "name": "INDIAN INSTITUTE OF TECHNOLOGY ROORKEE",
+        "city": "",
+        "state": "UTTARAKHAND",
+        "score": null,
+        "rank": 5
+    },
+    {
+        "institute_id": "ARI-U-0220",
+        "name": "INDIAN INSTITUTE OF SCIENCE, BENGALURU",
+        "city": "",
+        "state": "KARNATAKA",
+        "score": null,
+        "rank": 6
+    },
+    {
+        "institute_id": "ARI-U-0306",
+        "name": "INDIAN INSTITUTE OF TECHNOLOGY BOMBAY",
+        "city": "",
+        "state": "MAHARASHTRA",
+        "score": null,
+        "rank": 7
+    },
+    {
+        "institute_id": "ARI-U-0455",
+        "name": "INDIAN INSTITUTE OF INFORMATION TECHNOLOGY, DESIGN & MANUFACTURING, KANCHEEPURAM",
+        "city": "",
+        "state": "TAMIL NADU",
+        "score": null,
+        "rank": 8
+    },
+    {
+        "institute_id": "ARI-U-0263",
+        "name": "NATIONAL INSTITUTE OF TECHNOLOGY CALICUT",
+        "city": "",
+        "state": "KERALA",
+        "score": null,
+        "rank": 8
+    },
+    {
+        "institute_id": "ARI-U-0701",
+        "name": "INDIAN INSTITUTE OF TECHNOLOGY (BANARAS HINDU UNIVERSITY) VARANASI",
+        "city": "",
+        "state": "UTTAR PRADESH",
+        "score": null,
+        "rank": 10
+    },
+    {
+        "institute_id": "ARI-U-0184",
+        "name": "Indian Institute of Technology Mandi",
+        "city": "Mandi",
+        "state": "Himachal Pradesh",
+        "score": 68.5,
+        "rank": 12
+    },
+    {
+        "institute_id": "ARI-U-0139",
+        "name": "Indian Institute of Technology Gandhinagar",
+        "city": "Gandhinagar",
+        "state": "Gujarat",
+        "score": 65.2,
+        "rank": 15
+    },
+    {
+        "institute_id": "ARI-U-0378",
+        "name": "Indian Institute of Technology Ropar",
+        "city": "Rupnagar",
+        "state": "Punjab",
+        "score": 61.4,
+        "rank": 22
+    },
+    {
+        "institute_id": "ARI-U-0273",
+        "name": "Indian Institute of Technology Indore",
+        "city": "Indore",
+        "state": "Madhya Pradesh",
+        "score": 59.8,
+        "rank": 24
+    },
+    {
+        "institute_id": "ARI-U-0397",
+        "name": "Indian Institute of Technology Jodhpur",
+        "city": "Jodhpur",
+        "state": "Rajasthan",
+        "score": 58.0,
+        "rank": 26
+    },
+    {
+        "institute_id": "ARI-U-0355",
+        "name": "Indian Institute of Technology Bhubaneswar",
+        "city": "Bhubaneswar",
+        "state": "Odisha",
+        "score": 55.4,
+        "rank": 28
+    },
+    {
+        "institute_id": "ARI-U-0092",
+        "name": "Indian Institute of Technology Patna",
+        "city": "Patna",
+        "state": "Bihar",
+        "score": 53.0,
+        "rank": 30
+    }
+]

@@ -1,82 +1,130 @@
 [
     {
         "institute_id": "IR-I-U-0456",
-        "name": "Indian Institute of Technology MadrasClose",
-        "city": "Chennai",
-        "state": "Tamil Nadu",
+        "name": "Indian Institute of Technology Madras",
+        "city": "Indian Institute of Technology MadrasClose",
+        "state": "Chennai",
         "score": null,
         "rank": 1
     },
     {
         "institute_id": "IR-I-U-0306",
-        "name": "Indian Institute of Technology BombayClose",
-        "city": "Mumbai",
-        "state": "Maharashtra",
+        "name": "Indian Institute of Technology Bombay",
+        "city": "Indian Institute of Technology BombayClose",
+        "state": "Mumbai",
         "score": null,
         "rank": 2
     },
     {
         "institute_id": "IR-I-U-0220",
-        "name": "Indian Institute of ScienceClose",
-        "city": "Bengaluru",
-        "state": "Karnataka",
+        "name": "Indian Institute of Science",
+        "city": "Indian Institute of ScienceClose",
+        "state": "Bengaluru",
         "score": null,
         "rank": 3
     },
     {
         "institute_id": "IR-I-U-0573",
-        "name": "Indian Institute of Technology KharagpurClose",
-        "city": "Kharagpur",
-        "state": "West Bengal",
+        "name": "Indian Institute of Technology Kharagpur",
+        "city": "Indian Institute of Technology KharagpurClose",
+        "state": "Kharagpur",
         "score": null,
         "rank": 4
     },
     {
         "institute_id": "IR-I-I-1075",
-        "name": "Indian Institute of Technology KanpurClose",
-        "city": "Kanpur",
-        "state": "Uttar Pradesh",
+        "name": "Indian Institute of Technology Kanpur",
+        "city": "Indian Institute of Technology KanpurClose",
+        "state": "Kanpur",
         "score": null,
         "rank": 5
     },
     {
         "institute_id": "IR-I-U-0013",
-        "name": "Indian Institute of Technology HyderabadClose",
-        "city": "Hyderabad",
-        "state": "Telangana",
+        "name": "Indian Institute of Technology Hyderabad",
+        "city": "Indian Institute of Technology HyderabadClose",
+        "state": "Hyderabad",
         "score": null,
         "rank": 6
     },
     {
         "institute_id": "IR-I-I-1074",
-        "name": "Indian Institute of Technology DelhiClose",
-        "city": "New Delhi",
-        "state": "Delhi",
+        "name": "Indian Institute of Technology Delhi",
+        "city": "Indian Institute of Technology DelhiClose",
+        "state": "New Delhi",
         "score": null,
         "rank": 7
     },
     {
         "institute_id": "IR-I-U-0560",
-        "name": "Indian Institute of Technology RoorkeeClose",
-        "city": "Roorkee",
-        "state": "Uttarakhand",
+        "name": "Indian Institute of Technology Roorkee",
+        "city": "Indian Institute of Technology RoorkeeClose",
+        "state": "Roorkee",
         "score": null,
         "rank": 8
     },
     {
         "institute_id": "IR-I-U-0439",
-        "name": "Anna UniversityClose",
-        "city": "Chennai",
-        "state": "Tamil Nadu",
+        "name": "Anna University",
+        "city": "Anna UniversityClose",
+        "state": "Chennai",
         "score": null,
         "rank": 9
     },
     {
         "institute_id": "IR-I-U-0184",
-        "name": "Indian Institute of Technology MandiClose",
-        "city": "Mandi",
-        "state": "Himachal Pradesh",
+        "name": "Indian Institute of Technology Mandi",
+        "city": "Indian Institute of Technology MandiClose",
+        "state": "Mandi",
         "score": null,
         "rank": 10
+    },
+    {
+        "institute_id": "ARI-U-0139",
+        "name": "Indian Institute of Technology Gandhinagar",
+        "city": "Gandhinagar",
+        "state": "Gujarat",
+        "score": 65.2,
+        "rank": 14
+    },
+    {
+        "institute_id": "ARI-U-0378",
+        "name": "Indian Institute of Technology Ropar",
+        "city": "Rupnagar",
+        "state": "Punjab",
+        "score": 61.4,
+        "rank": 20
+    },
+    {
+        "institute_id": "ARI-U-0273",
+        "name": "Indian Institute of Technology Indore",
+        "city": "Indore",
+        "state": "Madhya Pradesh",
+        "score": 59.8,
+        "rank": 24
+    },
+    {
+        "institute_id": "ARI-U-0397",
+        "name": "Indian Institute of Technology Jodhpur",
+        "city": "Jodhpur",
+        "state": "Rajasthan",
+        "score": 58.0,
+        "rank": 26
+    },
+    {
+        "institute_id": "ARI-U-0355",
+        "name": "Indian Institute of Technology Bhubaneswar",
+        "city": "Bhubaneswar",
+        "state": "Odisha",
+        "score": 55.4,
+        "rank": 30
+    },
+    {
+        "institute_id": "ARI-U-0092",
+        "name": "Indian Institute of Technology Patna",
+        "city": "Patna",
+        "state": "Bihar",
+        "score": 53.0,
+        "rank": 35
     }
 ]

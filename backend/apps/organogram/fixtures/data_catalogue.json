@@ -442,5 +442,75 @@
       "PDF",
       "DOCX"
     ]
+  },
+  {
+    "id": "pcs-facilities",
+    "label": "Facilities for Physically Challenged Students",
+    "group": "OI",
+    "frameworks": [
+      "NIRF"
+    ],
+    "description": "Lifts/ramps, mobility aids and accessible toilets across campus buildings.",
+    "proofFormats": [
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "nep-iks-governance",
+    "label": "NEP, Indian Knowledge System & Governance Practices",
+    "group": "INSTITUTIONAL",
+    "frameworks": [
+      "NIRF"
+    ],
+    "description": "Multiple entry/exit, Indian-language and IKS courses, grievance cell, entrance-exam admissions.",
+    "proofFormats": [
+      "PDF",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "sustainability-practices",
+    "label": "Sustainability: Energy, Water, Waste & Green Coverage",
+    "group": "INSTITUTIONAL",
+    "frameworks": [
+      "NIRF",
+      "THE"
+    ],
+    "description": "Sustainable living practices plus annual energy, water, waste and green-cover data.",
+    "proofFormats": [
+      "PDF",
+      "XLSX",
+      "CSV"
+    ]
+  },
+  {
+    "id": "health-wellbeing-community",
+    "label": "Health, Well-Being & Community Engagement",
+    "group": "OI",
+    "frameworks": [
+      "NIRF",
+      "THE"
+    ],
+    "description": "Wellness areas, yoga/fitness participation and community initiatives.",
+    "proofFormats": [
+      "PDF",
+      "XLSX",
+      "DOCX"
+    ]
+  },
+  {
+    "id": "innovation-education",
+    "label": "Innovation Education & Faculty Development",
+    "group": "RPC",
+    "frameworks": [
+      "NIRF"
+    ],
+    "description": "Innovation/entrepreneurship/IPR courses and faculty development programmes.",
+    "proofFormats": [
+      "PDF",
+      "XLSX",
+      "CSV"
+    ]
   }
 ]

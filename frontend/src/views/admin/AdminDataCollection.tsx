@@ -56,7 +56,7 @@ export default function DataCollectionPage() {
   const active = requests.filter((request) => request.status !== 'CLOSED');
   const pendingSections = active.reduce(
     (total, request) =>
-      total + request.targets.filter((target) => target.status !== 'SUBMITTED').length,
+      total + (request.targets ?? []).filter((target) => target.status !== 'SUBMITTED').length,
     0,
   );
 
@@ -136,11 +136,14 @@ export default function DataCollectionPage() {
         ) : (
           <div className="space-y-4">
             {requests.map((request) => {
-              const submitted = request.targets.filter(
+              const reqTargets = request.targets ?? [];
+              const reqDeliveries = request.deliveries ?? [];
+              const reqItems = request.dataItemIds ?? [];
+              const submitted = reqTargets.filter(
                 (target) => target.status === 'SUBMITTED',
               ).length;
-              const progress = request.targets.length
-                ? Math.round((submitted / request.targets.length) * 100)
+              const progress = reqTargets.length
+                ? Math.round((submitted / reqTargets.length) * 100)
                 : 0;
               const days = daysUntil(request.deadline);
               const overdue = days < 0 && request.status !== 'CLOSED';
@@ -170,19 +173,19 @@ export default function DataCollectionPage() {
                         )}
                       </div>
                       <p className="text-sm text-zinc-500 mt-1 truncate">
-                        {request.targets.length} section
-                        {request.targets.length === 1 ? '' : 's'} &middot;{' '}
-                        {request.dataItemIds.length} data item
-                        {request.dataItemIds.length === 1 ? '' : 's'} &middot;{' '}
-                        {request.deliveries.length} email
-                        {request.deliveries.length === 1 ? '' : 's'}
+                        {reqTargets.length} section
+                        {reqTargets.length === 1 ? '' : 's'} &middot;{' '}
+                        {reqItems.length} data item
+                        {reqItems.length === 1 ? '' : 's'} &middot;{' '}
+                        {reqDeliveries.length} email
+                        {reqDeliveries.length === 1 ? '' : 's'}
                       </p>
                       <p className="text-xs text-zinc-400 mt-1 truncate">
-                        {request.targets
+                        {reqTargets
                           .slice(0, 4)
-                          .map((target) => unitLabel(target.unitId))
+                          .map((target) => unitLabel(target.unitId || (target as any).orgUnitId))
                           .join(', ')}
-                        {request.targets.length > 4 ? ` +${request.targets.length - 4} more` : ''}
+                        {reqTargets.length > 4 ? ` +${reqTargets.length - 4} more` : ''}
                       </p>
                     </div>
                   </div>
